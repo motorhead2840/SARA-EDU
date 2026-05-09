@@ -25,6 +25,5 @@ module.exports = buildModule("SaraProtocolModule", (m) => {
   return {
     saraToken,
     saraKnowledgeRegistry,
-    deployer,
   };
 });
