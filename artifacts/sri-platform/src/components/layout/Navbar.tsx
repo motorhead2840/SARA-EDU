@@ -12,6 +12,7 @@ export function Navbar() {
     { href: "/blueprint", label: "Blueprint" },
     { href: "/pitch", label: "Pitch" },
     { href: "/token", label: "SARA Token", accent: true },
+    { href: "/abhaya", label: "Abhaya Gate", accent: true },
   ];
 
   const isLoginPage = location.startsWith("/login");
