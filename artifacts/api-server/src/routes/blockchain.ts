@@ -51,11 +51,14 @@ router.get("/token", async (_req, res) => {
       }),
     ]);
 
-    const totalSupplyHex = tsResponse.status === "fulfilled" ? (tsResponse.value.result as string) : "0x0";
-    const maxSupplyHex   = msResponse.status === "fulfilled" ? (msResponse.value.result as string) : "0x0";
+    const toSafeHex = (hex: string | undefined) =>
+      hex && hex.length > 2 ? hex : "0x0";
 
-    const totalSupplyWei = BigInt(totalSupplyHex ?? "0x0");
-    const maxSupplyWei   = BigInt(maxSupplyHex ?? "0x0");
+    const totalSupplyHex = tsResponse.status === "fulfilled" ? toSafeHex(tsResponse.value.result as string) : "0x0";
+    const maxSupplyHex   = msResponse.status === "fulfilled" ? toSafeHex(msResponse.value.result as string) : "0x0";
+
+    const totalSupplyWei = BigInt(totalSupplyHex);
+    const maxSupplyWei   = BigInt(maxSupplyHex);
     const DECIMALS = 18n;
     const DIV = 10n ** DECIMALS;
 
@@ -115,7 +118,9 @@ router.get("/balance/:address", async (req, res) => {
       return;
     }
 
-    const rawWei = BigInt((response.result as string) ?? "0x0");
+    // eth_call returns "0x" (empty) when the contract doesn't exist at that address
+    const resultHex = (response.result as string) || "0x0";
+    const rawWei = BigInt(resultHex.length > 2 ? resultHex : "0x0");
     res.json({
       address,
       rawBalance: rawWei.toString(),

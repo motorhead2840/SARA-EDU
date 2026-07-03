@@ -8,6 +8,12 @@ The IAM user (`SARA_IAM_REPLIT`) must have the `AmazonManagedBlockchainQueryFull
 
 **Why:** AWS Managed Blockchain Query is a distinct service with its own IAM namespace (`managedblockchain-query`). New IAM users have no permissions by default.
 
-**How to apply:** In AWS IAM Console → Users → SARA_IAM_REPLIT → Add permissions → Attach policy → `AmazonManagedBlockchainQueryFullAccess`. Or use a minimal inline policy granting `managedblockchain-query:GetTokenBalance`, `managedblockchain-query:ListTokenBalances`, `managedblockchain-query:ListTransactions`.
+**How to apply:** Two separate IAM namespaces must be granted:
+1. `managedblockchain-query:*` — for the high-level SDK (GetTokenBalance, ListTokenBalances, ListTransactions). Attach `AmazonManagedBlockchainQueryFullAccess` managed policy.
+2. `managedblockchain:*` on `Resource: "*"` — for SigV4-signed JSON-RPC node calls (eth_call, eth_blockNumber, etc). Scoping to a specific node ARN does NOT work — must use `*`. Add as an inline policy.
 
-**Observed error:** `User … is not authorized to perform: managedblockchain-query:GetTokenBalance … because no identity-based policy allows the action`
+**Observed errors (in order):**
+- `not authorized to perform: managedblockchain-query:GetTokenBalance` → fix #1 above
+- `not authorized to perform: managedblockchain:POST` → fix #2 above
+
+**eth_call returns `0x` (empty):** Contract does not exist at that address on that network. Returns clean `0` after code defensively handles `0x` → `0x0` conversion.
