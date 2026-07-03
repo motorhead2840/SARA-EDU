@@ -2,38 +2,37 @@ import { Link } from "wouter";
 
 export function Footer() {
   return (
-    <footer className="w-full bg-stone-50 border-t border-stone-200 py-14 relative z-10">
+    <footer className="w-full bg-card border-t border-border/60 py-14 relative z-10">
       <div className="max-w-7xl mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
 
           {/* Brand */}
           <div className="md:col-span-1">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-7 h-7 bg-amber-400 flex items-center justify-center">
-                <span className="font-serif text-xs font-bold text-amber-900">S</span>
+            <div className="flex items-center gap-2.5 mb-5">
+              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center glow-red">
+                <span className="text-white font-bold text-sm" style={{ fontFamily: 'Poppins' }}>S</span>
               </div>
-              <span className="font-sans text-base font-bold text-stone-800">
-                SRI <span className="text-amber-500">Learn</span>
+              <span className="font-bold text-lg text-foreground" style={{ fontFamily: 'Poppins' }}>
+                SRI <span className="text-primary">Learn</span>
               </span>
             </div>
-            <p className="font-sans text-sm text-stone-500 leading-relaxed mb-3">
-              Where Vedantic wisdom meets global homeschooling — a contemplative AI platform for every learner.
+            <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+              A smart learning platform that helps every student grow at their own pace — from anywhere in the world.
             </p>
-            <p className="font-mono text-xs text-stone-400 uppercase tracking-wider">Blueprint v1.0 · February 2026</p>
+            <p className="text-xs text-muted-foreground/60">Established 2026 · Global Education</p>
           </div>
 
-          {/* Platform */}
+          {/* Learn */}
           <div>
-            <h4 className="font-mono text-xs font-bold uppercase tracking-widest text-stone-400 mb-4">Platform</h4>
-            <ul className="space-y-2.5">
+            <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60 mb-5">Learn</h4>
+            <ul className="space-y-3">
               {[
-                { href: "/architecture", label: "Architecture" },
-                { href: "/pedagogy", label: "Pedagogy" },
-                { href: "/blueprint", label: "Blueprint" },
-                { href: "/pitch", label: "Investment Pitch" },
+                { href: "/architecture", label: "How It Works" },
+                { href: "/pedagogy",     label: "Learning Methods" },
+                { href: "/blueprint",    label: "Our Approach" },
               ].map(l => (
                 <li key={l.href}>
-                  <Link href={l.href} className="font-sans text-sm text-stone-500 hover:text-amber-600 transition-colors">
+                  <Link href={l.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                     {l.label}
                   </Link>
                 </li>
@@ -41,28 +40,30 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Technology */}
+          {/* Product */}
           <div>
-            <h4 className="font-mono text-xs font-bold uppercase tracking-widest text-stone-400 mb-4">Technology</h4>
-            <ul className="space-y-2.5">
+            <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60 mb-5">Product</h4>
+            <ul className="space-y-3">
               {[
-                { href: "/token",  label: "SARA Token",    color: "text-amber-500" },
-                { href: "/abhaya", label: "Abhaya Gate",   color: "text-emerald-600" },
+                { href: "/token",   label: "SRI Rewards",  color: "text-primary" },
+                { href: "/abhaya",  label: "AI Safety",    color: "text-secondary" },
+                { href: "/pitch",   label: "Our Mission",  color: "" },
               ].map(l => (
                 <li key={l.href}>
-                  <Link href={l.href} className={`font-sans text-sm font-semibold ${l.color} hover:underline transition-colors`}>
+                  <Link href={l.href}
+                    className={`text-sm font-semibold transition-colors hover:brightness-125 ${l.color || "text-muted-foreground hover:text-foreground"}`}>
                     {l.label}
                   </Link>
                 </li>
               ))}
-              <li><div className="w-full h-px bg-stone-200 my-1" /></li>
+              <li className="pt-1 border-t border-border/40 mt-2" />
               {[
-                { href: "/login/school",   label: "School Portal",   color: "text-blue-500" },
-                { href: "/login/parent",   label: "Parent Portal",   color: "text-amber-500" },
-                { href: "/login/student",  label: "Student Portal",  color: "text-emerald-500" },
+                { href: "/login/school",  label: "School Portal" },
+                { href: "/login/parent",  label: "Family Portal" },
+                { href: "/login/student", label: "Student Portal" },
               ].map(l => (
                 <li key={l.href}>
-                  <Link href={l.href} className={`font-sans text-sm ${l.color} hover:underline transition-colors`}>
+                  <Link href={l.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                     {l.label}
                   </Link>
                 </li>
@@ -70,27 +71,25 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* SRI Quantum */}
+          {/* Community */}
           <div>
-            <h4 className="font-mono text-xs font-bold uppercase tracking-widest text-stone-400 mb-4">SRI Quantum</h4>
-            <p className="font-sans text-sm text-stone-500 leading-relaxed mb-3">
-              SRI Quantum Technologies<br />
-              Contemplative AI Platform<br />
-              Patent Filing · February 2026
+            <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60 mb-5">Community</h4>
+            <p className="text-sm text-muted-foreground leading-relaxed mb-5">
+              Join thousands of families and schools using SRI Learn to make education more personal, safe, and fun.
             </p>
-            <div className="inline-block bg-[#0B0F2E] border border-amber-400/30 px-3 py-1.5">
-              <span className="font-mono text-xs text-[#E8C66A]">Ω-Manifold V3.0</span>
-            </div>
+            <Link href="/login"
+              className="inline-flex items-center gap-2 bg-primary text-white text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-primary/90 transition-all hover:scale-105 glow-red">
+              Join SRI Learn →
+            </Link>
           </div>
         </div>
 
-        {/* Bottom bar */}
-        <div className="pt-6 border-t border-stone-200 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="font-mono text-xs text-stone-400">
+        <div className="pt-6 border-t border-border/60 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-xs text-muted-foreground">
             © 2026 SRI Quantum Technologies. All rights reserved.
           </p>
-          <p className="font-mono text-xs text-stone-400">
-            Made with <span className="text-amber-400">♥</span> for global learners
+          <p className="text-xs text-muted-foreground">
+            Built with ❤️ for learners everywhere
           </p>
         </div>
       </div>

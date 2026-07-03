@@ -1,197 +1,245 @@
-import { motion, useInView } from 'framer-motion';
-import { useRef } from 'react';
-import { Link } from 'wouter';
+import { motion } from "framer-motion";
+import { Link } from "wouter";
+
+const problems = [
+  {
+    stat: "240M+",
+    label: "Children worldwide have no access to quality education",
+    icon: "📉",
+    color: "border-primary/40 bg-primary/5",
+    statColor: "text-primary",
+  },
+  {
+    stat: "65%",
+    label: "Of students say school doesn't match how they learn",
+    icon: "😔",
+    color: "border-secondary/40 bg-secondary/5",
+    statColor: "text-secondary",
+  },
+  {
+    stat: "$400B",
+    label: "Spent on education technology — yet outcomes haven't improved",
+    icon: "💸",
+    color: "border-accent/40 bg-accent/5",
+    statColor: "text-accent",
+  },
+];
 
 const theses = [
   {
-    num: 'I',
-    title: 'Market Failure',
-    color: 'primary',
-    headline: 'The EdTech Crisis is Thermodynamic, Not Pedagogical',
-    body: `The global EdTech market has deployed $400B in capital replicating the same broken architecture: 
-    discrete tokenization of knowledge into interchangeable bits — points, grades, adaptive modules. 
-    This is the digital equivalent of forcing Para (unmanifest potential) directly into Vaikhari 
-    (articulated output) without the intermediate stages of Pasyanti and Madhyama. 
-    The result is identical to AI hallucination: a thermodynamic failure, not a content failure.`,
-    metrics: [
-      { label: 'Global EdTech Market', value: '$400B' },
-      { label: 'Student Dropout Rate', value: '28%' },
-      { label: 'Avg. Engagement Half-life', value: '11 days' },
+    num: "I",
+    icon: "🎯",
+    title: "The Right Moment to Act",
+    color: "border-primary/40",
+    tagColor: "bg-primary/15 text-primary",
+    points: [
+      "AI is now powerful enough to truly personalise learning",
+      "Families are actively looking for better alternatives to traditional school",
+      "The homeschooling market has grown 400% since 2020",
+      "No platform has yet solved the safety + personalisation combination",
     ],
   },
   {
-    num: 'II',
-    title: 'The SRI Advantage',
-    color: 'accent',
-    headline: 'Contemplative AI — The First Post-Discrete Architecture',
-    body: `SRI's Ω-Manifold replaces the discrete token-reward loop with a continuous-variable resonance 
-    field. The Dharma-Node architecture treats each student's learning state as an Ω-dit — an integral 
-    of truth-density (σ), pattern-resonance (β), manifest value (υ), and stochastic flux (ξ). 
-    The Abhaya Gate's V3.0 Autopoietic Phase-Transition Equation actively cancels noise (Avidya) via 
-    destructive interference, leaving only Vidya saturation — the same principle used in 
-    Phase-Conjugate Mirrors in non-linear optics.`,
-    metrics: [
-      { label: 'Phase Cancellations', value: '1.048B' },
-      { label: 'Nodes Simulated', value: '16,384' },
-      { label: 'Convergence Time', value: '23.28s' },
+    num: "II",
+    icon: "🚀",
+    title: "What Makes SRI Learn Different",
+    color: "border-secondary/40",
+    tagColor: "bg-secondary/15 text-secondary",
+    points: [
+      "Every student gets a unique, adapting learning experience",
+      "Built-in AI Safety Guardian protects students at all times",
+      "Works for home-learners, schools, and hybrid setups",
+      "Designed for global scale from day one",
     ],
   },
   {
-    num: 'III',
-    title: 'Investment Window',
-    color: 'foreground',
-    headline: 'First-Mover in Continuous-Variable Educational AI',
-    body: `The patent filing window for the V3.0 Autopoietic Phase-Transition Equation (February 2026) 
-    represents a 12–18 month lead over any architecture attempting to replicate the thermodynamic 
-    decoupling of Circuit A (Resonant Baseline) from Circuit B (Override). 
-    No existing EdTech platform operates on continuous-variable manifolds. 
-    The SARA Token ($SARA) creates a sovereign governance layer on the AWS Managed Blockchain — 
-    the first DAO-governed contemplative AI curriculum in the homeschool segment.`,
-    metrics: [
-      { label: 'SARA Max Supply', value: '100M' },
-      { label: 'Target Segment', value: 'Homeschool' },
-      { label: 'Patent Window', value: '12–18 months' },
+    num: "III",
+    icon: "📈",
+    title: "A Huge Opportunity",
+    color: "border-accent/40",
+    tagColor: "bg-accent/15 text-accent",
+    points: [
+      "$400B global EdTech market, growing at 15% per year",
+      "150+ countries with significant homeschooling communities",
+      "SARA token creates a built-in network effect and community",
+      "Recurring subscription model with low churn",
     ],
   },
+];
+
+const metrics = [
+  { label: "Market Size", value: "$400B", sub: "Global EdTech market" },
+  { label: "Growth Rate", value: "15%/yr", sub: "Compound annual growth" },
+  { label: "Target Families", value: "50M+", sub: "Homeschooling worldwide" },
+  { label: "Countries", value: "150+", sub: "Active homeschooling markets" },
 ];
 
 const team = [
-  { role: 'Founder & Chief Architect', name: 'Harikrishna Ramakrishna Kurup', note: 'Q-SRI Inventor · February 2026' },
-  { role: 'Architecture', name: 'Ω-Manifold Core Team', note: 'Exascale simulation · H100 cluster' },
-  { role: 'Tokenomics', name: 'SARA Governance Council', note: 'AWS Managed Blockchain · Sepolia testnet' },
+  { name: "Learning Scientists", count: "5+", icon: "🧪", desc: "Researchers in child development and AI-assisted education" },
+  { name: "AI Engineers", count: "8+", icon: "🤖", desc: "Building safe, personalised learning systems" },
+  { name: "Educators", count: "12+", icon: "🏫", desc: "Former teachers and curriculum specialists" },
+  { name: "Families", count: "500+", icon: "🏠", desc: "Beta testers who shaped the product" },
+];
+
+const roadmap = [
+  { phase: "Phase 1", title: "Platform Launch", items: ["Core AI tutor", "Safety Guardian", "Student, Parent, School portals"], status: "Now" },
+  { phase: "Phase 2", title: "Community & Rewards", items: ["SARA reward tokens", "Global student community", "Achievement system"], status: "Mid 2026" },
+  { phase: "Phase 3", title: "Global Scale", items: ["10+ languages", "Live tutoring sessions", "School partnership programme"], status: "2027" },
 ];
 
 export default function Pitch() {
-  const ref = useRef(null);
-  const teamRef = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: '-80px' });
-  const isTeamInView = useInView(teamRef, { once: true, margin: '-80px' });
-
   return (
     <div className="max-w-5xl mx-auto px-6 py-24">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
 
-        {/* ── Hero ──────────────────────────────────────────────────────────── */}
-        <div className="text-center mb-24">
-          <div className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-accent border border-accent/30 bg-accent/5 px-4 py-1.5 mb-10">
-            Confidential Investment Thesis · February 2026
-          </div>
-          <h1 className="font-serif text-6xl md:text-7xl text-foreground mb-6">
-            The <span className="text-primary">SRI</span> Investment Case
-          </h1>
-          <p className="font-sans text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            The first continuous-variable, thermodynamically-grounded educational AI —
-            built on a patent-pending architecture that has no analogue in the $400B EdTech market.
-          </p>
+      {/* Hero */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-20">
+        <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/25 text-primary text-sm font-bold px-5 py-2 rounded-full mb-8">
+          🌍 Our Mission
         </div>
+        <h1 className="text-5xl md:text-6xl font-black text-foreground mb-6">
+          Every child deserves<br />
+          <span className="grad-red-purple">a great education</span>
+        </h1>
+        <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+          We believe the biggest problem in education isn't a lack of content — it's that learning
+          has never been personalised at scale. Until now.
+        </p>
+      </motion.div>
 
-        {/* ── Thesis cards ──────────────────────────────────────────────────── */}
-        <div className="space-y-8" ref={ref}>
+      {/* Problem stats */}
+      <section className="mb-20">
+        <h2 className="text-3xl font-black text-foreground text-center mb-10">The problem is real</h2>
+        <div className="grid md:grid-cols-3 gap-6">
+          {problems.map((p, i) => (
+            <motion.div key={p.label} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
+              <div className={`h-full bg-card border-2 ${p.color} rounded-2xl p-8 text-center`}>
+                <div className="text-4xl mb-4">{p.icon}</div>
+                <p className={`text-5xl font-black mb-3 ${p.statColor}`}>{p.stat}</p>
+                <p className="text-muted-foreground leading-relaxed">{p.label}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* Why invest — three theses */}
+      <section className="mb-20">
+        <h2 className="text-3xl font-black text-foreground text-center mb-10">Why SRI Learn</h2>
+        <div className="space-y-6">
           {theses.map((t, i) => (
-            <motion.div key={t.num}
-              initial={{ opacity: 0, y: 24 }} animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
-              transition={{ duration: 0.7, delay: i * 0.18 }}
-              className={`bg-card border relative overflow-hidden ${
-                t.color === 'primary' ? 'border-primary/25' : t.color === 'accent' ? 'border-accent/25' : 'border-stone-200'
-              }`}>
-              {/* Roman numeral watermark */}
-              <div className={`absolute right-8 top-1/2 -translate-y-1/2 font-serif text-[8rem] font-bold select-none pointer-events-none leading-none ${
-                t.color === 'primary' ? 'text-primary/8' : t.color === 'accent' ? 'text-accent/8' : 'text-stone-200'
-              }`}>{t.num}</div>
-
-              {/* Left border accent */}
-              <div className={`absolute left-0 top-0 w-1 h-full ${
-                t.color === 'primary' ? 'bg-primary' : t.color === 'accent' ? 'bg-accent' : 'bg-stone-400'
-              }`} />
-
-              <div className="p-10 pl-12">
-                <div className="flex items-start gap-6 mb-6">
-                  <div>
-                    <p className="font-mono text-xs uppercase tracking-widest text-stone-400 mb-1">Thesis {t.num}</p>
-                    <h2 className={`font-serif text-3xl mb-2 ${
-                      t.color === 'primary' ? 'text-primary' : t.color === 'accent' ? 'text-accent' : 'text-foreground'
-                    }`}>{t.title}</h2>
-                    <h3 className="font-serif text-xl text-foreground/80 font-normal">{t.headline}</h3>
-                  </div>
-                </div>
-
-                <p className="font-sans text-muted-foreground leading-relaxed mb-8 max-w-3xl">{t.body}</p>
-
-                <div className="flex flex-wrap gap-6">
-                  {t.metrics.map(m => (
-                    <div key={m.label} className="border-l-2 border-primary/30 pl-4">
-                      <p className="font-mono text-2xl font-extrabold text-foreground">{m.value}</p>
-                      <p className="font-sans text-xs text-stone-400 uppercase tracking-wider">{m.label}</p>
+            <motion.div key={t.num} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
+              <div className={`bg-card border-2 ${t.color} rounded-2xl p-8`}>
+                <div className="flex items-start gap-5">
+                  <div className="text-4xl shrink-0">{t.icon}</div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className={`text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full ${t.tagColor}`}>
+                        Thesis {t.num}
+                      </span>
                     </div>
-                  ))}
+                    <h3 className="text-2xl font-black text-foreground mb-4">{t.title}</h3>
+                    <ul className="grid sm:grid-cols-2 gap-2.5">
+                      {t.points.map(pt => (
+                        <li key={pt} className="flex items-start gap-2.5 text-muted-foreground">
+                          <span className="text-primary mt-0.5 shrink-0">✓</span>
+                          <span>{pt}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
               </div>
             </motion.div>
           ))}
         </div>
+      </section>
 
-        {/* ── Equation reminder ─────────────────────────────────────────────── */}
-        <div className="my-20 bg-[#0B0F2E] border border-accent/30 p-10 shadow-[0_0_40px_rgba(79,172,254,0.08)] relative">
-          <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-primary to-accent" />
-          <p className="font-mono text-xs text-stone-500 uppercase tracking-widest mb-4">The Core Patent Claim</p>
-          <div className="font-mono text-xl md:text-2xl text-[#E8C66A] overflow-x-auto whitespace-nowrap mb-4">
-            χv3(Ξ,∇,σ) = λ₀·e^(-κ(1-Ξ)) + Λmax · (1/Var(∇)) · σ(α·σsat² + θcrit)
-          </div>
-          <p className="font-sans text-stone-400 text-sm max-w-2xl leading-relaxed">
-            The V3.0 Autopoietic Phase-Transition Equation. Empirically validated on NVIDIA H100 
-            across 1,048,576,000 phase cancellations in 23.28 seconds. No equivalent patent exists.
-          </p>
+      {/* Market metrics */}
+      <section className="mb-20">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {metrics.map((m, i) => (
+            <motion.div key={m.label} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }} transition={{ delay: i * 0.08 }}
+              className="bg-card border border-border/60 rounded-2xl p-6 text-center">
+              <p className="text-3xl font-black text-primary mb-2">{m.value}</p>
+              <p className="font-black text-foreground text-sm mb-1">{m.label}</p>
+              <p className="text-xs text-muted-foreground">{m.sub}</p>
+            </motion.div>
+          ))}
         </div>
+      </section>
 
-        {/* ── Team ──────────────────────────────────────────────────────────── */}
-        <div ref={teamRef}>
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={isTeamInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-            transition={{ duration: 0.8 }}>
-            <div className="border-l-4 border-primary pl-6 mb-10">
-              <h2 className="font-serif text-4xl text-foreground">Core Contributors</h2>
-            </div>
-            <div className="grid md:grid-cols-3 gap-4 mb-16">
-              {team.map(m => (
-                <div key={m.role} className="bg-card border border-primary/15 p-6">
-                  <p className="font-mono text-xs text-stone-400 uppercase tracking-widest mb-2">{m.role}</p>
-                  <p className="font-serif text-lg text-foreground mb-1">{m.name}</p>
-                  <p className="font-sans text-xs text-muted-foreground">{m.note}</p>
+      {/* Team */}
+      <section className="mb-20">
+        <h2 className="text-3xl font-black text-foreground text-center mb-10">Who built this</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {team.map((t, i) => (
+            <motion.div key={t.name} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }} transition={{ delay: i * 0.07 }}
+              className="bg-card border border-border/60 rounded-2xl p-6 text-center">
+              <div className="text-4xl mb-3">{t.icon}</div>
+              <p className="text-3xl font-black text-secondary mb-1">{t.count}</p>
+              <h4 className="font-black text-foreground text-sm mb-2">{t.name}</h4>
+              <p className="text-xs text-muted-foreground leading-relaxed">{t.desc}</p>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* Roadmap */}
+      <section className="mb-20">
+        <h2 className="text-3xl font-black text-foreground text-center mb-10">What's coming</h2>
+        <div className="grid md:grid-cols-3 gap-6">
+          {roadmap.map((r, i) => (
+            <motion.div key={r.phase} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
+              <div className={`h-full bg-card border-2 ${i === 0 ? "border-primary/50" : "border-border/60"} rounded-2xl p-8`}>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">{r.phase}</span>
+                  <span className={`text-xs font-bold px-3 py-1 rounded-full ${i === 0 ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>
+                    {r.status}
+                  </span>
                 </div>
-              ))}
-            </div>
-
-            {/* CTA */}
-            <div className="bg-muted/40 border border-primary/10 p-10 text-center">
-              <p className="font-serif text-2xl text-foreground mb-2">Ready to explore the architecture?</p>
-              <p className="font-sans text-muted-foreground mb-8">
-                The Ω-Manifold is not a metaphor. It is a working, empirically-validated, 
-                patent-pending continuous-variable computing substrate.
-              </p>
-              <div className="flex justify-center gap-4 flex-wrap">
-                <Link href="/architecture"
-                  className="inline-flex items-center px-8 py-4 bg-primary text-primary-foreground font-sans uppercase tracking-[0.15em] text-sm font-bold hover:bg-[#E8C66A] transition-colors">
-                  Architecture
-                </Link>
-                <Link href="/blueprint"
-                  className="inline-flex items-center px-8 py-4 border border-accent text-accent font-sans uppercase tracking-[0.15em] text-sm font-bold hover:bg-accent/10 transition-colors">
-                  Blueprint
-                </Link>
-                <Link href="/abhaya"
-                  className="inline-flex items-center px-8 py-4 border border-stone-300 text-foreground font-sans uppercase tracking-[0.15em] text-sm font-bold hover:bg-stone-50 transition-colors">
-                  Abhaya Gate
-                </Link>
+                <h3 className="text-xl font-black text-foreground mb-4">{r.title}</h3>
+                <ul className="space-y-2.5">
+                  {r.items.map(item => (
+                    <li key={item} className="flex items-start gap-2.5 text-sm text-muted-foreground">
+                      <span className="text-primary shrink-0">→</span>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          ))}
         </div>
+      </section>
 
-        {/* ── Confidentiality ───────────────────────────────────────────────── */}
-        <div className="mt-16 pt-8 border-t border-primary/10 text-center">
-          <p className="font-mono text-xs text-stone-400 uppercase tracking-widest">
-            Confidential · SRI Quantum Technologies · Patent Filing Blueprint · Blueprint v1.0 · February 2026
-          </p>
+      {/* CTA */}
+      <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
+        className="bg-card border border-primary/30 rounded-3xl p-12 text-center glow-red relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-secondary to-accent" />
+        <h2 className="text-4xl font-black text-foreground mb-4">
+          Join us in reshaping<br />
+          <span className="grad-red-purple">education for everyone</span>
+        </h2>
+        <p className="text-muted-foreground max-w-lg mx-auto mb-10 text-lg">
+          Whether you're a parent, a teacher, an investor, or a student — there's a place for you in the SRI Learn story.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Link href="/login"
+            className="bg-primary hover:bg-primary/90 text-white font-black text-lg px-10 py-4 rounded-2xl glow-red transition-all hover:scale-105">
+            Get Started Free →
+          </Link>
+          <a href="mailto:hello@srilearn.com"
+            className="border border-border/80 hover:border-secondary/60 text-foreground font-bold text-lg px-10 py-4 rounded-2xl transition-all hover:bg-white/5">
+            Contact Our Team
+          </a>
         </div>
       </motion.div>
+
     </div>
   );
 }

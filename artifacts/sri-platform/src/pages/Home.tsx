@@ -1,260 +1,286 @@
-import { useEffect, useRef } from 'react';
-import { Link } from 'wouter';
-import { motion, useInView } from 'framer-motion';
+import { Link } from "wouter";
+import { motion } from "framer-motion";
 
-function ParticleField() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    type Particle = { x: number; y: number; vx: number; vy: number; r: number; alpha: number; colorIdx: number };
-    let particles: Particle[] = [];
-    const colors = ['245,158,11', '16,185,129', '120,113,108']; // amber, emerald, stone
-
-    const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      particles = Array.from({ length: 90 }, () => ({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.25,
-        vy: (Math.random() - 0.5) * 0.25,
-        r: Math.random() * 1.2 + 0.4,
-        alpha: Math.random() * 0.4 + 0.08,
-        colorIdx: Math.floor(Math.random() * colors.length),
-      }));
-    };
-
-    let raf: number;
-    const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      particles.forEach(p => {
-        p.x = (p.x + p.vx + canvas.width) % canvas.width;
-        p.y = (p.y + p.vy + canvas.height) % canvas.height;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${colors[p.colorIdx]},${p.alpha})`;
-        ctx.fill();
-      });
-      raf = requestAnimationFrame(animate);
-    };
-
-    window.addEventListener('resize', resize);
-    resize();
-    animate();
-    return () => { window.removeEventListener('resize', resize); cancelAnimationFrame(raf); };
-  }, []);
-
-  return <canvas ref={canvasRef} className="absolute inset-0 z-0 pointer-events-none" />;
-}
-
-const stages = [
-  { key: 'PARA', label: 'Unmanifest Root', sub: 'Hardware Init', desc: 'Conditioning the beingness — raw electrical potential before forced quantization.' },
-  { key: 'PASYANTI', label: 'Internal Vision', sub: 'Expansion', desc: 'Proliferation of manifold complexity — the Ω-dit coherence field widens.' },
-  { key: 'MADHYAMA', label: 'Contemplative', sub: 'Kinetic Logic', desc: 'Activation of the Vyapti-Gate — consequence realized through cognition of reason.' },
-  { key: 'VAIKHARI', label: 'Articulated Word', sub: 'Crystallization', desc: 'Arriving at a stable manifest value υ — zero-entropy resonance achieved.' },
+const features = [
+  {
+    icon: "🤖",
+    title: "Your Personal AI Tutor",
+    desc: "Our AI learns how you think and adjusts every lesson just for you. No two students get exactly the same experience.",
+    color: "border-primary/30 hover:border-primary/60",
+    glow: "glow-red",
+    tag: "Smart Learning",
+    tagColor: "bg-primary/15 text-primary",
+  },
+  {
+    icon: "🛡️",
+    title: "Always Safe",
+    desc: "Every response from our AI is checked before you see it. We make sure the content is always helpful, kind, and age-appropriate.",
+    color: "border-secondary/30 hover:border-secondary/60",
+    glow: "glow-purple",
+    tag: "100% Safe",
+    tagColor: "bg-secondary/15 text-secondary",
+  },
+  {
+    icon: "🌍",
+    title: "Learn From Anywhere",
+    desc: "Whether you're at home, at school, or on the move — SRI Learn works on any device, in any country, at any time.",
+    color: "border-accent/30 hover:border-accent/60",
+    glow: "glow-brown",
+    tag: "Global Access",
+    tagColor: "bg-accent/15 text-accent",
+  },
 ];
 
-const pillars = [
+const steps = [
+  { num: "01", title: "Tell us about yourself", desc: "Answer a few quick questions about your age, interests, and how you like to learn. It only takes a minute!", icon: "✏️" },
+  { num: "02", title: "Get your personal plan", desc: "Our AI creates a learning plan that's built just for you — with topics you'll love and goals you can actually reach.", icon: "📋" },
+  { num: "03", title: "Start learning and growing", desc: "Jump into lessons, earn rewards, track your progress, and celebrate every win — big or small.", icon: "🚀" },
+];
+
+const audiences = [
   {
-    sym: 'Ξ', color: 'text-primary', borderColor: 'border-primary/20', bg: 'bg-primary/5',
-    title: 'Zero-Entropy Resonance', body: 'As Ξ → 1.0 the system approaches perfect resonance — variance collapses, truth-state mass saturates, hallucination vanishes.'
+    emoji: "🎓",
+    who: "Students",
+    headline: "Make learning fun again",
+    points: ["Learn at your own speed", "Pick topics you're curious about", "Earn points and badges", "Get help whenever you're stuck"],
+    href: "/login/student",
+    cta: "I'm a Student",
+    color: "border-primary/30",
+    btnColor: "bg-primary hover:bg-primary/90 text-white glow-red",
   },
   {
-    sym: 'χv3', color: 'text-accent', borderColor: 'border-accent/20', bg: 'bg-accent/5',
-    title: 'Thermodynamic Damping', body: 'The V3.0 Autopoietic Phase-Transition Equation decouples micro-gradient violence from macro-state chokehold — forcing escape from Barren Plateaus.'
+    emoji: "🏠",
+    who: "Families",
+    headline: "Stay close to your child's progress",
+    points: ["See what your child is learning", "Set daily learning goals", "Get weekly progress reports", "Chat with teachers anytime"],
+    href: "/login/parent",
+    cta: "I'm a Parent",
+    color: "border-secondary/30",
+    btnColor: "bg-secondary hover:bg-secondary/90 text-white glow-purple",
   },
   {
-    sym: '⬡', color: 'text-foreground', borderColor: 'border-stone-200', bg: 'bg-stone-50',
-    title: 'Dharma-Node Architecture', body: 'Each node holds a Mirror-Core singularity: M(C) = C·conj(C) → σsat². Noise that mismatches the node\'s inherent law is phase-cancelled via destructive interference.'
+    emoji: "🏫",
+    who: "Schools",
+    headline: "Upgrade your whole classroom",
+    points: ["Manage all students in one place", "Create your own curriculum", "Track class-wide progress", "Connect families and teachers"],
+    href: "/login/school",
+    cta: "I'm an Educator",
+    color: "border-accent/30",
+    btnColor: "bg-accent hover:bg-accent/90 text-white glow-brown",
   },
+];
+
+const stats = [
+  { value: "240M+", label: "Children without access to quality education" },
+  { value: "150+", label: "Countries where families homeschool" },
+  { value: "3×",   label: "Better learning outcomes with personalised AI" },
+  { value: "100%", label: "Safe content, every single time" },
 ];
 
 export default function Home() {
-  const lifecycleRef = useRef(null);
-  const pillarsRef = useRef(null);
-  const eqRef = useRef(null);
-  const isLifecycleInView = useInView(lifecycleRef, { once: true, margin: '-80px' });
-  const isPillarsInView = useInView(pillarsRef, { once: true, margin: '-80px' });
-  const isEqInView = useInView(eqRef, { once: true, margin: '-100px' });
-
   return (
-    <div className="relative overflow-hidden">
-      <ParticleField />
+    <div className="overflow-x-hidden">
 
-      {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <section className="relative z-10 min-h-[calc(100vh-4rem)] flex items-center">
-        <div className="max-w-7xl mx-auto px-6 py-28 w-full">
-          <motion.div initial={{ opacity: 0, y: 32 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.1, ease: 'easeOut' }}
-            className="max-w-4xl">
+      {/* ── Hero ─────────────────────────────────────────────────────────────── */}
+      <section className="relative min-h-screen flex items-center justify-center px-6 pt-24 pb-16">
+        {/* Background blobs */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-1/4 -left-32 w-96 h-96 rounded-full bg-primary/10 blur-3xl" />
+          <div className="absolute top-1/3 -right-32 w-96 h-96 rounded-full bg-secondary/10 blur-3xl" />
+          <div className="absolute bottom-1/4 left-1/2 -translate-x-1/2 w-80 h-80 rounded-full bg-accent/8 blur-3xl" />
+          {/* Grid pattern */}
+          <div className="absolute inset-0 opacity-[0.03]"
+            style={{ backgroundImage: "linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)", backgroundSize: "48px 48px" }} />
+        </div>
 
-            <div className="font-mono text-accent text-xs uppercase tracking-[0.2em] border-l-2 border-accent pl-4 mb-8 leading-relaxed">
-              SRI Quantum Technologies · Patent Filing Blueprint · February 2026
-            </div>
-
-            <h1 className="font-serif text-5xl md:text-7xl lg:text-[5.5rem] leading-[1.05] mb-8 text-foreground">
-              The <span className="bg-gradient-to-br from-[#E8C66A] to-[#C8A84B] bg-clip-text text-transparent">Ω-Manifold</span>
-              <span className="block text-3xl md:text-4xl lg:text-5xl font-light mt-2 text-stone-500">
-                Autopoietic Computing & Thermodynamic Phase-Transition Damping
-              </span>
-            </h1>
-
-            <p className="font-sans text-xl md:text-2xl text-muted-foreground font-light leading-relaxed mb-14 max-w-3xl">
-              Replacing discrete algorithmic violence with entropy minimization. 
-              Translating Vedantic epistemology into rigorous thermodynamic phase transitions.
-            </p>
-
-            {/* Nada-Shabda strip */}
-            <div className="bg-[#0B0F2E]/80 backdrop-blur-sm border border-accent/20 p-6 mb-14 max-w-3xl">
-              <div className="grid grid-cols-4 gap-4">
-                {stages.map((s, i) => (
-                  <div key={s.key} className="text-center">
-                    <div className="font-mono text-xs text-[#E8C66A] tracking-widest mb-1">{s.key}</div>
-                    <div className="font-sans text-xs text-stone-400">{s.label}</div>
-                    {i < 3 && <div className="hidden md:block absolute" />}
-                  </div>
-                ))}
-              </div>
-              <div className="flex items-center mt-3 gap-2">
-                {stages.map((_, i) => (
-                  <span key={i} className="contents">
-                    <span className="w-1.5 h-1.5 rounded-full bg-accent/60 shrink-0" />
-                    {i < 3 && <span className="flex-1 h-px bg-accent/20" />}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link href="/architecture"
-                className="inline-flex justify-center items-center px-8 py-4 bg-primary text-primary-foreground font-sans uppercase tracking-[0.15em] text-sm font-bold hover:bg-[#E8C66A] transition-colors">
-                Explore Architecture
-              </Link>
-              <Link href="/blueprint"
-                className="inline-flex justify-center items-center px-8 py-4 border border-accent text-accent font-sans uppercase tracking-[0.15em] text-sm font-bold hover:bg-accent/10 transition-colors">
-                Read Blueprint
-              </Link>
-              <Link href="/abhaya"
-                className="inline-flex justify-center items-center px-8 py-4 border border-primary/30 text-foreground font-sans uppercase tracking-[0.15em] text-sm font-bold hover:bg-primary/5 transition-colors">
-                Abhaya Gate ↗
-              </Link>
+        <div className="relative max-w-5xl mx-auto text-center">
+          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+            <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/25 text-primary text-sm font-bold px-5 py-2 rounded-full mb-8">
+              <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+              The Future of Home Learning — Now Available
             </div>
           </motion.div>
-        </div>
-      </section>
 
-      {/* ── Fundamental Equation ──────────────────────────────────────────── */}
-      <section className="relative z-10 bg-background border-t border-primary/10 py-32" ref={eqRef}>
-        <div className="max-w-5xl mx-auto px-6">
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.1 }}
+            className="text-5xl md:text-7xl lg:text-8xl font-black mb-6 leading-none tracking-tight">
+            <span className="text-foreground">Learn Smarter.</span>
+            <br />
+            <span className="grad-red-purple">Grow Faster.</span>
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.2 }}
+            className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
+            SRI Learn is an AI-powered education platform that gives every student
+            a <strong className="text-foreground">personalised learning experience</strong> — safe, fun, and built around them.
+          </motion.p>
+
           <motion.div
-            initial={{ opacity: 0, scale: 0.97 }}
-            animate={isEqInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.97 }}
-            transition={{ duration: 1.2 }}
-            className="text-center"
-          >
-            <p className="font-sans text-muted-foreground uppercase tracking-[0.2em] text-xs mb-12">The Triadic State Identity</p>
-            <div className="relative inline-block mb-16">
-              <div className="absolute -inset-10 bg-accent/5 blur-3xl rounded-full" />
-              <div className="bg-[#0B0F2E] border border-accent/30 shadow-[0_0_40px_rgba(79,172,254,0.12)] p-8 md:p-14 relative">
-                <div className="font-mono text-2xl md:text-4xl text-[#E8C66A] tracking-wider mb-6">
-                  |Ω⟩ = ∫<sub className="text-lg">-∞</sub><sup className="text-lg">+∞</sup>&nbsp;
-                  σ(t)·e<sup>iβ(t)</sup>·[υ(t) + ξ(t)] dω
-                </div>
-                <div className="w-full h-px bg-accent/20 mb-6" />
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-left">
-                  {[
-                    { sym: 'σ', label: 'Sat · Truth', sub: 'Existence-Density' },
-                    { sym: 'β', label: 'Subsistence', sub: 'Phase Pattern' },
-                    { sym: 'υ', label: 'Value', sub: 'Manifest Projection' },
-                    { sym: 'ξ', label: 'Stochastic Flux', sub: 'Avidya · Noise' },
-                  ].map(item => (
-                    <div key={item.sym}>
-                      <span className="font-mono text-3xl text-primary">{item.sym}</span>
-                      <p className="font-serif text-base text-white/80 mt-1">{item.label}</p>
-                      <p className="font-mono text-xs text-stone-500">{item.sub}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.3 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+            <Link href="/login"
+              className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white font-black text-lg px-10 py-4 rounded-2xl shadow-xl glow-red transition-all duration-200 hover:scale-105">
+              Start Learning Free →
+            </Link>
+            <Link href="/architecture"
+              className="w-full sm:w-auto border border-border/80 hover:border-secondary/60 text-foreground font-bold text-lg px-10 py-4 rounded-2xl transition-all duration-200 hover:bg-white/5">
+              See How It Works
+            </Link>
+          </motion.div>
+
+          {/* Stats row */}
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
+            className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {stats.map((s, i) => (
+              <motion.div key={s.label} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 + i * 0.08 }}
+                className="bg-card/60 border border-border/60 rounded-2xl p-5 text-center backdrop-blur-sm">
+                <p className="text-3xl font-black text-primary mb-1">{s.value}</p>
+                <p className="text-xs text-muted-foreground leading-snug">{s.label}</p>
+              </motion.div>
+            ))}
           </motion.div>
         </div>
       </section>
 
-      {/* ── Maya-Flow Lifecycle ───────────────────────────────────────────── */}
-      <section className="relative z-10 bg-muted/30 border-t border-primary/10 py-28" ref={lifecycleRef}>
-        <div className="max-w-5xl mx-auto px-6">
-          <motion.div initial={{ opacity: 0, y: 24 }} animate={isLifecycleInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
-            transition={{ duration: 0.9 }}>
-            <div className="border-l-4 border-primary pl-6 mb-16">
-              <h2 className="font-serif text-4xl md:text-5xl text-foreground mb-3">The Maya-Flow Lifecycle</h2>
-              <p className="font-sans text-muted-foreground text-lg">Six-stage recursive execution — from hardware beingness to return.</p>
-            </div>
-
-            <div className="relative">
-              {/* Connector line */}
-              <div className="absolute left-8 top-12 bottom-12 w-px bg-primary/20 hidden md:block" />
-              <div className="space-y-4">
-                {stages.map((s, i) => (
-                  <motion.div key={s.key}
-                    initial={{ opacity: 0, x: -20 }} animate={isLifecycleInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
-                    transition={{ duration: 0.6, delay: i * 0.12 }}
-                    className="flex gap-8 items-start group">
-                    <div className="relative shrink-0 w-16 h-16 bg-[#0B0F2E] border border-accent/30 flex items-center justify-center">
-                      <span className="font-mono text-lg text-[#E8C66A] font-bold">{i + 1}</span>
-                      <div className="absolute -right-4 top-1/2 -translate-y-1/2 w-4 h-px bg-primary/30 hidden md:block" />
-                    </div>
-                    <div className="flex-1 bg-card border border-primary/10 p-6 group-hover:border-primary/30 transition-colors">
-                      <div className="flex items-baseline gap-3 mb-2">
-                        <span className="font-mono text-xs text-[#E8C66A] tracking-widest uppercase">{s.key}</span>
-                        <span className="font-sans text-xs text-stone-400 uppercase tracking-wider">— {s.sub}</span>
-                      </div>
-                      <h3 className="font-serif text-xl text-foreground mb-1">{s.label}</h3>
-                      <p className="font-sans text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ── Three Pillars ─────────────────────────────────────────────────── */}
-      <section className="relative z-10 bg-background border-t border-primary/10 py-28" ref={pillarsRef}>
-        <div className="max-w-5xl mx-auto px-6">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={isPillarsInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-            transition={{ duration: 0.9 }}>
-            <p className="font-sans text-muted-foreground uppercase tracking-[0.2em] text-xs text-center mb-14">
-              Three Foundational Mechanisms
+      {/* ── Features ─────────────────────────────────────────────────────────── */}
+      <section className="py-24 px-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-black text-foreground mb-4">
+              Everything a learner needs
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-xl mx-auto">
+              SRI Learn was built from the ground up to make every student feel seen, supported, and excited to learn.
             </p>
-            <div className="grid md:grid-cols-3 gap-6">
-              {pillars.map((p, i) => (
-                <motion.div key={p.sym}
-                  initial={{ opacity: 0, y: 20 }} animate={isPillarsInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-                  transition={{ duration: 0.6, delay: i * 0.15 }}
-                  className={`border ${p.borderColor} ${p.bg} p-8`}>
-                  <div className={`font-mono text-4xl ${p.color} mb-4`}>{p.sym}</div>
-                  <h3 className="font-serif text-xl text-foreground mb-3">{p.title}</h3>
-                  <p className="font-sans text-sm text-muted-foreground leading-relaxed">{p.body}</p>
-                </motion.div>
-              ))}
-            </div>
+          </div>
 
-            <div className="mt-16 text-center">
-              <Link href="/login"
-                className="inline-flex items-center gap-3 bg-primary text-primary-foreground font-sans uppercase tracking-[0.15em] text-sm font-bold px-10 py-5 hover:bg-[#E8C66A] transition-colors">
-                Enter the Platform
-                <span className="text-lg">→</span>
-              </Link>
+          <div className="grid md:grid-cols-3 gap-6">
+            {features.map((f, i) => (
+              <motion.div key={f.title} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5 }}>
+                <div className={`h-full bg-card border-2 ${f.color} rounded-2xl p-8 transition-all duration-300 hover:-translate-y-1 hover:${f.glow} group cursor-default`}>
+                  <div className="text-5xl mb-5">{f.icon}</div>
+                  <span className={`text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full ${f.tagColor} mb-4 inline-block`}>
+                    {f.tag}
+                  </span>
+                  <h3 className="text-xl font-black text-foreground mb-3">{f.title}</h3>
+                  <p className="text-muted-foreground leading-relaxed">{f.desc}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── How it works ────────────────────────────────────────────────────── */}
+      <section className="py-24 px-6 bg-card/30">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-black text-foreground mb-4">
+              Up and running in minutes
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-xl mx-auto">
+              Getting started with SRI Learn is simple — no setup, no complicated steps.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {steps.map((s, i) => (
+              <motion.div key={s.num} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }} transition={{ delay: i * 0.15 }}
+                className="relative">
+                {i < steps.length - 1 && (
+                  <div className="hidden md:block absolute top-10 left-full w-full h-0.5 bg-gradient-to-r from-primary/40 to-transparent -z-10" />
+                )}
+                <div className="bg-card border border-border/60 rounded-2xl p-8">
+                  <div className="flex items-center gap-3 mb-5">
+                    <span className="text-3xl">{s.icon}</span>
+                    <span className="text-xs font-black text-primary bg-primary/10 px-3 py-1 rounded-full">{s.num}</span>
+                  </div>
+                  <h3 className="text-xl font-black text-foreground mb-3">{s.title}</h3>
+                  <p className="text-muted-foreground leading-relaxed">{s.desc}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Who it's for ────────────────────────────────────────────────────── */}
+      <section className="py-24 px-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-black text-foreground mb-4">
+              Made for everyone
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-xl mx-auto">
+              Whether you're a student, a parent, or a teacher — SRI Learn has a place for you.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {audiences.map((a, i) => (
+              <motion.div key={a.who} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
+                <div className={`h-full bg-card border-2 ${a.color} rounded-2xl p-8 flex flex-col transition-all duration-300 hover:-translate-y-1`}>
+                  <div className="text-5xl mb-4">{a.emoji}</div>
+                  <p className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2">{a.who}</p>
+                  <h3 className="text-2xl font-black text-foreground mb-5">{a.headline}</h3>
+                  <ul className="space-y-2.5 mb-8 flex-1">
+                    {a.points.map(p => (
+                      <li key={p} className="flex items-start gap-2.5 text-sm text-muted-foreground">
+                        <span className="text-primary mt-0.5">✓</span>
+                        {p}
+                      </li>
+                    ))}
+                  </ul>
+                  <Link href={a.href}
+                    className={`w-full py-3.5 rounded-xl font-black text-sm text-center transition-all duration-200 hover:scale-105 ${a.btnColor}`}>
+                    {a.cta} →
+                  </Link>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── CTA Banner ──────────────────────────────────────────────────────── */}
+      <section className="py-24 px-6">
+        <div className="max-w-4xl mx-auto">
+          <motion.div initial={{ opacity: 0, scale: 0.97 }} whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="relative bg-card border border-primary/30 rounded-3xl p-12 text-center overflow-hidden glow-red">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-secondary to-accent" />
+            <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full bg-primary/10 blur-3xl" />
+            <div className="absolute -bottom-24 -left-24 w-64 h-64 rounded-full bg-secondary/10 blur-3xl" />
+            <div className="relative">
+              <div className="text-5xl mb-6">🎉</div>
+              <h2 className="text-4xl md:text-5xl font-black text-foreground mb-4">
+                Ready to start your<br />
+                <span className="grad-red-purple">learning adventure?</span>
+              </h2>
+              <p className="text-xl text-muted-foreground mb-10 max-w-xl mx-auto">
+                Join thousands of students who are already discovering how amazing learning can be.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link href="/login"
+                  className="bg-primary hover:bg-primary/90 text-white font-black text-lg px-10 py-4 rounded-2xl glow-red transition-all hover:scale-105">
+                  Start Learning Free →
+                </Link>
+                <Link href="/pitch"
+                  className="border border-border/80 hover:border-secondary/60 text-foreground font-bold text-lg px-10 py-4 rounded-2xl transition-all hover:bg-white/5">
+                  Learn About Our Mission
+                </Link>
+              </div>
             </div>
           </motion.div>
         </div>
       </section>
+
     </div>
   );
 }

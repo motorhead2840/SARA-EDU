@@ -7,10 +7,15 @@ const portals = [
     href: "/login/school",
     icon: "🏫",
     title: "Schools",
-    subtitle: "Institution Portal",
-    description: "Manage curriculum, track student cohorts, and coordinate with families — all in one place.",
-    features: ["Cohort management", "Curriculum builder", "Parent communication", "Progress analytics"],
-    color: "blue" as const,
+    subtitle: "Educator Portal",
+    desc: "Manage your students, build curriculum, and stay connected with families.",
+    features: ["Manage all students", "Build your curriculum", "Track class progress", "Parent communication"],
+    borderColor: "border-secondary/40 hover:border-secondary",
+    iconBg: "bg-secondary/15",
+    tagColor: "bg-secondary/15 text-secondary",
+    dotColor: "bg-secondary",
+    btnClass: "bg-secondary hover:bg-secondary/90 text-white glow-purple",
+    glowClass: "hover:glow-purple",
   },
   {
     id: "parent",
@@ -18,9 +23,14 @@ const portals = [
     icon: "🏠",
     title: "Parents",
     subtitle: "Family Portal",
-    description: "Guide your child's learning journey, track milestones, and connect with their teachers.",
-    features: ["Learning roadmap", "Daily schedule", "Teacher messaging", "Progress reports"],
-    color: "amber" as const,
+    desc: "Follow your child's learning journey and celebrate every milestone together.",
+    features: ["Daily progress updates", "Set learning goals", "Message teachers", "Weekly reports"],
+    borderColor: "border-primary/40 hover:border-primary",
+    iconBg: "bg-primary/15",
+    tagColor: "bg-primary/15 text-primary",
+    dotColor: "bg-primary",
+    btnClass: "bg-primary hover:bg-primary/90 text-white glow-red",
+    glowClass: "hover:glow-red",
   },
   {
     id: "student",
@@ -28,80 +38,78 @@ const portals = [
     icon: "🎓",
     title: "Students",
     subtitle: "Learner Portal",
-    description: "Start your learning adventure. Explore lessons, complete quests, and celebrate your growth.",
-    features: ["Interactive lessons", "Learning quests", "Achievements", "Study buddy chat"],
-    color: "emerald" as const,
+    desc: "Start your learning adventure — explore, discover, and earn rewards along the way!",
+    features: ["Personalised lessons", "Fun challenges", "Earn SARA tokens", "Global community"],
+    borderColor: "border-accent/40 hover:border-accent",
+    iconBg: "bg-accent/15",
+    tagColor: "bg-accent/15 text-accent",
+    dotColor: "bg-accent",
+    btnClass: "bg-accent hover:bg-accent/90 text-white glow-brown",
+    glowClass: "hover:glow-brown",
   },
 ];
-
-const colorMap = {
-  blue:    { border: "border-blue-200 hover:border-blue-400",   accent: "text-blue-600",   badge: "bg-blue-50 text-blue-600 border-blue-200",   btn: "bg-blue-500 hover:bg-blue-600 text-white",    dot: "bg-blue-400" },
-  amber:   { border: "border-amber-200 hover:border-amber-400", accent: "text-amber-600",  badge: "bg-amber-50 text-amber-600 border-amber-200", btn: "bg-amber-400 hover:bg-amber-500 text-amber-900", dot: "bg-amber-400" },
-  emerald: { border: "border-emerald-200 hover:border-emerald-400", accent: "text-emerald-600", badge: "bg-emerald-50 text-emerald-700 border-emerald-200", btn: "bg-emerald-500 hover:bg-emerald-600 text-white", dot: "bg-emerald-400" },
-};
 
 export default function Login() {
   return (
     <div className="max-w-6xl mx-auto px-6 py-24">
 
-      {/* ── Hero ────────────────────────────────────────────────────────────── */}
+      {/* Hero */}
       <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}
         className="text-center mb-16">
-        <h1 className="font-serif text-6xl text-foreground mb-4">
-          Welcome to <span className="text-primary">SRI Learn</span>
+        <h1 className="text-5xl md:text-6xl font-black text-foreground mb-4">
+          Welcome to <span className="grad-red-purple">SRI Learn</span>
         </h1>
-        <p className="font-sans text-xl text-muted-foreground max-w-xl mx-auto leading-relaxed">
-          Your global home-learning platform. Choose your portal to get started.
+        <p className="text-xl text-muted-foreground max-w-lg mx-auto">
+          Choose your portal to sign in and start your learning journey.
         </p>
       </motion.div>
 
-      {/* ── Portal cards ────────────────────────────────────────────────────── */}
+      {/* Portal cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-        {portals.map((p, i) => {
-          const c = colorMap[p.color];
-          return (
-            <motion.div key={p.id}
-              initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: i * 0.12 }}>
-              <div className={`group relative bg-card border-2 ${c.border} p-8 cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 h-full flex flex-col`}>
-                {/* Badge */}
-                <div className="flex items-center justify-between mb-6">
-                  <span className={`font-mono text-xs font-bold uppercase tracking-widest px-3 py-1 border ${c.badge}`}>
-                    {p.subtitle}
-                  </span>
-                  <span className={`w-2 h-2 rounded-full ${c.dot}`} />
-                </div>
-
-                {/* Icon + title */}
-                <div className="text-4xl mb-3">{p.icon}</div>
-                <h2 className={`font-serif text-3xl ${c.accent} mb-2`}>{p.title}</h2>
-                <p className="font-sans text-sm text-muted-foreground leading-relaxed mb-6">{p.description}</p>
-
-                {/* Features */}
-                <ul className="space-y-2 mb-8 flex-1">
-                  {p.features.map(f => (
-                    <li key={f} className="flex items-center gap-2 font-sans text-sm text-foreground/70">
-                      <span className={`w-1 h-4 ${c.dot} shrink-0`} />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-
-                {/* CTA */}
-                <Link href={p.href}
-                  className={`w-full py-3.5 font-sans font-bold text-sm text-center uppercase tracking-[0.12em] transition-all duration-200 shadow-sm group-hover:shadow-md ${c.btn}`}>
-                  Sign in as {p.title.slice(0, -1)} →
-                </Link>
+        {portals.map((p, i) => (
+          <motion.div key={p.id}
+            initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: i * 0.12 }}>
+            <div className={`group h-full bg-card border-2 ${p.borderColor} ${p.glowClass} rounded-2xl p-8 flex flex-col transition-all duration-300 hover:-translate-y-1`}>
+              {/* Badge row */}
+              <div className="flex items-center justify-between mb-6">
+                <span className={`text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full ${p.tagColor}`}>
+                  {p.subtitle}
+                </span>
+                <span className={`w-2.5 h-2.5 rounded-full ${p.dotColor} animate-pulse`} />
               </div>
-            </motion.div>
-          );
-        })}
+
+              {/* Icon + title */}
+              <div className={`w-14 h-14 ${p.iconBg} rounded-2xl flex items-center justify-center text-3xl mb-4`}>
+                {p.icon}
+              </div>
+              <h2 className="text-3xl font-black text-foreground mb-2">{p.title}</h2>
+              <p className="text-muted-foreground leading-relaxed mb-6">{p.desc}</p>
+
+              {/* Features */}
+              <ul className="space-y-2.5 mb-8 flex-1">
+                {p.features.map(f => (
+                  <li key={f} className="flex items-center gap-2.5 text-sm text-muted-foreground">
+                    <span className="text-primary">✓</span>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+
+              {/* CTA */}
+              <Link href={p.href}
+                className={`w-full py-3.5 font-black text-sm text-center rounded-xl transition-all duration-200 hover:scale-105 ${p.btnClass}`}>
+                Sign in as {p.id.charAt(0).toUpperCase() + p.id.slice(1)} →
+              </Link>
+            </div>
+          </motion.div>
+        ))}
       </div>
 
       <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}
-        className="text-center font-sans text-sm text-stone-400">
+        className="text-center text-sm text-muted-foreground">
         New to SRI Learn?{" "}
-        <a href="#" className="text-primary font-semibold hover:underline">Request access</a>
+        <a href="#" className="text-primary font-bold hover:underline">Request access</a>
         {" "}or contact your school administrator.
       </motion.p>
     </div>
