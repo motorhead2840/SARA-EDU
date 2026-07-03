@@ -215,6 +215,7 @@ const ALLOWED_RPC_METHODS = new Set([
   "eth_call",
   "eth_blockNumber",
   "eth_getBalance",
+  "eth_getCode",
   "eth_getTransactionByHash",
   "eth_getTransactionReceipt",
   "eth_getBlockByNumber",
