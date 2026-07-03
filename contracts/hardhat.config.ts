@@ -32,9 +32,9 @@ const config: HardhatUserConfig = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 200,
+        runs: 1000,   // higher runs = cheaper calls, slightly larger bytecode
       },
-      viaIR: true,
+      viaIR: true,   // Yul IR pipeline: enables cross-function optimisations
     },
   },
   networks: {

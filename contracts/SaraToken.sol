@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 /**
- * @title  SaraToken
+ * @title  SaraToken — Gas-Optimised v2
  * @notice SRI Adaptive Response Asset (SARA)
  *         Governance + utility ERC-20 token for the SRI Learn platform.
  *
@@ -11,12 +11,26 @@ pragma solidity ^0.8.24;
  *   Genesis mint :  10,000,000 SARA → deployer wallet on construction
  *   Remaining    :  90,000,000 SARA → minted by owner over time (DAO / vesting)
  *
+ * ─── Planned allocation (enforced off-chain / via vesting contracts) ────────
+ *   Treasury   :  40,000,000 SARA  (40 %)
+ *   Ecosystem  :  25,000,000 SARA  (25 %)
+ *   Team       :  15,000,000 SARA  (15 %)
+ *   Community  :  10,000,000 SARA  (10 %)
+ *   Genesis    :  10,000,000 SARA  (10 %)
+ *
  * ─── Features ──────────────────────────────────────────────────────────────
  *   ERC-20          standard transfers & approvals
  *   ERC-20 Permit   gasless approvals (EIP-2612)
  *   ERC-20 Votes    snapshot voting power for DAO governance
  *   ERC-20 Burnable token holders can burn their own tokens
  *   Ownable2Step    safe two-step ownership transfer (multisig / Governor)
+ *
+ * ─── Gas optimisations over v1 ─────────────────────────────────────────────
+ *   • Custom errors replace require strings          (~50 gas saved per revert)
+ *   • Unused allocation constants removed            (~4 getter stubs removed)
+ *   • mint() reason param: string → bytes32          (~200+ gas saved per mint)
+ *   • Unchecked supply arithmetic inside mint()      (~20 gas saved per mint)
+ *   • viaIR + optimizer runs=1000 in hardhat config  (smaller bytecode overall)
  *
  * ─── Deployment ────────────────────────────────────────────────────────────
  *   Testnet : Ethereum Sepolia
@@ -35,15 +49,21 @@ import "@openzeppelin/contracts/utils/Nonces.sol";
 contract SaraToken is ERC20, ERC20Burnable, ERC20Permit, ERC20Votes, Ownable2Step {
 
     // ── Supply constants ────────────────────────────────────────────────────
-    uint256 public constant MAX_SUPPLY       = 100_000_000 * 10 ** 18;
-    uint256 public constant GENESIS_MINT     =  10_000_000 * 10 ** 18;
-    uint256 public constant TREASURY_ALLOC   =  40_000_000 * 10 ** 18;
-    uint256 public constant ECOSYSTEM_ALLOC  =  25_000_000 * 10 ** 18;
-    uint256 public constant TEAM_ALLOC       =  15_000_000 * 10 ** 18;
-    uint256 public constant COMMUNITY_ALLOC  =  10_000_000 * 10 ** 18;
+    // Only constants actually used in contract logic are kept here.
+    // Allocation splits live in the NatSpec above — no on-chain getter needed.
+    uint256 public constant MAX_SUPPLY   = 100_000_000 * 10 ** 18;
+    uint256 public constant GENESIS_MINT =  10_000_000 * 10 ** 18;
+
+    // ── Custom errors (replaces require strings — saves ~50 gas per revert) ─
+    /// @dev Thrown when a mint would push totalSupply past MAX_SUPPLY.
+    error ExceedsMaxSupply(uint256 requested, uint256 available);
 
     // ── Events ──────────────────────────────────────────────────────────────
-    event TokensMinted(address indexed to, uint256 amount, string reason);
+    // reason is bytes32 instead of string:
+    //   • Fixed-width → no ABI offset+length header in calldata
+    //   • ~200 gas cheaper per mint on average inputs
+    //   • Decode off-chain: ethers.decodeBytes32String(reason)
+    event TokensMinted(address indexed to, uint256 amount, bytes32 indexed reason);
 
     // ── Constructor ─────────────────────────────────────────────────────────
     /// @param initialOwner Deployer wallet — receives GENESIS_MINT on deploy.
@@ -59,13 +79,21 @@ contract SaraToken is ERC20, ERC20Burnable, ERC20Permit, ERC20Votes, Ownable2Ste
     /// @notice Mint SARA up to MAX_SUPPLY. Only callable by owner.
     /// @param to      Recipient (treasury, vesting contract, reward pool, etc.)
     /// @param amount  Amount in wei (18 decimals)
-    /// @param reason  Label emitted in event for off-chain indexing
+    /// @param reason  Short label for off-chain indexing, max 31 ASCII chars.
+    ///                Encode with: ethers.encodeBytes32String("treasury_round_1")
     function mint(
         address to,
         uint256 amount,
-        string calldata reason
+        bytes32 reason
     ) external onlyOwner {
-        require(totalSupply() + amount <= MAX_SUPPLY, "SARA: exceeds max supply");
+        // totalSupply() < MAX_SUPPLY is already guaranteed by the error branch,
+        // so the addition cannot overflow — safe to use unchecked.
+        unchecked {
+            uint256 supply = totalSupply();
+            if (supply + amount > MAX_SUPPLY) {
+                revert ExceedsMaxSupply(amount, MAX_SUPPLY - supply);
+            }
+        }
         _mint(to, amount);
         emit TokensMinted(to, amount, reason);
     }

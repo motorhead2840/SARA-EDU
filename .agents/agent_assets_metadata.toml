@@ -5,4 +5,4 @@ generated = []
 id = "rrFr6RBwjlTtGQTGKMR5Z"
 uri = "file://contracts/SaraToken.flat.sol"
 type = "unspecified"
-title = "SaraToken Flattened — Copy & paste into Etherscan"
+title = "SaraToken v2 (Gas-Optimised) — Paste into Remix & Etherscan"
