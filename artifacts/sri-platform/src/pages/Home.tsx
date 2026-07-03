@@ -51,7 +51,9 @@ function ParticleBackground() {
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(200, 168, 75, ${p.alpha})`; // #C8A84B
+        const colors = ['245,158,11', '16,185,129', '59,130,246']; // amber, emerald, sky
+        const color = colors[Math.floor(p.x / canvas.width * colors.length) % colors.length];
+        ctx.fillStyle = `rgba(${color}, ${p.alpha * 0.6})`;
         ctx.fill();
       });
 
