@@ -6,6 +6,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.50"
     }
+    confluent = {
+      source  = "confluentinc/confluent"
+      version = "~> 1.83"
+    }
     random = {
       source  = "hashicorp/random"
       version = "~> 3.6"
@@ -32,4 +36,11 @@ provider "aws" {
       ManagedBy   = "terraform"
     }
   }
+}
+
+# Confluent Cloud — control-plane credentials supplied via env vars or tfvars:
+#   TF_VAR_confluent_cloud_api_key / TF_VAR_confluent_cloud_api_secret
+provider "confluent" {
+  cloud_api_key    = var.confluent_cloud_api_key
+  cloud_api_secret = var.confluent_cloud_api_secret
 }

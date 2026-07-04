@@ -1,10 +1,13 @@
 /**
- * Thin wrapper around kafkajs with MSK IAM auth support.
- * kafkajs is lighter than kafka-node and has first-class TypeScript types.
+ * Confluent Cloud Kafka producer client.
  *
- * IAM auth is provided via the AWS MSK IAM SASL mechanism.
- * kafkajs does not ship MSK IAM built-in; we implement the SASL mechanism
- * using the AWS SDK v3 SigV4 signer which is already in the project via @aws-sdk.
+ * Auth: SASL/PLAIN with Confluent Cloud API key + secret.
+ * Was: AWS MSK IAM (SigV4). Changed when MSK was replaced by Confluent Cloud.
+ *
+ * Required env vars:
+ *   KAFKA_BOOTSTRAP   — Confluent bootstrap endpoint (pkc-*.confluent.cloud:9092)
+ *   KAFKA_API_KEY     — Confluent Cloud API key (from Secrets Manager in production)
+ *   KAFKA_API_SECRET  — Confluent Cloud API secret
  */
 
 import { logger as baseLogger } from './logger.js';
@@ -18,33 +21,41 @@ interface SendOpts {
 }
 
 export class KafkaProducerClient {
-  private bootstrap: string;
+  private readonly bootstrap: string;
+  private readonly apiKey: string;
+  private readonly apiSecret: string;
   private producer: unknown = null;
 
-  constructor(bootstrap: string) {
+  constructor(bootstrap: string, apiKey: string, apiSecret: string) {
     this.bootstrap = bootstrap;
+    this.apiKey    = apiKey;
+    this.apiSecret = apiSecret;
   }
 
   async connect(): Promise<void> {
-    // Dynamic import so dev environment doesn't need kafkajs installed
     const { Kafka, logLevel } = await import('kafkajs');
 
-    const brokers = this.bootstrap.split(',').map((b) => b.trim());
+    const brokers = this.bootstrap
+      .replace(/^(SASL_SSL:\/\/|SSL:\/\/)/i, '')
+      .split(',')
+      .map((b) => b.trim());
 
     const kafka = new (Kafka as any)({
-      clientId: 'sri-api-server',
+      clientId:  'sri-api-server',
       brokers,
-      ssl: true,
+      ssl:       true,
       sasl: {
-        mechanism: 'aws',
-        authenticationProvider: await this._mskIamProvider(),
+        mechanism: 'plain',
+        username:  this.apiKey,
+        password:  this.apiSecret,
       },
-      logLevel: logLevel.WARN,
+      logLevel:  logLevel.WARN,
     });
 
     this.producer = kafka.producer({
       allowAutoTopicCreation: false,
       retry: { retries: 5, initialRetryTime: 300 },
+      compression: 2, // LZ4
     });
 
     await (this.producer as any).connect();
@@ -53,7 +64,7 @@ export class KafkaProducerClient {
   async send(opts: SendOpts): Promise<void> {
     if (!this.producer) throw new Error('Producer not connected');
     await (this.producer as any).send({
-      topic: opts.topic,
+      topic:    opts.topic,
       messages: [{ key: opts.key ?? null, value: opts.value }],
     });
   }
@@ -63,43 +74,5 @@ export class KafkaProducerClient {
       await (this.producer as any).disconnect();
       this.producer = null;
     }
-  }
-
-  /** Build an MSK IAM SASL authentication provider using AWS SigV4. */
-  private async _mskIamProvider() {
-    const { defaultProvider } = await import('@aws-sdk/credential-providers');
-    const { SignatureV4 } = await import('@smithy/signature-v4');
-    const { Sha256 } = await import('@aws-crypto/sha256-js');
-
-    const region = process.env.AWS_REGION ?? 'us-east-1';
-    const credProvider = defaultProvider();
-
-    return {
-      authenticationProvider: async () => {
-        const creds = await credProvider();
-        const signer = new SignatureV4({
-          credentials: creds,
-          region,
-          service: 'kafka-cluster',
-          sha256: Sha256 as any,
-        });
-
-        const signed = await signer.sign({
-          method: 'GET',
-          hostname: 'kafka.amazonaws.com',
-          path: '/',
-          headers: { host: 'kafka.amazonaws.com', 'x-amz-date': new Date().toISOString().replace(/[:-]/g, '').slice(0, 15) + 'Z' },
-          query: { Action: 'kafka-cluster:Connect' },
-          body: '',
-          protocol: 'https:',
-        });
-
-        return {
-          version: '2020_10_22',
-          host: signed.hostname,
-          ...signed.headers,
-        };
-      },
-    };
   }
 }

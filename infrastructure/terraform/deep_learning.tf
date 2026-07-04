@@ -103,7 +103,8 @@ resource "aws_iam_role_policy" "gpu_instance_permissions" {
       { Effect = "Allow"; Action = ["sagemaker:PutRecord", "sagemaker:GetRecord"]; Resource = "*" },
       { Effect = "Allow"; Action = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]; Resource = "*" },
       { Effect = "Allow"; Action = ["ecr:GetAuthorizationToken", "ecr:BatchGetImage", "ecr:GetDownloadUrlForLayer"]; Resource = "*" },
-      { Effect = "Allow"; Action = ["kafka-cluster:Connect", "kafka-cluster:WriteData"]; Resource = [aws_msk_cluster.main.arn, "${aws_msk_cluster.main.arn}/*"] },
+      # Confluent Cloud — no MSK IAM needed; auth is SASL/PLAIN via Secrets Manager credentials
+      { Effect = "Allow"; Action = ["secretsmanager:GetSecretValue"]; Resource = "arn:aws:secretsmanager:${var.aws_region}:*:secret:${var.project}/${var.environment}/confluent/*" },
     ]
   })
 }
@@ -319,7 +320,8 @@ resource "aws_batch_job_definition" "tensorflow_train" {
     environment = [
       { name = "AWS_REGION";          value = var.aws_region },
       { name = "S3_SAGEMAKER_BUCKET"; value = aws_s3_bucket.sagemaker.id },
-      { name = "KAFKA_BOOTSTRAP";     value = aws_msk_cluster.main.bootstrap_brokers_sasl_iam },
+      { name = "KAFKA_BOOTSTRAP";          value = aws_ssm_parameter.confluent_bootstrap.value },
+      { name = "CONFLUENT_SECRET_NAME";    value = aws_secretsmanager_secret.confluent_app.name },
     ]
     mountPoints = [{ containerPath = "/mnt/training-data"; readOnly = false; sourceVolume = "efs" }]
     volumes     = [{ name = "efs"; host = { sourcePath = "/mnt/training-data" } }]

@@ -185,7 +185,8 @@ resource "aws_iam_role_policy" "lambda_satellite_permissions" {
     Version = "2012-10-17"
     Statement = [
       { Effect = "Allow"; Action = ["kinesis:GetRecords", "kinesis:GetShardIterator", "kinesis:DescribeStream", "kinesis:ListShards"]; Resource = aws_kinesis_stream.satellite_data.arn },
-      { Effect = "Allow"; Action = ["kafka-cluster:Connect", "kafka-cluster:WriteData", "kafka-cluster:WriteDataIdempotently", "kafka-cluster:DescribeTopic"]; Resource = [aws_msk_cluster.main.arn, "${aws_msk_cluster.main.arn}/*"] },
+      # Confluent Cloud — SASL/PLAIN; credentials from Secrets Manager
+      { Effect = "Allow"; Action = ["secretsmanager:GetSecretValue"]; Resource = "arn:aws:secretsmanager:${var.aws_region}:*:secret:${var.project}/${var.environment}/confluent/*" },
       { Effect = "Allow"; Action = ["s3:PutObject"]; Resource = "${aws_s3_bucket.data_lake.arn}/satellite/*" },
       { Effect = "Allow"; Action = ["ssm:GetParameter"]; Resource = "arn:aws:ssm:${var.aws_region}:*:parameter/${var.project}/${var.environment}/*" },
       { Effect = "Allow"; Action = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]; Resource = "arn:aws:logs:*:*:*" },
@@ -206,7 +207,8 @@ resource "aws_lambda_function" "satellite_kinesis_bridge" {
 
   environment {
     variables = {
-      KAFKA_BOOTSTRAP = aws_msk_cluster.main.bootstrap_brokers_sasl_iam
+      KAFKA_BOOTSTRAP       = aws_ssm_parameter.confluent_bootstrap.value
+      CONFLUENT_SECRET_NAME = aws_secretsmanager_secret.confluent_lambda.name
       KAFKA_TOPIC     = "data.cleaned"
       S3_BUCKET       = aws_s3_bucket.data_lake.id
       S3_PREFIX       = "satellite/"

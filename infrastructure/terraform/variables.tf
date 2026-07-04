@@ -59,24 +59,24 @@ variable "redis_node_type" {
   default     = "cache.t3.medium"
 }
 
-# ─── MSK (Kafka) ──────────────────────────────────────────────────────────────
+# ─── Confluent Cloud (replaces MSK) ──────────────────────────────────────────
 
-variable "kafka_version" {
-  description = "Apache Kafka version for MSK"
+variable "confluent_cloud_api_key" {
+  description = "Confluent Cloud API key (control plane)"
   type        = string
-  default     = "3.5.1"
+  sensitive   = true
 }
 
-variable "kafka_broker_instance_type" {
-  description = "MSK broker instance type"
+variable "confluent_cloud_api_secret" {
+  description = "Confluent Cloud API secret (control plane)"
   type        = string
-  default     = "kafka.m5.large"
+  sensitive   = true
 }
 
-variable "kafka_broker_count" {
-  description = "Number of Kafka brokers (must be multiple of AZ count)"
+variable "confluent_cluster_ckus" {
+  description = "Number of Confluent Kafka Units for the dedicated cluster (min 2)"
   type        = number
-  default     = 3
+  default     = 2
 }
 
 # ─── OpenSearch ───────────────────────────────────────────────────────────────

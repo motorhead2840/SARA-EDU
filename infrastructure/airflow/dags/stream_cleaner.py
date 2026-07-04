@@ -108,48 +108,54 @@ def _clean_record(topic: str, record: dict[str, Any]) -> dict[str, Any] | None:
 # ─── Task Functions ────────────────────────────────────────────────────────────
 
 def consume_and_clean(**context: Any) -> dict[str, int]:
-    """Poll all raw Kafka topics, clean records, push to XCom."""
-    from kafka import KafkaConsumer  # type: ignore
-    from kafka.errors import NoBrokersAvailable  # type: ignore
-
-    if not KAFKA_BOOTSTRAP:
-        logger.warning("KAFKA_BOOTSTRAP not set — skipping consume step")
-        return {}
+    """Poll all raw Kafka topics via Confluent Cloud, clean records, push to XCom."""
+    from kafka_utils import get_consumer  # type: ignore
 
     cleaned: dict[str, list[dict]] = {t: [] for t in RAW_TOPICS}
     stats: dict[str, int] = {}
 
     try:
-        consumer = KafkaConsumer(
-            *RAW_TOPICS,
-            bootstrap_servers=KAFKA_BOOTSTRAP.split(","),
-            security_protocol="SASL_SSL",
-            sasl_mechanism="AWS_MSK_IAM",
+        consumer = get_consumer(
             group_id="airflow-stream-cleaner",
-            auto_offset_reset="earliest",
-            enable_auto_commit=False,
-            consumer_timeout_ms=POLL_TIMEOUT_MS,
-            value_deserializer=lambda b: json.loads(b.decode("utf-8", errors="replace")),
-            max_poll_records=MAX_RECORDS,
+            topics=RAW_TOPICS,
+            extra={
+                "consumer_timeout_ms":  POLL_TIMEOUT_MS,
+                "auto.offset.reset":    "earliest",
+                "enable.auto.commit":   False,
+                "max.poll.records":     MAX_RECORDS,
+            },
         )
 
-        batch = consumer.poll(timeout_ms=POLL_TIMEOUT_MS, max_records=MAX_RECORDS)
-        for tp, messages in batch.items():
-            topic = tp.topic
-            for msg in messages:
-                rec = _clean_record(topic, msg.value)
-                if rec:
-                    cleaned[topic].append(rec)
-            stats[topic] = len(cleaned[topic])
-            logger.info("Topic %s: %d clean records", topic, stats[topic])
+        # Confluent consumer uses poll() which returns a single Message at a time
+        msgs_polled = 0
+        while msgs_polled < MAX_RECORDS:
+            msg = consumer.poll(timeout=POLL_TIMEOUT_MS / 1000.0)
+            if msg is None:
+                break
+            if msg.error():
+                logger.warning("Confluent consumer error: %s", msg.error())
+                continue
 
-        consumer.commit()
+            topic = msg.topic()
+            try:
+                record = json.loads(msg.value().decode("utf-8", errors="replace"))
+            except (json.JSONDecodeError, AttributeError):
+                continue
+
+            cleaned_rec = _clean_record(topic, record)
+            if cleaned_rec:
+                cleaned.setdefault(topic, []).append(cleaned_rec)
+            msgs_polled += 1
+
+        consumer.commit(asynchronous=False)
         consumer.close()
 
-    except NoBrokersAvailable:
-        logger.error("No Kafka brokers available — check MSK connectivity")
+        for topic, records in cleaned.items():
+            stats[topic] = len(records)
+            logger.info("Topic %s: %d clean records", topic, len(records))
+
     except Exception as exc:  # noqa: BLE001
-        logger.exception("Kafka consume error: %s", exc)
+        logger.exception("Confluent Kafka consume error: %s", exc)
 
     context["ti"].xcom_push(key="cleaned", value=cleaned)
     return stats
@@ -186,23 +192,19 @@ def write_to_s3(**context: Any) -> None:
 
 
 def _publish_cleaned(cleaned: dict[str, list[dict]]) -> None:
-    """Publish all cleaned records to the data.cleaned Kafka topic."""
-    if not KAFKA_BOOTSTRAP:
-        return
+    """Publish all cleaned records to the data.cleaned Confluent Kafka topic."""
     try:
-        from kafka import KafkaProducer  # type: ignore
+        from kafka_utils import get_producer  # type: ignore
 
-        producer = KafkaProducer(
-            bootstrap_servers=KAFKA_BOOTSTRAP.split(","),
-            security_protocol="SASL_SSL",
-            sasl_mechanism="AWS_MSK_IAM",
-            value_serializer=lambda v: json.dumps(v).encode(),
-        )
+        producer = get_producer()
         for topic, records in cleaned.items():
             for rec in records:
-                producer.send("data.cleaned", value=rec)
-        producer.flush()
-        producer.close()
+                producer.produce(
+                    "data.cleaned",
+                    key=topic.encode(),
+                    value=json.dumps(rec).encode(),
+                )
+        producer.flush(timeout=30)
     except Exception as exc:  # noqa: BLE001
         logger.warning("Could not publish to data.cleaned: %s", exc)
 

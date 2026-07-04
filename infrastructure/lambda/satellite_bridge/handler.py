@@ -21,13 +21,42 @@ import boto3
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-KAFKA_BOOTSTRAP = os.environ.get("KAFKA_BOOTSTRAP", "")
-KAFKA_TOPIC     = os.environ.get("KAFKA_TOPIC", "data.cleaned")
-S3_BUCKET       = os.environ.get("S3_BUCKET", "")
-S3_PREFIX       = os.environ.get("S3_PREFIX", "satellite/")
-AWS_REGION      = os.environ.get("AWS_REGION", "us-east-1")
+KAFKA_TOPIC       = os.environ.get("KAFKA_TOPIC", "data.cleaned")
+S3_BUCKET         = os.environ.get("S3_BUCKET", "")
+S3_PREFIX         = os.environ.get("S3_PREFIX", "satellite/")
+AWS_REGION        = os.environ.get("AWS_REGION", "us-east-1")
+CONFLUENT_SECRET  = os.environ.get("CONFLUENT_SECRET_NAME", "sri/production/confluent/lambda-key")
 
-s3 = boto3.client("s3", region_name=AWS_REGION)
+s3 = boto3.client("s3",            region_name=AWS_REGION)
+sm = boto3.client("secretsmanager", region_name=AWS_REGION)
+
+_confluent_producer = None
+
+
+def _get_confluent_producer():
+    global _confluent_producer
+    if _confluent_producer:
+        return _confluent_producer
+    try:
+        import json as _json
+        from confluent_kafka import Producer  # type: ignore
+        secret = _json.loads(sm.get_secret_value(SecretId=CONFLUENT_SECRET)["SecretString"])
+        bootstrap = secret["bootstrap"].replace("SASL_SSL://", "").replace("SSL://", "")
+        _confluent_producer = Producer({
+            "bootstrap.servers":  bootstrap,
+            "security.protocol": "SASL_SSL",
+            "sasl.mechanisms":   "PLAIN",
+            "sasl.username":     secret["api_key"],
+            "sasl.password":     secret["api_secret"],
+            "client.id":         "satellite-bridge",
+            "acks":              "1",
+            "retries":           3,
+        })
+        logger.info("Confluent producer initialised for satellite-bridge")
+        return _confluent_producer
+    except Exception as exc:
+        logger.warning("Confluent producer init failed: %s", exc)
+        return None
 
 
 def _decode_frame(data_b64: str) -> dict:
@@ -69,24 +98,21 @@ def _archive_to_s3(record_id: str, frame: dict) -> str:
 
 
 def _publish_to_kafka(events: list[dict]) -> int:
-    """Publish normalised events to Kafka. Returns count published."""
-    if not KAFKA_BOOTSTRAP or not events:
+    """Publish normalised events to Confluent Cloud Kafka. Returns count published."""
+    if not events:
+        return 0
+    producer = _get_confluent_producer()
+    if producer is None:
+        logger.warning("No Confluent producer — skipping Kafka publish for %d events", len(events))
         return 0
     try:
-        from kafka import KafkaProducer  # type: ignore
-        producer = KafkaProducer(
-            bootstrap_servers=KAFKA_BOOTSTRAP.split(","),
-            security_protocol="SASL_SSL",
-            sasl_mechanism="AWS_MSK_IAM",
-            value_serializer=lambda v: json.dumps(v).encode(),
-        )
         for ev in events:
-            producer.send(KAFKA_TOPIC, value=ev)
-        producer.flush()
-        producer.close()
+            producer.produce(KAFKA_TOPIC, key=str(ev.get("sequence_number", "")).encode(),
+                             value=json.dumps(ev).encode())
+        producer.flush(timeout=30)
         return len(events)
     except Exception as exc:
-        logger.error("Kafka publish failed: %s", exc)
+        logger.error("Confluent Kafka publish failed: %s", exc)
         return 0
 
 

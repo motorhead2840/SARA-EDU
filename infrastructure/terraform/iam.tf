@@ -43,24 +43,16 @@ resource "aws_iam_role_policy" "ecs_task_permissions" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
-      {
-        Sid      = "KafkaIAMAuth"
-        Effect   = "Allow"
-        Action   = ["kafka-cluster:Connect", "kafka-cluster:DescribeCluster",
-                    "kafka-cluster:AlterCluster", "kafka-cluster:ReadData",
-                    "kafka-cluster:WriteData", "kafka-cluster:DescribeTopic",
-                    "kafka-cluster:CreateTopic", "kafka-cluster:AlterTopic",
-                    "kafka-cluster:DescribeGroup", "kafka-cluster:AlterGroup"]
-        Resource = [aws_msk_cluster.main.arn, "${aws_msk_cluster.main.arn}/*"]
-      },
+      # Kafka auth is now SASL/PLAIN via Confluent Cloud API keys stored in
+      # Secrets Manager — no MSK IAM permissions required.
       {
         Sid    = "S3Access"
         Effect = "Allow"
         Action = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject", "s3:ListBucket"]
         Resource = [
-          aws_s3_bucket.assets.arn, "${aws_s3_bucket.assets.arn}/*",
+          aws_s3_bucket.assets.arn,   "${aws_s3_bucket.assets.arn}/*",
           aws_s3_bucket.chromadb.arn, "${aws_s3_bucket.chromadb.arn}/*",
-          aws_s3_bucket.data_lake.arn, "${aws_s3_bucket.data_lake.arn}/*",
+          aws_s3_bucket.data_lake.arn,"${aws_s3_bucket.data_lake.arn}/*",
         ]
       },
       {
@@ -143,7 +135,7 @@ resource "aws_iam_role_policy" "mwaa_permissions" {
       { Effect = "Allow"; Action = ["cloudwatch:PutMetricData"]; Resource = "*" },
       { Effect = "Allow"; Action = ["sqs:ChangeMessageVisibility", "sqs:DeleteMessage", "sqs:GetQueueAttributes", "sqs:GetQueueUrl", "sqs:ReceiveMessage", "sqs:SendMessage"]; Resource = "arn:aws:sqs:${var.aws_region}:*:airflow-celery-*" },
       { Effect = "Allow"; Action = ["kms:Decrypt", "kms:DescribeKey", "kms:GenerateDataKey*", "kms:Encrypt"]; Resource = "*" },
-      { Effect = "Allow"; Action = ["kafka-cluster:Connect", "kafka-cluster:ReadData", "kafka-cluster:WriteData", "kafka-cluster:DescribeTopic", "kafka-cluster:DescribeGroup"]; Resource = [aws_msk_cluster.main.arn, "${aws_msk_cluster.main.arn}/*"] },
+      # Confluent Cloud uses SASL/PLAIN — credentials come from Secrets Manager, no IAM needed.
       { Effect = "Allow"; Action = ["es:ESHttpGet", "es:ESHttpPost", "es:ESHttpPut", "es:ESHttpDelete"]; Resource = "${aws_opensearch_domain.main.arn}/*" },
       { Effect = "Allow"; Action = ["secretsmanager:GetSecretValue"]; Resource = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.project}/*" },
       { Effect = "Allow"; Action = ["ssm:GetParameter", "ssm:GetParameters"]; Resource = "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/*" },
@@ -187,11 +179,19 @@ resource "aws_iam_role_policy_attachment" "lambda_vpc" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
 resource "aws_iam_role_policy" "lambda_kafka_permissions" {
+  # This role was for the MSK topic provisioner Lambda, which is now deprecated.
+  # Topics are managed by Terraform via confluent_kafka_topic in confluent.tf.
+  # Keeping the role to avoid destroying/recreating attached resources;
+  # permissions are now a no-op placeholder.
   name = "kafka-permissions"
   role = aws_iam_role.lambda_kafka.id
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{ Effect = "Allow"; Action = ["kafka-cluster:Connect", "kafka-cluster:CreateTopic", "kafka-cluster:AlterTopic", "kafka-cluster:DescribeTopic"]; Resource = [aws_msk_cluster.main.arn, "${aws_msk_cluster.main.arn}/*"] }]
+    Statement = [
+      # Confluent Cloud — SASL/PLAIN; topic provisioner Lambda is deprecated.
+      # Grant read access to Confluent secret so the Lambda can report its status.
+      { Effect = "Allow"; Action = ["secretsmanager:GetSecretValue"]; Resource = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.project}/${var.environment}/confluent/*" }
+    ]
   })
 }
 

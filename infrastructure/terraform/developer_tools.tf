@@ -301,7 +301,7 @@ resource "aws_codegurureviewer_repository_association" "opentag" {
 
 resource "aws_ssm_parameter" "app_config" {
   for_each = {
-    "kafka_bootstrap"   = aws_msk_cluster.main.bootstrap_brokers_sasl_iam
+    "kafka_bootstrap"   = aws_ssm_parameter.confluent_bootstrap.value
     "redis_endpoint"    = aws_elasticache_replication_group.main.primary_endpoint_address
     "rds_endpoint"      = aws_db_instance.main.endpoint
     "opensearch_domain" = aws_opensearch_domain.main.endpoint

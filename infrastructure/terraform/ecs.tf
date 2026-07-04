@@ -166,19 +166,23 @@ resource "aws_ecs_task_definition" "api_server" {
       essential = true
       portMappings = [{ containerPort = 8080, protocol = "tcp" }]
       environment = [
-        { name = "NODE_ENV",        value = "production" },
-        { name = "PORT",            value = "8080" },
-        { name = "KAFKA_BOOTSTRAP", value = aws_msk_cluster.main.bootstrap_brokers_sasl_iam },
-        { name = "REDIS_URL",       value = "rediss://${aws_elasticache_replication_group.main.primary_endpoint_address}:6379" },
-        { name = "OPENSEARCH_URL",  value = "https://${aws_opensearch_domain.main.endpoint}" },
-        { name = "AWS_REGION",      value = var.aws_region },
-        { name = "S3_ASSETS_BUCKET",   value = aws_s3_bucket.assets.id },
-        { name = "S3_CHROMADB_BUCKET", value = aws_s3_bucket.chromadb.id },
+        { name = "NODE_ENV",             value = "production" },
+        { name = "PORT",                 value = "8080" },
+        { name = "REDIS_URL",            value = "rediss://${aws_elasticache_replication_group.main.primary_endpoint_address}:6379" },
+        { name = "OPENSEARCH_URL",       value = "https://${aws_opensearch_domain.main.endpoint}" },
+        { name = "AWS_REGION",           value = var.aws_region },
+        { name = "S3_ASSETS_BUCKET",     value = aws_s3_bucket.assets.id },
+        { name = "S3_CHROMADB_BUCKET",   value = aws_s3_bucket.chromadb.id },
+        { name = "S3_ACADEMIC_BUCKET",   value = aws_s3_bucket.academic.id },
       ]
       secrets = [
-        { name = "DATABASE_URL",     valueFrom = "${aws_secretsmanager_secret.db_password.arn}:database_url::" },
-        { name = "SESSION_SECRET",   valueFrom = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.project}/${var.environment}/session_secret" },
-        { name = "STRIPE_SECRET_KEY",valueFrom = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.project}/${var.environment}/stripe_secret_key" },
+        { name = "DATABASE_URL",      valueFrom = "${aws_secretsmanager_secret.db_password.arn}:database_url::" },
+        { name = "SESSION_SECRET",    valueFrom = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.project}/${var.environment}/session_secret" },
+        { name = "STRIPE_SECRET_KEY", valueFrom = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.project}/${var.environment}/stripe_secret_key" },
+        # Confluent Cloud credentials (JSON: { api_key, api_secret, bootstrap })
+        { name = "KAFKA_BOOTSTRAP",   valueFrom = "${aws_secretsmanager_secret.confluent_app.arn}:bootstrap::" },
+        { name = "KAFKA_API_KEY",     valueFrom = "${aws_secretsmanager_secret.confluent_app.arn}:api_key::" },
+        { name = "KAFKA_API_SECRET",  valueFrom = "${aws_secretsmanager_secret.confluent_app.arn}:api_secret::" },
       ]
       logConfiguration = {
         logDriver = "awslogs"
@@ -215,12 +219,22 @@ resource "aws_ecs_task_definition" "shri_api" {
       essential = true
       portMappings = [{ containerPort = 8000, protocol = "tcp" }]
       environment = [
-        { name = "CHROMADB_S3_BUCKET", value = aws_s3_bucket.chromadb.id },
-        { name = "KAFKA_BOOTSTRAP",    value = aws_msk_cluster.main.bootstrap_brokers_sasl_iam },
-        { name = "AWS_REGION",         value = var.aws_region },
+        { name = "CHROMADB_S3_BUCKET",  value = aws_s3_bucket.chromadb.id },
+        { name = "AWS_REGION",          value = var.aws_region },
+        { name = "S3_ACADEMIC_BUCKET",  value = aws_s3_bucket.academic.id },
+        { name = "OPENSEARCH_URL",      value = "https://${aws_opensearch_domain.main.endpoint}" },
+        { name = "API_SERVER_URL",      value = "http://api-server.${var.project}.internal:8080" },
+        # Bedrock — used when BEDROCK_ENABLED=true (primary) or OPENAI_API_KEY missing (fallback)
+        { name = "BEDROCK_ENABLED",     value = "true" },
+        { name = "BEDROCK_REGION",      value = var.aws_region },
+        { name = "BEDROCK_MODEL_ID",    value = "anthropic.claude-3-5-sonnet-20241022-v2:0" },
       ]
       secrets = [
-        { name = "OPENAI_API_KEY", valueFrom = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.project}/${var.environment}/openai_api_key" },
+        { name = "OPENAI_API_KEY",   valueFrom = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.project}/${var.environment}/openai_api_key" },
+        # Confluent Cloud credentials
+        { name = "KAFKA_BOOTSTRAP",  valueFrom = "${aws_secretsmanager_secret.confluent_app.arn}:bootstrap::" },
+        { name = "KAFKA_API_KEY",    valueFrom = "${aws_secretsmanager_secret.confluent_app.arn}:api_key::" },
+        { name = "KAFKA_API_SECRET", valueFrom = "${aws_secretsmanager_secret.confluent_app.arn}:api_secret::" },
       ]
       logConfiguration = {
         logDriver = "awslogs"

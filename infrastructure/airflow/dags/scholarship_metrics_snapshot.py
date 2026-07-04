@@ -132,26 +132,24 @@ def compute_metrics(**context):
 
 
 def publish_to_kafka(**context):
-    """Publish snapshot to mentor.metrics.snapshots topic."""
+    """Publish snapshot to Confluent Cloud mentor.metrics.snapshots topic."""
     snapshot = context["ti"].xcom_pull(key="snapshot")
-    if not snapshot or not KAFKA_BOOTSTRAP:
+    if not snapshot:
         return
 
     try:
-        from kafka import KafkaProducer  # type: ignore
+        from kafka_utils import get_producer  # type: ignore
 
-        producer = KafkaProducer(
-            bootstrap_servers=KAFKA_BOOTSTRAP.split(","),
-            security_protocol="SASL_SSL",
-            sasl_mechanism="AWS_MSK_IAM",
-            value_serializer=lambda v: json.dumps(v).encode(),
+        producer = get_producer()
+        producer.produce(
+            "mentor.metrics.snapshots",
+            key=b"snapshot",
+            value=json.dumps(snapshot).encode(),
         )
-        producer.send("mentor.metrics.snapshots", value=snapshot)
-        producer.flush()
-        producer.close()
-        logger.info("Published snapshot to mentor.metrics.snapshots")
+        producer.flush(timeout=30)
+        logger.info("Published snapshot to mentor.metrics.snapshots (Confluent)")
     except Exception as exc:  # noqa: BLE001
-        logger.warning("Kafka publish failed: %s", exc)
+        logger.warning("Confluent Kafka publish failed: %s", exc)
 
 
 def save_to_s3(**context):

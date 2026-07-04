@@ -2,8 +2,11 @@
 SARA Token Event Indexer Lambda
 --------------------------------
 Polls Etherscan API for new ERC-20 Transfer events on the SARA token contract,
-publishes each new event to the 'blockchain.token.events' Kafka topic, and
-indexes into OpenSearch.
+publishes each new event to the 'blockchain.token.events' Confluent Kafka topic,
+and indexes into OpenSearch.
+
+Auth: Confluent Cloud SASL/PLAIN — credentials from Secrets Manager.
+Was:  AWS MSK IAM SASL (changed when MSK was replaced by Confluent Cloud).
 
 Triggered every 5 minutes by EventBridge.
 Uses SSM Parameter Store for the last-processed block number (checkpoint).
@@ -22,17 +25,45 @@ import urllib.parse
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-KAFKA_BOOTSTRAP  = os.environ.get("KAFKA_BOOTSTRAP", "")
 KAFKA_TOPIC      = os.environ.get("KAFKA_TOPIC", "blockchain.token.events")
 OPENSEARCH_URL   = os.environ.get("OPENSEARCH_URL", "")
 AWS_REGION       = os.environ.get("AWS_REGION", "us-east-1")
 CONTRACT_SECRET  = os.environ.get("SARA_CONTRACT_SECRET", "")
 ETHERSCAN_SECRET = os.environ.get("ETHERSCAN_SECRET", "")
+CONFLUENT_SECRET = os.environ.get("CONFLUENT_SECRET_NAME", "sri/production/confluent/lambda-key")
 
-SSM_CHECKPOINT_KEY = f"/sri/production/blockchain/sara_last_block"
+SSM_CHECKPOINT_KEY = "/sri/production/blockchain/sara_last_block"
+OS_INDEX           = "blockchain-token-events"
 
-ssm = boto3.client("ssm", region_name=AWS_REGION)
+ssm = boto3.client("ssm",            region_name=AWS_REGION)
 sm  = boto3.client("secretsmanager", region_name=AWS_REGION)
+
+_confluent_producer = None
+
+
+def _get_confluent_producer():
+    global _confluent_producer
+    if _confluent_producer:
+        return _confluent_producer
+    try:
+        from confluent_kafka import Producer  # type: ignore
+        secret = json.loads(sm.get_secret_value(SecretId=CONFLUENT_SECRET)["SecretString"])
+        bootstrap = secret["bootstrap"].replace("SASL_SSL://", "").replace("SSL://", "")
+        _confluent_producer = Producer({
+            "bootstrap.servers":  bootstrap,
+            "security.protocol": "SASL_SSL",
+            "sasl.mechanisms":   "PLAIN",
+            "sasl.username":     secret["api_key"],
+            "sasl.password":     secret["api_secret"],
+            "client.id":         "sara-event-indexer",
+            "acks":              "1",
+            "retries":           3,
+        })
+        logger.info("Confluent producer initialised for sara-event-indexer")
+        return _confluent_producer
+    except Exception as exc:
+        logger.warning("Confluent producer init failed: %s", exc)
+        return None
 
 
 def _get_secret(secret_name: str) -> str:
@@ -67,115 +98,140 @@ def _set_checkpoint(block_number: int) -> None:
         logger.warning("Checkpoint write failed: %s", exc)
 
 
-def _fetch_etherscan_events(contract: str, api_key: str, start_block: int) -> list[dict]:
-    """Fetch ERC-20 Transfer events from Etherscan tokentx API."""
+def _fetch_token_events(contract: str, api_key: str, from_block: int) -> list[dict]:
     params = urllib.parse.urlencode({
-        "module":     "account",
-        "action":     "tokentx",
+        "module":          "account",
+        "action":          "tokentx",
         "contractaddress": contract,
-        "startblock": start_block,
-        "endblock":   999999999,
-        "sort":       "asc",
-        "apikey":     api_key,
+        "startblock":      from_block,
+        "endblock":        "latest",
+        "sort":            "asc",
+        "apikey":          api_key,
     })
     url = f"https://api.etherscan.io/api?{params}"
     try:
-        with urllib.request.urlopen(url, timeout=30) as resp:
+        with urllib.request.urlopen(url, timeout=15) as resp:
             data = json.loads(resp.read())
         if data.get("status") == "1":
             return data.get("result", [])
-        logger.info("Etherscan returned status %s: %s", data.get("status"), data.get("message"))
+        logger.info("Etherscan: %s", data.get("message", "no events"))
         return []
     except Exception as exc:
-        logger.error("Etherscan API error: %s", exc)
+        logger.warning("Etherscan fetch failed: %s", exc)
         return []
 
 
-def _publish_to_kafka(events: list[dict]) -> int:
-    """Publish events to MSK Kafka. Returns count published."""
-    if not KAFKA_BOOTSTRAP or not events:
-        return 0
-    try:
-        from kafka import KafkaProducer  # type: ignore
-        producer = KafkaProducer(
-            bootstrap_servers=KAFKA_BOOTSTRAP.split(","),
-            security_protocol="SASL_SSL",
-            sasl_mechanism="AWS_MSK_IAM",
-            value_serializer=lambda v: json.dumps(v).encode(),
-            key_serializer=lambda k: k.encode() if k else None,
-        )
-        for ev in events:
-            # Use tx_hash as the Kafka key for idempotency/partitioning
-            producer.send(KAFKA_TOPIC, key=ev.get("tx_hash"), value=ev)
-        producer.flush()
-        producer.close()
-        return len(events)
-    except Exception as exc:
-        logger.error("Kafka publish failed: %s", exc)
-        return 0
-
-
-def _index_to_opensearch(events: list[dict]) -> None:
-    """Bulk-index events into OpenSearch sri-blockchain-token-events."""
-    if not OPENSEARCH_URL or not events:
+def _publish_to_kafka(producer, event: dict) -> None:
+    if producer is None:
         return
+    payload = json.dumps({
+        "tx_hash":    event.get("hash", ""),
+        "from":       event.get("from", ""),
+        "to":         event.get("to", ""),
+        "value":      event.get("value", "0"),
+        "token_name": event.get("tokenName", "SARA"),
+        "block":      int(event.get("blockNumber", 0)),
+        "timestamp":  int(event.get("timeStamp", 0)),
+        "_source":    "sara-event-indexer",
+    })
+    tx_hash = event.get("hash", "unknown")
     try:
-        from opensearchpy import OpenSearch, helpers  # type: ignore
-        client = OpenSearch(hosts=[OPENSEARCH_URL], use_ssl=True, verify_certs=True)
-        # Use tx_hash as the document _id for idempotent upserts
-        actions = [{"_index": "sri-blockchain-token-events", "_id": ev.get("tx_hash") or str(i), "_source": ev} for i, ev in enumerate(events)]
-        success, errors = helpers.bulk(client, actions, raise_on_error=False)
-        logger.info("OpenSearch: %d indexed, %d errors", success, len(errors))
+        producer.produce(KAFKA_TOPIC, key=tx_hash.encode(), value=payload.encode())
     except Exception as exc:
-        logger.warning("OpenSearch index failed: %s", exc)
+        logger.warning("Kafka produce failed for tx %s: %s", tx_hash, exc)
 
 
-def lambda_handler(event: dict, context: Any) -> dict:
-    contract_address = _get_secret(CONTRACT_SECRET)
-    etherscan_api_key = _get_secret(ETHERSCAN_SECRET)
+def _index_to_opensearch(event: dict, _api_key: str = "") -> None:
+    """Index a single SARA token event to OpenSearch with AWS SigV4 signing."""
+    if not OPENSEARCH_URL:
+        return
+    tx_hash = event.get("hash", "unknown")
+    doc = {
+        "tx_hash":    tx_hash,
+        "from":       event.get("from", ""),
+        "to":         event.get("to", ""),
+        "value":      event.get("value", "0"),
+        "token_name": event.get("tokenName", "SARA"),
+        "block":      int(event.get("blockNumber", 0)),
+        "timestamp":  int(event.get("timeStamp", 0)),
+    }
+    url = f"{OPENSEARCH_URL}/{OS_INDEX}/_doc/{tx_hash}"
+    body = json.dumps(doc).encode()
 
-    if not contract_address:
-        logger.error("SARA contract address not found in Secrets Manager at %s", CONTRACT_SECRET)
-        return {"statusCode": 500, "error": "Missing SARA contract address"}
+    try:
+        import botocore.auth
+        import botocore.awsrequest
+        import botocore.session
 
-    start_block = _get_checkpoint()
-    logger.info("Polling SARA events from block %d", start_block)
+        session     = botocore.session.get_session()
+        credentials = session.get_credentials().get_frozen_credentials()
+        service     = "es"
+        region      = AWS_REGION
 
-    raw_events = _fetch_etherscan_events(contract_address, etherscan_api_key, start_block)
-    if not raw_events:
-        logger.info("No new SARA events found")
-        return {"statusCode": 200, "published": 0}
+        request = botocore.awsrequest.AWSRequest(
+            method="PUT",
+            url=url,
+            data=body,
+            headers={"Content-Type": "application/json"},
+        )
+        signer = botocore.auth.SigV4Auth(credentials, service, region)
+        signer.add_auth(request)
 
-    # Transform and enrich
-    enriched = []
-    max_block = start_block
-    for tx in raw_events:
-        block_num = int(tx.get("blockNumber", 0))
-        # tx_hash is the canonical field name — used as Kafka key and OpenSearch _id
-        tx_hash = tx.get("hash", "")
-        enriched.append({
-            "tx_hash":     tx_hash,
-            "from":        tx.get("from", "").lower(),
-            "to":          tx.get("to", "").lower(),
-            "value":       tx.get("value"),
-            "token_name":  tx.get("tokenName", "SARA"),
-            "token_symbol":tx.get("tokenSymbol", "SARA"),
-            "block_number":block_num,
-            "timestamp":   int(tx.get("timeStamp", 0)) * 1000,  # ms epoch
-            "gas_used":    tx.get("gasUsed"),
-            "event_type":  "Transfer",
-            "network":     "mainnet",
-            "_indexed_at": int(time.time() * 1000),
-        })
-        max_block = max(max_block, block_num)
+        prepared = request.prepare()
+        # Convert to urllib Request
+        req = urllib.request.Request(
+            prepared.url,
+            data=body,
+            method="PUT",
+            headers=dict(prepared.headers),
+        )
+        with urllib.request.urlopen(req, timeout=10):
+            pass
+    except Exception as exc:
+        logger.warning("OpenSearch index failed for tx %s: %s", tx_hash, exc)
 
-    published = _publish_to_kafka(enriched)
-    _index_to_opensearch(enriched)
 
-    # Advance checkpoint past the last processed block
-    if max_block > start_block:
-        _set_checkpoint(max_block + 1)
-        logger.info("Checkpoint advanced to block %d", max_block + 1)
+def lambda_handler(event: Any, context: Any) -> dict:
+    contract_raw = _get_secret(CONTRACT_SECRET)
+    etherscan_raw = _get_secret(ETHERSCAN_SECRET)
 
-    logger.info("Processed %d SARA events, published %d to Kafka", len(enriched), published)
-    return {"statusCode": 200, "events_found": len(enriched), "published": published, "last_block": max_block}
+    try:
+        contract_data = json.loads(contract_raw)
+        contract_address = contract_data.get("contract_address", "")
+    except (json.JSONDecodeError, AttributeError):
+        contract_address = contract_raw
+
+    try:
+        etherscan_data = json.loads(etherscan_raw)
+        etherscan_api_key = etherscan_data.get("api_key", "")
+    except (json.JSONDecodeError, AttributeError):
+        etherscan_api_key = etherscan_raw
+
+    if not contract_address or not etherscan_api_key:
+        logger.error("Missing SARA contract address or Etherscan API key")
+        return {"statusCode": 500, "error": "Missing configuration"}
+
+    from_block = _get_checkpoint() or 1
+    logger.info("Fetching SARA events from block %d", from_block)
+
+    events = _fetch_token_events(contract_address, etherscan_api_key, from_block)
+    if not events:
+        logger.info("No new events since block %d", from_block)
+        return {"statusCode": 200, "processed": 0}
+
+    producer = _get_confluent_producer()
+    max_block = from_block
+
+    for tx in events:
+        _publish_to_kafka(producer, tx)
+        _index_to_opensearch(tx, etherscan_api_key)
+        block = int(tx.get("blockNumber", 0))
+        if block > max_block:
+            max_block = block
+
+    if producer:
+        producer.flush(timeout=30)
+
+    _set_checkpoint(max_block + 1)
+    logger.info("Processed %d events, checkpoint now block %d", len(events), max_block + 1)
+    return {"statusCode": 200, "processed": len(events), "new_checkpoint": max_block + 1}

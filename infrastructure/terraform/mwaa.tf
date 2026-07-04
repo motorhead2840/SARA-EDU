@@ -35,9 +35,11 @@ resource "aws_mwaa_environment" "main" {
     "celery.worker_concurrency"           = "16"
     "secrets.backend"                     = "airflow.providers.amazon.aws.secrets.secrets_manager.SecretsManagerBackend"
     "secrets.backend_kwargs"              = jsonencode({ connections_prefix = "airflow/connections", variables_prefix = "airflow/variables", sep = "/" })
-    "kafka.bootstrap_servers"             = aws_msk_cluster.main.bootstrap_brokers_sasl_iam
+    # Confluent Cloud — credentials fetched at task-time from Secrets Manager via kafka_utils.py
+    "kafka.bootstrap_servers"             = aws_ssm_parameter.confluent_bootstrap.value
     "kafka.security_protocol"             = "SASL_SSL"
-    "kafka.sasl_mechanism"                = "AWS_MSK_IAM"
+    "kafka.sasl_mechanism"                = "PLAIN"
+    "kafka.confluent_secret_name"         = aws_secretsmanager_secret.confluent_airflow.name
     "opensearch.host"                     = aws_opensearch_domain.main.endpoint
     "sagemaker.region"                    = var.aws_region
     "s3.data_lake_bucket"                 = aws_s3_bucket.data_lake.id

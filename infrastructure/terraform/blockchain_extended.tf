@@ -64,7 +64,7 @@ resource "aws_iam_role_policy" "lambda_sara_permissions" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
-      { Effect = "Allow"; Action = ["kafka-cluster:Connect", "kafka-cluster:WriteData", "kafka-cluster:WriteDataIdempotently", "kafka-cluster:DescribeTopic"]; Resource = [aws_msk_cluster.main.arn, "${aws_msk_cluster.main.arn}/*"] },
+      # Confluent Cloud — SASL/PLAIN auth; no MSK IAM actions needed
       { Effect = "Allow"; Action = ["secretsmanager:GetSecretValue"]; Resource = ["arn:aws:secretsmanager:${var.aws_region}:*:secret:${var.project}/${var.environment}/*"] },
       { Effect = "Allow"; Action = ["ssm:GetParameter", "ssm:PutParameter"]; Resource = ["arn:aws:ssm:${var.aws_region}:*:parameter/${var.project}/${var.environment}/*", "arn:aws:ssm:${var.aws_region}:*:parameter/sri/production/*"] },
       { Effect = "Allow"; Action = ["es:ESHttp*"]; Resource = "${aws_opensearch_domain.main.arn}/*" },
@@ -86,7 +86,8 @@ resource "aws_lambda_function" "sara_event_indexer" {
 
   environment {
     variables = {
-      KAFKA_BOOTSTRAP      = aws_msk_cluster.main.bootstrap_brokers_sasl_iam
+      KAFKA_BOOTSTRAP       = aws_ssm_parameter.confluent_bootstrap.value
+      CONFLUENT_SECRET_NAME = aws_secretsmanager_secret.confluent_lambda.name
       KAFKA_TOPIC          = "blockchain.token.events"
       OPENSEARCH_URL       = "https://${aws_opensearch_domain.main.endpoint}"
       SARA_CONTRACT_SECRET = "${var.project}/${var.environment}/sara/contract_address"
