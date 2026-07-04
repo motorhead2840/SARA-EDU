@@ -65,11 +65,11 @@ export const useSubscriptionHooks = () => {
   };
 
   // 3. POST /api/subscription/checkout/fiat
-  const checkoutFiat = async (email: string, countryCode: string): Promise<CheckoutFiatResponse> => {
+  const checkoutFiat = async (email: string, countryCode: string, paymentCategory?: string): Promise<CheckoutFiatResponse> => {
     const response = await fetch(`/api/subscription/checkout/fiat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, country_code: countryCode }),
+      body: JSON.stringify({ email, country_code: countryCode, payment_category: paymentCategory }),
     });
     if (!response.ok) {
       throw new Error('Failed to checkout fiat');

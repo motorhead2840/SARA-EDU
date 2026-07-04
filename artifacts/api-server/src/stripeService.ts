@@ -35,23 +35,42 @@ export class StripeService {
     priceId: string;
     successUrl: string;
     cancelUrl: string;
+    /** 'card' (default) — credit/debit card only.
+     *  'bank' — bank account only (ACH / SEPA / BECS etc.); Stripe verifies
+     *  the account via Financial Connections before processing. */
+    paymentCategory?: 'card' | 'bank';
   }): Promise<string> {
     const stripe = await getUncachableStripeClient();
     const customerId = await this.findOrCreateCustomer(opts.email);
 
+    const isBank = opts.paymentCategory === 'bank';
+
+    // Bank payment methods — Stripe picks the right one per region automatically.
+    // us_bank_account (ACH), sepa_debit (EU), au_becs_debit (AU), acss_debit (CA).
+    // Financial Connections verifies the account before charging.
+    const bankMethods = ['us_bank_account', 'sepa_debit', 'au_becs_debit', 'acss_debit'] as const;
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
-      payment_method_types: ['card'],
+      payment_method_types: isBank ? (bankMethods as unknown as string[]) : ['card'],
       line_items: [{ price: opts.priceId, quantity: 1 }],
       mode: 'subscription',
       success_url: opts.successUrl,
       cancel_url: opts.cancelUrl,
-      // Global payment methods via Stripe's automatic detection
       payment_method_collection: 'if_required',
       subscription_data: {
         metadata: { email: opts.email },
       },
       allow_promotion_codes: true,
+      // For bank accounts: require Financial Connections verification
+      ...(isBank && {
+        payment_method_options: {
+          us_bank_account: {
+            financial_connections: { permissions: ['payment_method'] },
+            verification_method: 'automatic',
+          },
+        },
+      }),
     });
 
     if (!session.url) throw new Error('Stripe did not return a checkout URL');

@@ -91,8 +91,12 @@ router.get('/plans', async (req, res) => {
 // ─── POST /checkout/fiat ──────────────────────────────────────────────────────
 
 router.post('/checkout/fiat', async (req, res) => {
-  const { email, country_code } = req.body ?? {};
+  const { email, country_code, payment_category } = req.body ?? {};
   if (!email) return res.status(400).json({ error: 'email is required' });
+
+  const validCategories = ['card', 'bank'];
+  const paymentCategory: 'card' | 'bank' =
+    validCategories.includes(payment_category) ? payment_category : 'card';
 
   try {
     const tier     = countryToTier(country_code ?? 'US');
@@ -108,11 +112,12 @@ router.post('/checkout/fiat', async (req, res) => {
       priceId,
       successUrl: `${baseUrl}/subscribe/success?session_id={CHECKOUT_SESSION_ID}`,
       cancelUrl:  `${baseUrl}/subscribe`,
+      paymentCategory,
     });
 
     await storage.upsertUser(email);
 
-    res.json({ url, tier, usd_price: TIER_USD[tier] });
+    res.json({ url, tier, usd_price: TIER_USD[tier], payment_category: paymentCategory });
   } catch (err) {
     res.status(500).json({ error: 'Failed to create checkout session', detail: String(err) });
   }

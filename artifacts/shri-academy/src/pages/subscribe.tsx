@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'wouter';
-import { Terminal, ShieldAlert, Cpu, Zap, CreditCard, Wallet, Copy, CheckCircle2, ArrowLeft, Loader2, Key } from 'lucide-react';
+import { Terminal, ShieldAlert, Cpu, Zap, CreditCard, Wallet, Copy, CheckCircle2, ArrowLeft, Loader2, Key, Landmark } from 'lucide-react';
 
 // API fetchers
 const fetchPlans = async (countryCode: string) => {
@@ -21,11 +21,11 @@ const fetchStatus = async (email: string) => {
   return res.json();
 };
 
-const checkoutFiat = async ({ email, country_code }: { email: string; country_code: string }) => {
+const checkoutFiat = async ({ email, country_code, payment_category }: { email: string; country_code: string; payment_category?: string }) => {
   const res = await fetch('/api/subscription/checkout/fiat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, country_code }),
+    body: JSON.stringify({ email, country_code, payment_category }),
   });
   if (!res.ok) throw new Error('Checkout failed');
   return res.json();
@@ -52,7 +52,8 @@ export default function Subscribe() {
   const [email, setEmail] = useState('');
   const [debouncedEmail, setDebouncedEmail] = useState('');
   const [countryCode, setCountryCode] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'fiat' | 'crypto' | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<'fiat' | 'crypto' | 'bank' | null>(null);
+  const [bankAccountType, setBankAccountType] = useState<'checking' | 'savings'>('checking');
   const [selectedCrypto, setSelectedCrypto] = useState<string>('usdc');
   const [cryptoPayment, setCryptoPayment] = useState<any>(null);
   const [copied, setCopied] = useState(false);
@@ -249,7 +250,7 @@ export default function Subscribe() {
                   {/* Payment Method Selection */}
                   <div className="space-y-4">
                     <div className="text-[10px] uppercase tracking-wider text-user/50 mb-2">Select_Transaction_Protocol</div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <button
                         onClick={() => setPaymentMethod('fiat')}
                         className={`flex flex-col items-center gap-3 p-4 border transition-all ${
@@ -260,7 +261,19 @@ export default function Subscribe() {
                         data-testid="btn-fiat"
                       >
                         <CreditCard className="w-6 h-6" />
-                        <span className="uppercase text-xs font-bold tracking-wider">Fiat_Gateway</span>
+                        <span className="uppercase text-[10px] sm:text-xs font-bold tracking-wider">Fiat_Gateway</span>
+                      </button>
+                      <button
+                        onClick={() => setPaymentMethod('bank')}
+                        className={`flex flex-col items-center gap-3 p-4 border transition-all ${
+                          paymentMethod === 'bank' 
+                            ? 'border-user bg-user/10 text-user' 
+                            : 'border-system/20 text-system/60 hover:border-user/50 hover:text-user'
+                        }`}
+                        data-testid="bank-tab"
+                      >
+                        <Landmark className="w-6 h-6" />
+                        <span className="uppercase text-[10px] sm:text-xs font-bold tracking-wider">Bank_Transfer</span>
                       </button>
                       <button
                         onClick={() => setPaymentMethod('crypto')}
@@ -272,7 +285,7 @@ export default function Subscribe() {
                         data-testid="btn-crypto"
                       >
                         <Wallet className="w-6 h-6" />
-                        <span className="uppercase text-xs font-bold tracking-wider">Web3_Direct</span>
+                        <span className="uppercase text-[10px] sm:text-xs font-bold tracking-wider">Web3_Direct</span>
                       </button>
                     </div>
                   </div>
@@ -288,6 +301,43 @@ export default function Subscribe() {
                       >
                         {fiatMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5" />}
                         {fiatMutation.isPending ? 'Establishing_Connection...' : 'Initialize_Stripe_Node'}
+                      </button>
+                    </div>
+                  )}
+
+                  {paymentMethod === 'bank' && (
+                    <div className="mt-6 pt-6 border-t border-user/20 animate-fade-in space-y-6">
+                      <div className="space-y-4">
+                        <div className="text-xs text-user/80 uppercase">Available for parents and students with a verified bank account</div>
+                        <div className="flex gap-4">
+                          <button 
+                            onClick={() => setBankAccountType('checking')}
+                            className={`flex-1 p-3 border transition-all uppercase text-xs font-bold tracking-wider ${bankAccountType === 'checking' ? 'border-user bg-user/20 text-user' : 'border-system/20 text-system/60 hover:border-user/30 hover:text-user'}`}
+                            data-testid="account-type-checking"
+                          >
+                            Checking_Account
+                          </button>
+                          <button 
+                            onClick={() => setBankAccountType('savings')}
+                            className={`flex-1 p-3 border transition-all uppercase text-xs font-bold tracking-wider ${bankAccountType === 'savings' ? 'border-user bg-user/20 text-user' : 'border-system/20 text-system/60 hover:border-user/30 hover:text-user'}`}
+                            data-testid="account-type-savings"
+                          >
+                            Savings_Account
+                          </button>
+                        </div>
+                        <div className="text-[10px] text-system/60 leading-relaxed uppercase border border-system/20 p-4 bg-black">
+                          STRIPE_VERIFIED — your bank account is verified in real-time via Stripe Financial Connections before any charge is processed. Only parents and students with a valid bank account can use this option.
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => fiatMutation.mutate({ email, country_code: countryCode || plans.detected_country, payment_category: 'bank' })}
+                        disabled={!email || fiatMutation.isPending}
+                        className="w-full py-4 border border-user text-user font-bold uppercase tracking-widest hover:bg-user/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        data-testid="bank-pay-button"
+                      >
+                        {fiatMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Landmark className="w-5 h-5" />}
+                        {fiatMutation.isPending ? 'Verifying_Connection...' : 'Verify_And_Pay'}
                       </button>
                     </div>
                   )}

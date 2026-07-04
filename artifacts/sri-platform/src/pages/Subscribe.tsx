@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
-import { Check, CreditCard, Loader2, Wallet, Zap, Copy, AlertCircle, RefreshCw, CheckCircle2 } from "lucide-react";
+import { Check, CreditCard, Loader2, Wallet, Zap, Copy, AlertCircle, RefreshCw, CheckCircle2, Building } from "lucide-react";
 import { useSubscriptionHooks, PlanDetails, CryptoPlan } from "@/hooks/use-subscriptions";
 import { useToast } from "@/hooks/use-toast";
 
 // Types
-type PaymentMethod = "fiat" | "crypto";
+type PaymentMethod = "fiat" | "crypto" | "bank";
 type CryptoCurrency = "USDC" | "ETH" | "BTC" | "SARA";
 
 const COUNTRIES = [
@@ -44,6 +44,7 @@ export default function Subscribe() {
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("fiat");
   const [cryptoCurrency, setCryptoCurrency] = useState<CryptoCurrency>("USDC");
+  const [accountType, setAccountType] = useState<"checking" | "savings">("checking");
 
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 
@@ -113,6 +114,19 @@ export default function Subscribe() {
     } catch (err) {
       console.error(err);
       toast({ title: "Checkout failed", variant: "destructive" });
+      setIsCheckingOut(false);
+    }
+  };
+
+  const handleBankCheckout = async () => {
+    if (!email) return;
+    setIsCheckingOut(true);
+    try {
+      const res = await checkoutFiat(email, countryCode, "bank");
+      window.location.href = res.url;
+    } catch (err) {
+      console.error(err);
+      toast({ title: "Bank checkout failed", variant: "destructive" });
       setIsCheckingOut(false);
     }
   };
@@ -362,6 +376,15 @@ export default function Subscribe() {
           >
             <Wallet className="w-5 h-5" /> Crypto Wallet
           </button>
+          <button
+            onClick={() => setPaymentMethod("bank")}
+            className={`flex-1 flex items-center justify-center gap-2 py-5 text-sm font-bold transition-colors ${
+              paymentMethod === "bank" ? "bg-[#EEF2FF] text-[#4040FF] border-b-2 border-[#4040FF]" : "text-[#6B7280] hover:text-[#0F0F1A] hover:bg-black/5"
+            }`}
+            data-testid="bank-tab"
+          >
+            <Building className="w-5 h-5" /> Bank Account
+          </button>
         </div>
 
         <div className="p-8">
@@ -383,6 +406,60 @@ export default function Subscribe() {
               </button>
               <p className="mt-4 text-xs text-[#6B7280] font-medium flex items-center justify-center gap-1">
                 <AlertCircle className="w-3 h-3" /> Secure payment processing via Stripe
+              </p>
+            </div>
+          )}
+
+          {/* BANK TAB */}
+          {paymentMethod === "bank" && (
+            <div className="text-center" data-testid="bank-checkout-section">
+              <div className="mb-6">
+                <h3 className="text-xl font-bold text-[#0F0F1A]">Bank Account</h3>
+                <p className="text-sm text-[#6B7280] font-medium">For parents & students with a verified bank account</p>
+              </div>
+
+              <div className="flex gap-4 mb-8 justify-center">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="accountType"
+                    value="checking"
+                    checked={accountType === "checking"}
+                    onChange={() => setAccountType("checking")}
+                    className="w-4 h-4 text-[#4040FF] border-gray-300 focus:ring-[#4040FF]"
+                    data-testid="account-type-checking"
+                  />
+                  <span className="text-sm font-bold text-[#0F0F1A]">Checking</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="accountType"
+                    value="savings"
+                    checked={accountType === "savings"}
+                    onChange={() => setAccountType("savings")}
+                    className="w-4 h-4 text-[#4040FF] border-gray-300 focus:ring-[#4040FF]"
+                    data-testid="account-type-savings"
+                  />
+                  <span className="text-sm font-bold text-[#0F0F1A]">Savings</span>
+                </label>
+              </div>
+
+              <div className="mb-8">
+                <span className="block text-[#6B7280] font-medium mb-1">Total Due Today</span>
+                <span className="text-5xl font-black text-[#0F0F1A]">${plans?.usd_price}</span>
+              </div>
+              <button
+                onClick={handleBankCheckout}
+                disabled={isCheckingOut || isLoadingPlans}
+                className="w-full bg-[#0F0F1A] hover:bg-[#4040FF] text-white font-bold py-4 rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                data-testid="bank-pay-button"
+              >
+                {isCheckingOut ? <Loader2 className="w-5 h-5 animate-spin" /> : "Verify & Pay"}
+              </button>
+              <p className="mt-4 text-xs text-[#6B7280] font-medium flex items-start text-left bg-gray-50 p-3 rounded-lg gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>Your bank account is verified in real-time via Stripe Financial Connections. Supports ACH (US), SEPA (EU), and other regional bank transfers.</span>
               </p>
             </div>
           )}
