@@ -22,6 +22,9 @@ import ChoosePath from '@/pages/ChoosePath';
 import BragSheet from '@/pages/BragSheet';
 import KnowledgeFeed from '@/pages/KnowledgeFeed';
 import NewsFeed from '@/pages/NewsFeed';
+import Pricing from '@/pages/Pricing';
+import CheckoutSuccess from '@/pages/CheckoutSuccess';
+import CheckoutCancel from '@/pages/CheckoutCancel';
 
 const queryClient = new QueryClient();
 
@@ -43,6 +46,9 @@ function Router() {
       <Route path="/login/student" component={LoginStudent} />
       <Route path="/token" component={Token} />
       <Route path="/abhaya" component={Abhaya} />
+      <Route path="/pricing" component={Pricing} />
+      <Route path="/checkout/success" component={CheckoutSuccess} />
+      <Route path="/checkout/cancel" component={CheckoutCancel} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -58,7 +64,6 @@ function App() {
               <Router />
             </Layout>
           </WouterRouter>
-          {/* Global wallet modal — rendered outside Layout so it always overlays correctly */}
           <WalletModal />
         </WalletProvider>
         <Toaster />

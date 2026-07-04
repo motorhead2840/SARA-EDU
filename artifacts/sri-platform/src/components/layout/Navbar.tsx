@@ -1,16 +1,15 @@
 import { Link, useLocation } from "wouter";
 import { useState } from "react";
-import { ExternalLink, Menu, X } from "lucide-react";
-import { WalletButton } from "@/components/wallet/WalletButton";
+import { ExternalLink, Menu, X, Zap } from "lucide-react";
 
 const links = [
   { href: "/",               label: "Home" },
   { href: "/choose-path",    label: "Learn" },
   { href: "/knowledge-feed", label: "Feed" },
   { href: "/news-feed",      label: "News" },
-  { href: "/token",          label: "Token" },
+  { href: "/pricing",        label: "Pricing" },
   { href: "/abhaya",         label: "Safety" },
-  { href: "/brag-sheet",     label: "Brag Sheet" },
+  { href: "/brag-sheet",     label: "Portfolio" },
 ];
 
 export function Navbar() {
@@ -38,17 +37,22 @@ export function Navbar() {
               {l.label}
             </Link>
           ))}
-          <a href="#" className="px-3 py-1.5 rounded-lg text-sm font-medium text-[#6B7280] hover:text-[#0F0F1A] hover:bg-black/5 flex items-center gap-1 transition-colors">
+          <a href="https://discord.gg" target="_blank" rel="noopener noreferrer"
+            className="px-3 py-1.5 rounded-lg text-sm font-medium text-[#6B7280] hover:text-[#0F0F1A] hover:bg-black/5 flex items-center gap-1 transition-colors">
             Community <ExternalLink className="w-3 h-3" />
           </a>
         </nav>
 
         {/* Right actions */}
         <div className="hidden lg:flex items-center gap-3 ml-auto">
-          <Link href="/login" className="text-sm font-medium text-[#6B7280] hover:text-[#0F0F1A] transition-colors">
+          <Link href="/login"
+            className="text-sm font-medium text-[#6B7280] hover:text-[#0F0F1A] transition-colors px-3 py-1.5">
             Sign In
           </Link>
-          <WalletButton variant="dark" />
+          <Link href="/pricing"
+            className="flex items-center gap-1.5 bg-[#0F0F1A] hover:bg-[#4040FF] text-white text-sm font-bold px-5 py-2 rounded-full transition-colors shadow-sm">
+            <Zap className="w-3.5 h-3.5" /> Get Started
+          </Link>
         </div>
 
         {/* Mobile hamburger */}
@@ -76,8 +80,20 @@ export function Navbar() {
                 {l.label}
               </Link>
             ))}
-            <div className="pt-3 border-t border-[#E5E7EB] mt-2">
-              <WalletButton variant="dark" className="w-full justify-center" />
+            <a href="https://discord.gg" target="_blank" rel="noopener noreferrer"
+              onClick={() => setOpen(false)}
+              className="px-4 py-3 rounded-xl font-medium text-sm text-[#6B7280] hover:text-[#0F0F1A] hover:bg-black/5 flex items-center gap-1 transition-colors">
+              Community <ExternalLink className="w-3 h-3" />
+            </a>
+            <div className="pt-3 border-t border-[#E5E7EB] mt-2 flex gap-2">
+              <Link href="/login" onClick={() => setOpen(false)}
+                className="flex-1 text-center py-3 rounded-xl border-2 border-gray-200 text-sm font-bold text-[#374151] hover:border-gray-400 transition-colors">
+                Sign In
+              </Link>
+              <Link href="/pricing" onClick={() => setOpen(false)}
+                className="flex-1 text-center py-3 rounded-xl bg-[#0F0F1A] text-white text-sm font-bold hover:bg-[#4040FF] transition-colors">
+                Get Started
+              </Link>
             </div>
           </div>
         </div>

@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { WalletButton } from "@/components/wallet/WalletButton";
+import { Zap } from "lucide-react";
 
 export function Footer() {
   return (
@@ -26,7 +26,7 @@ export function Footer() {
                 { href: "/choose-path",    label: "Choose Your Path" },
                 { href: "/knowledge-feed", label: "Knowledge Feed" },
                 { href: "/news-feed",      label: "Your News Feed" },
-                { href: "/brag-sheet",     label: "Brag Sheet" },
+                { href: "/brag-sheet",     label: "Portfolio" },
               ].map(l => (
                 <li key={l.href}>
                   <Link href={l.href} className="text-sm text-[#6B7280] hover:text-[#0F0F1A] transition-colors">
@@ -42,13 +42,14 @@ export function Footer() {
             <h4 className="text-xs font-bold uppercase tracking-widest text-[#9CA3AF] mb-5">Platform</h4>
             <ul className="space-y-3">
               {[
-                { href: "/token",  label: "SARA Token",  color: "text-[#4040FF]" },
-                { href: "/abhaya", label: "AI Safety",   color: "text-[#FF6B35]" },
-                { href: "/pitch",  label: "Our Mission", color: "" },
+                { href: "/pricing",  label: "Pricing",     color: "text-[#4040FF] font-semibold" },
+                { href: "/token",    label: "SARA Token",  color: "" },
+                { href: "/abhaya",   label: "AI Safety",   color: "" },
+                { href: "/pitch",    label: "Our Mission", color: "" },
               ].map(l => (
                 <li key={l.href}>
                   <Link href={l.href}
-                    className={`text-sm font-medium transition-colors hover:brightness-110 ${l.color || "text-[#6B7280] hover:text-[#0F0F1A]"}`}>
+                    className={`text-sm transition-colors hover:text-[#0F0F1A] ${l.color || "text-[#6B7280]"}`}>
                     {l.label}
                   </Link>
                 </li>
@@ -68,13 +69,16 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Community */}
+          {/* CTA */}
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-widest text-[#9CA3AF] mb-5">Community</h4>
+            <h4 className="text-xs font-bold uppercase tracking-widest text-[#9CA3AF] mb-5">Get Started</h4>
             <p className="text-sm text-[#6B7280] leading-relaxed mb-5">
-              Join researchers, students, and lifelong learners building the future of education on-chain.
+              Join researchers, students, and lifelong learners building the future of education.
             </p>
-            <WalletButton variant="dark" />
+            <Link href="/pricing"
+              className="inline-flex items-center gap-2 bg-[#0F0F1A] hover:bg-[#4040FF] text-white text-sm font-bold px-5 py-2.5 rounded-full transition-colors shadow-sm">
+              <Zap className="w-3.5 h-3.5" /> View Plans
+            </Link>
           </div>
         </div>
 
@@ -83,7 +87,7 @@ export function Footer() {
             © 2026 SRI Quantum Technologies. All rights reserved.
           </p>
           <p className="text-xs text-[#9CA3AF]">
-            Built with ❤️ for learners everywhere
+            Payments secured by <span className="font-semibold">Stripe</span> · Built for learners everywhere
           </p>
         </div>
       </div>
