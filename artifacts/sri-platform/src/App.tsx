@@ -25,6 +25,7 @@ import NewsFeed from '@/pages/NewsFeed';
 import Pricing from '@/pages/Pricing';
 import CheckoutSuccess from '@/pages/CheckoutSuccess';
 import CheckoutCancel from '@/pages/CheckoutCancel';
+import Subscribe from '@/pages/Subscribe';
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,7 @@ function Router() {
       <Route path="/token" component={Token} />
       <Route path="/abhaya" component={Abhaya} />
       <Route path="/pricing" component={Pricing} />
+      <Route path="/subscribe" component={Subscribe} />
       <Route path="/checkout/success" component={CheckoutSuccess} />
       <Route path="/checkout/cancel" component={CheckoutCancel} />
       <Route component={NotFound} />

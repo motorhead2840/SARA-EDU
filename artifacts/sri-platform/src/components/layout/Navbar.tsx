@@ -8,6 +8,7 @@ const links = [
   { href: "/knowledge-feed", label: "Feed" },
   { href: "/news-feed",      label: "News" },
   { href: "/pricing",        label: "Pricing" },
+  { href: "/subscribe",      label: "Subscribe" },
   { href: "/abhaya",         label: "Safety" },
   { href: "/brag-sheet",     label: "Portfolio" },
 ];

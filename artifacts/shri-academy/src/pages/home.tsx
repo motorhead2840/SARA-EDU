@@ -177,6 +177,21 @@ export default function Home() {
             </span>
           </div>
 
+          {/* Subscribe Link */}
+          <a 
+            href="/subscribe"
+            onClick={(e) => {
+              e.preventDefault();
+              window.history.pushState(null, '', '/subscribe');
+              window.dispatchEvent(new Event('popstate'));
+            }}
+            className="flex items-center gap-2 px-3 py-1.5 border border-user/50 text-user hover:bg-user/10 transition-colors uppercase cursor-pointer text-glow-user"
+            data-testid="nav-subscribe"
+          >
+            <Zap className="w-3 h-3" />
+            <span>Upgrade</span>
+          </a>
+
           {/* Reset Button */}
           <button 
             onClick={handleReset}

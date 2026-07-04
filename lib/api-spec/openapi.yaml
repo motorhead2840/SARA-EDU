@@ -12,6 +12,8 @@ tags:
     description: Health operations
   - name: shri
     description: Shri Academy AI Mentor operations
+  - name: subscription
+    description: Global GDP-tiered subscription (fiat + crypto)
 paths:
   /healthz:
     get:

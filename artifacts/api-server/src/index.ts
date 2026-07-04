@@ -1,5 +1,7 @@
 import { runMigrations } from "stripe-replit-sync";
 import { getStripeSync } from "./stripeClient.js";
+import { initSubscriptionSchema } from "./lib/subscriptionDb.js";
+import { ensureSubscriptionProducts } from "./lib/stripeProducts.js";
 import app from "./app.js";
 import { logger } from "./lib/logger.js";
 
@@ -29,12 +31,27 @@ async function initStripe() {
     stripeSync.syncBackfill()
       .then(() => logger.info("Stripe data synced"))
       .catch((err) => logger.error({ err }, "Stripe backfill error"));
+
+    // Provision GDP-tier subscription products (idempotent)
+    ensureSubscriptionProducts()
+      .then(() => logger.info("Subscription products ready"))
+      .catch((err) => logger.warn({ err }, "Subscription product setup failed (non-fatal)"));
   } catch (err) {
     logger.error({ err }, "Stripe init failed — payments will be unavailable");
     // Don't crash the server if Stripe fails — other routes still work
   }
 }
 
+async function initSubscription() {
+  try {
+    await initSubscriptionSchema();
+    logger.info("Subscription schema ready");
+  } catch (err) {
+    logger.error({ err }, "Subscription schema init failed");
+  }
+}
+
+await initSubscription();
 await initStripe();
 
 app.listen(port, (err) => {
