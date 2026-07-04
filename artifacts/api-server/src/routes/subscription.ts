@@ -25,6 +25,7 @@ import {
 import { getTierPriceMap } from '../lib/stripeProducts.js';
 import { stripeService } from '../stripeService.js';
 import { storage } from '../storage.js';
+import { kafka } from '../lib/kafkaProducer.js';
 import type { CryptoCurrency } from '../lib/coinGecko.js';
 
 const router = Router();
@@ -116,6 +117,9 @@ router.post('/checkout/fiat', async (req, res) => {
     });
 
     await storage.upsertUser(email);
+
+    // Emit checkout-initiated event (not yet confirmed — Stripe webhook will confirm)
+    void kafka.paymentFiat({ email, amount_usd: TIER_USD[tier], currency: 'usd', status: 'initiated', stripe_session: undefined });
 
     res.json({ url, tier, usd_price: TIER_USD[tier], payment_category: paymentCategory });
   } catch (err) {
@@ -225,6 +229,16 @@ router.get('/crypto/status/:id', async (req, res) => {
         // Race condition or tx collision — return pending so client retries
         return res.json({ status: 'pending', expires_in_ms: Math.max(0, payment.expires_at.getTime() - Date.now()), payment });
       }
+
+      // Emit to Kafka (fire-and-forget — never blocks the response)
+      void kafka.paymentCrypto({
+        email:         payment.email,
+        tx_hash:       txHash,
+        currency:      payment.currency,
+        amount_crypto: payment.crypto_amount,
+        tier:          payment.tier,
+      });
+      void kafka.subscriptionCreated({ email: payment.email, tier: payment.tier, source: 'crypto' });
 
       return res.json({ status: 'confirmed', tx_hash: txHash, payment });
     }

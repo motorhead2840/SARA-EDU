@@ -15,6 +15,7 @@ import { timingSafeEqual } from 'node:crypto';
 import { pool } from '../db.js';
 import { hashPassword, verifyPassword, signMentorToken } from '../lib/mentorAuth.js';
 import { requireMentor } from '../middleware/requireMentor.js';
+import { kafka } from '../lib/kafkaProducer.js';
 
 const router = Router();
 
@@ -222,6 +223,9 @@ router.get('/metrics', requireMentor, async (req, res) => {
     const totalRevenueCrypto = cryptoPayments.reduce(
       (acc, r) => acc + parseFloat(String(r.total_usd)), 0
     );
+
+    // Emit metrics-read audit event (fire-and-forget)
+    void kafka.mentorMetricsRead({ mentor_email: res.locals.mentor!.email });
 
     res.json({
       generated_at: new Date().toISOString(),
