@@ -1,57 +1,60 @@
 ---
 name: AWS Infrastructure
-description: Full AWS stack for SRI Platform — Terraform IaC in infrastructure/terraform/, MWAA DAGs, GitHub Actions CI/CD.
+description: Full AWS stack for SRI Platform — Terraform IaC in infrastructure/terraform/, MWAA DAGs, GitHub Actions CI/CD, ML services, Deep Learning, Ground Station, Outposts.
 ---
 
-## Location
-All IaC lives in `infrastructure/`:
-- `terraform/` — 15 .tf files, one per service
-- `airflow/dags/` — stream_cleaner.py (15-min), scholarship_metrics_snapshot.py (hourly)
-- `airflow/requirements.txt` — upload to S3 before MWAA starts
-- `codebuild/` — buildspec-cyberdemon.yml, buildspec-opentag.yml
-- `scripts/bootstrap.sh` — run ONCE before `terraform init`
-- `lambda/kafka_topics/handler.py` — topic provisioner (invoke once post-apply)
-- `README.md` — full runbook with costs (~$1,873/mo), step-by-step
+## Terraform file inventory (infrastructure/terraform/)
+26 .tf files, one concern per file. Key additions beyond original 15:
+- `deep_learning.tf` — DL AMIs (SSM lookup), GPU training/inference launch templates, Spot Fleet, AWS Batch, EFS
+- `tensorflow.tf` — SageMaker TF Pipeline (5-step: feature-eng→train→eval→condition→register), Monitor, Clarify
+- `ml_services.tf` — Bedrock (IAM only), Comprehend, Transcribe, Polly, Rekognition, Textract, Lex v2, Kendra, Translate
+- `developer_tools.tf` — CodeArtifact (npm+pypi+internal), X-Ray groups/sampling, CloudWatch dashboards (ops/ml/blockchain), alarms, CodeGuru, Cloud9, SSM params
+- `blockchain_extended.tf` — AMB Query IAM, Hyperledger Fabric network, SARA event indexer Lambda (dedicated IAM role)
+- `ground_station.tf` — Mission profile, X-band antenna configs, Kinesis stream, bridge Lambda (dedicated IAM role)
+- `outposts.tf` — Conditional on `var.outpost_arn`; needs both `outpost_local_gateway_id` (lgw-*) AND `outpost_local_gateway_route_table_id` (lgt-*) — these are different IDs
+- `compute.tf` — Image Builder (AL2023 parent image wildcard ARN is correct for Image Builder), ARM64 ASG uses `al2023-ami-kernel-default-arm64` SSM param (NOT the x86 DL AMI), Global Accelerator, Transit Gateway
+- `opensearch_extended.tf` — ISM policies via Lambda provisioner, index aliases, domain policy
+- `sagemaker_extended.tf` — Studio, TF App Image Config, Ground Truth, extra Feature Groups (mentor-activity, blockchain-events), Edge Manager device fleet
 
-## Services (all us-east-1)
-- VPC: 3 AZs, public/private/database subnets, NAT gateways, S3+ECR VPC endpoints
-- RDS PostgreSQL 15 Multi-AZ (db.t3.medium) + read replica for analytics
-- ElastiCache Redis 7 (cache.t3.medium, 3-node cluster)
-- MSK Kafka 3.5.1 (kafka.m5.large × 3), IAM auth, TLS, 12 topics defined
-- OpenSearch 2.11 (r6g.large × 3 + 3 dedicated masters), Fine-Grained Access Control
-- ECS Fargate cluster (api-server + shri-api services, auto-scaling 2-10 tasks)
-- ALB → Route 53 (sriplatform.com) + ACM wildcard cert
-- MWAA 2.8.1 (mw1.small, 2 schedulers, 1-10 workers)
-- SageMaker domain + student-engagement FeatureGroup + model package group
-- AWS Managed Blockchain: Ethereum accessor token (AMB mainnet node)
-- S3 buckets: assets, chromadb-vectors, airflow, kafka-logs, sagemaker, data-lake
-- ECR repos: sri/api-server, sri/shri-academy-api
-- CodeStar Connection (GitHub OAuth — must complete in Console post-apply)
-- CodePipeline × 2: motorhead2840/Cyberdemon → api-server, motorhead2840/OpenTag → shri-api
-- GitHub Actions OIDC deploy role (motorhead2840/*)
+## Lambda functions (infrastructure/lambda/)
+- `kafka_topics/handler.py` — Kafka topic provisioner (invoke once post-MSK)
+- `opensearch_provision/handler.py` — index templates + ISM + aliases (HEAD returns empty body — handled)
+- `sara_event_indexer/handler.py` — polls Etherscan, publishes to Kafka key=`tx_hash` (not `hash`), OpenSearch _id=`tx_hash`
+- `satellite_bridge/handler.py` — Kinesis→Kafka bridge, base64 decode error handled before `raw_bytes` reference
 
-## Bootstrap sequence (run once)
-1. `bash infrastructure/scripts/bootstrap.sh` — creates S3 state bucket, DynamoDB lock, OIDC provider, deploy role
-2. `cd infrastructure/terraform && terraform init && terraform plan && terraform apply`
-3. Console → Developer Tools → Connections → complete GitHub OAuth
-4. Upload Airflow DAGs + requirements.txt to S3 airflow bucket
-5. Invoke lambda `sri-kafka-topic-provisioner` to create 12 Kafka topics
+## IAM role naming conventions
+Each new Lambda has its own dedicated role (not shared with lambda_kafka):
+- `lambda_sara_indexer` — SSM, Secrets Manager, Kafka, OpenSearch, CloudWatch Logs
+- `lambda_satellite_bridge` — Kinesis read, Kafka write, S3 put (satellite/*), SSM, CloudWatch Logs
+- `lambda_opensearch` — VPC, OpenSearch ESHttp*, CloudWatch Logs
 
-## Kafka topics (12 total)
-session/chat/frustration events, subscription.created/cancelled, payment.fiat/crypto, mentor.metrics.snapshots, blockchain.token.events, data.cleaned, opensearch.ingestion, sagemaker.features
+## Airflow DAGs (4 total)
+- `stream_cleaner` — 15 min (existing)
+- `scholarship_metrics_snapshot` — hourly (existing)
+- `ml_enrichment` — 30 min: Comprehend sentiment+keyphrases, Translate, Polly TTS, OpenSearch index
+- `sagemaker_training_trigger` — weekly Monday: checks data sufficiency (≥10 files), submits SageMaker Pipeline, PythonSensor monitors, SNS notify on done
 
-## Kafka producer (api-server)
-`src/lib/kafkaProducer.ts` — singleton, lazy connect, graceful no-op when KAFKA_BOOTSTRAP unset (dev safe).
-`kafka.*` helpers: subscriptionCreated, subscriptionCancelled, paymentFiat, paymentCrypto, blockchainTokenEvent, mentorMetricsRead.
-Already wired into subscription.ts (fiat checkout + crypto confirm) and mentor.ts (metrics read).
+## Bootstrap sequence
+1. `bash infrastructure/scripts/bootstrap.sh` (once)
+2. `cd infrastructure/terraform && terraform init && terraform apply`
+3. Console → Developer Tools → Connections → complete GitHub OAuth (CodeStar)
+4. Upload Airflow DAGs + requirements.txt to S3 MWAA bucket
+5. Invoke `sri-kafka-topic-provisioner` Lambda once
+6. Invoke `sri-opensearch-provisioner` Lambda once  ← new step
+7. Add `AWS_DEPLOY_ROLE_ARN` to GitHub secrets on both repos
 
-**Why:** Events are fire-and-forget (void) — Kafka failures never block HTTP responses.
+## Cost estimate (approximate)
+~$3,450–3,850/mo (without Outposts rack fee, without Ground Station contacts)
+Key additions: Kendra DEVELOPER_EDITION ~$810/mo, Bedrock ~$50–300/mo usage-based, Fabric ~$250/mo
 
-## GitHub Actions
-`.github/workflows/deploy-cyberdemon.yml` and `deploy-opentag.yml` — OIDC auth, ECR push, ECS rolling deploy with health check. Secret needed in both repos: `AWS_DEPLOY_ROLE_ARN`.
+## Outposts — two separate variables required
+`outpost_local_gateway_id` = `lgw-*` (used as `gateway_id` on route)
+`outpost_local_gateway_route_table_id` = `lgt-*` (used for VPC association)
+These are different and commonly confused.
 
-## MWAA Airflow connections to set (in UI post-deploy)
-- `postgres_replica` — points to RDS replica endpoint
+**Why:** AWS Terraform provider rejects LGW IDs in `local_gateway_route_table_id`; must be the route table ID.
 
-## Terraform backend
-S3 bucket: `sri-platform-tfstate`, DynamoDB: `sri-platform-tflock`, region: us-east-1
+## Kafka producer wiring (api-server)
+- `lib/kafkaProducer.ts` — singleton, lazy connect, graceful no-op when `KAFKA_BOOTSTRAP` unset
+- Wired into `routes/subscription.ts` (fiat checkout + crypto confirm) and `routes/mentor.ts` (metrics read)
+- All emits are fire-and-forget (`void kafka.*()`) — never blocks HTTP response

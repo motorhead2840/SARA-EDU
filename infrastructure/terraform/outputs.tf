@@ -32,3 +32,58 @@ output "s3_chromadb_bucket"  { value = aws_s3_bucket.chromadb.id }
 output "s3_data_lake_bucket" { value = aws_s3_bucket.data_lake.id }
 output "s3_airflow_bucket"   { value = aws_s3_bucket.airflow.id }
 output "s3_sagemaker_bucket" { value = aws_s3_bucket.sagemaker.id }
+
+# ─── Deep Learning / Compute ────────────────────────────────────────────────
+
+output "ecr_tensorflow_training_url"  { value = aws_ecr_repository.tensorflow_training.repository_url }
+output "batch_gpu_job_queue"          { value = aws_batch_job_queue.gpu_training.name }
+output "batch_tensorflow_job_def"     { value = aws_batch_job_definition.tensorflow_train.name }
+output "gpu_training_asg_name"        { value = aws_autoscaling_group.gpu_training.name }
+output "efs_training_data_id"         { value = aws_efs_file_system.training_data.id }
+output "global_accelerator_ips"       { value = aws_globalaccelerator_accelerator.main.ip_sets[*].ip_addresses }
+output "transit_gateway_id"           { value = aws_ec2_transit_gateway.main.id }
+output "image_builder_pipeline_arn"   { value = aws_imagebuilder_image_pipeline.platform.arn }
+
+# ─── ML Services ─────────────────────────────────────────────────────────────
+
+output "bedrock_model_ids_ssm"     { value = aws_ssm_parameter.bedrock_model_ids.name }
+output "polly_config_ssm"          { value = aws_ssm_parameter.polly_config.name }
+output "kendra_index_id"           { value = aws_kendra_index.course_materials.id }
+output "lex_bot_id"                { value = aws_lexv2models_bot.shri_intake.id }
+
+# ─── Developer Tools ─────────────────────────────────────────────────────────
+
+output "codeartifact_domain"          { value = aws_codeartifact_domain.main.domain }
+output "codeartifact_npm_endpoint"    { value = aws_codeartifact_repository.npm.repository_endpoint }
+output "codeartifact_pypi_endpoint"   { value = aws_codeartifact_repository.pypi.repository_endpoint }
+output "xray_group_arn"               { value = aws_xray_group.main.arn }
+output "cloudwatch_ops_dashboard"     { value = aws_cloudwatch_dashboard.operations.dashboard_name }
+output "cloudwatch_ml_dashboard"      { value = aws_cloudwatch_dashboard.ml.dashboard_name }
+output "cloudwatch_blockchain_dashboard" { value = aws_cloudwatch_dashboard.blockchain.dashboard_name }
+output "alerts_sns_topic_arn"         { value = aws_sns_topic.alerts.arn }
+output "cloud9_environment_id"        { value = aws_cloud9_environment_ec2.dev.id }
+
+# ─── SageMaker Extended ───────────────────────────────────────────────────────
+
+output "sagemaker_pipeline_arn"          { value = aws_sagemaker_pipeline.shri_tutor_tf.arn }
+output "sagemaker_feature_group_mentor"  { value = aws_sagemaker_feature_group.mentor_activity.feature_group_name }
+output "sagemaker_feature_group_blockchain" { value = aws_sagemaker_feature_group.blockchain_events.feature_group_name }
+output "sagemaker_edge_fleet_name"       { value = aws_sagemaker_device_fleet.edge_tutors.device_fleet_name }
+
+# ─── Blockchain Extended ──────────────────────────────────────────────────────
+
+output "fabric_network_id"         { value = aws_managed_blockchain_network.fabric.id }
+output "fabric_member_id"          { value = aws_managed_blockchain_network.fabric.member_id }
+output "sara_event_indexer_arn"    { value = aws_lambda_function.sara_event_indexer.arn }
+output "fabric_admin_secret_arn"   { value = aws_secretsmanager_secret.fabric_admin.arn }
+
+# ─── Ground Station ───────────────────────────────────────────────────────────
+
+output "satellite_kinesis_stream_arn"  { value = aws_kinesis_stream.satellite_data.arn }
+output "ground_station_mission_arn"    { value = aws_groundstation_mission_profile.main.arn }
+output "satellite_bridge_lambda_arn"   { value = aws_lambda_function.satellite_kinesis_bridge.arn }
+
+# ─── Outposts (populated after Outpost delivery) ─────────────────────────────
+
+output "outpost_subnet_id"    { value = length(aws_subnet.outpost) > 0 ? aws_subnet.outpost[0].id : "not-provisioned" }
+output "outpost_rds_endpoint" { value = length(aws_db_instance.outpost) > 0 ? aws_db_instance.outpost[0].endpoint : "not-provisioned" }
