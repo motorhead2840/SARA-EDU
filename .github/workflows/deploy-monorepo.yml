@@ -5,8 +5,8 @@ name: Shri Academy Monorepo — Build, Push & Deploy
 on:
   push:
     tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
-      - 'v[0-9]+.[0-9]+.[0-9]+-*'    # pre-release tags: v1.2.3-rc.1
+      - 'v*.*.*'          # e.g. v1.2.3
+      - 'v*.*.*-*'        # pre-release tags: v1.2.3-rc.1
   workflow_dispatch:
     inputs:
       service:
@@ -34,9 +34,10 @@ jobs:
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.service == 'both' || inputs.service == 'api-server' }}
 
     env:
-      ECR_REPO:       sri/api-server
-      ECS_SERVICE:    api-server
-      CONTAINER_NAME: api-server
+      ECR_REPO:        sri/api-server
+      ECS_SERVICE:     api-server
+      TASK_DEF_FAMILY: sri-production-api-server
+      CONTAINER_NAME:  api-server
 
     steps:
       - name: Checkout
@@ -82,7 +83,7 @@ jobs:
       - name: Download current ECS task definition
         run: |
           aws ecs describe-task-definition \
-            --task-definition ${{ env.ECS_SERVICE }} \
+            --task-definition ${{ env.TASK_DEF_FAMILY }} \
             --query taskDefinition \
             > task-def.json
 
@@ -120,9 +121,10 @@ jobs:
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.service == 'both' || inputs.service == 'shri-api' }}
 
     env:
-      ECR_REPO:       sri/shri-academy-api
-      ECS_SERVICE:    shri-api
-      CONTAINER_NAME: shri-api
+      ECR_REPO:        sri/shri-academy-api
+      ECS_SERVICE:     shri-api
+      TASK_DEF_FAMILY: sri-production-shri-api
+      CONTAINER_NAME:  shri-api
 
     steps:
       - name: Checkout
@@ -167,7 +169,7 @@ jobs:
       - name: Download current ECS task definition
         run: |
           aws ecs describe-task-definition \
-            --task-definition ${{ env.ECS_SERVICE }} \
+            --task-definition ${{ env.TASK_DEF_FAMILY }} \
             --query taskDefinition \
             > task-def.json
 

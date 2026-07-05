@@ -137,6 +137,12 @@ variable "github_org" {
   default     = "motorhead2840"
 }
 
+variable "github_monorepo" {
+  description = "GitHub repository name for the Shri Academy monorepo (used for OIDC trust policy)"
+  type        = string
+  default     = "shri-academy"
+}
+
 # ─── NVIDIA NIM ───────────────────────────────────────────────────────────────
 
 variable "nvidia_api_key" {

@@ -124,6 +124,12 @@ output "sagemaker_edge_fleet_name"          { value = aws_sagemaker_device_fleet
 # ─── Blockchain Extended ──────────────────────────────────────────────────────
 
 output "fabric_network_id"       { value = aws_managed_blockchain_network.fabric.id }
+
+# ─── GitHub Actions OIDC ──────────────────────────────────────────────────────
+output "github_actions_deploy_role_arn" {
+  description = "Copy this value → GitHub repo → Settings → Environments → production → Secrets → AWS_DEPLOY_ROLE_ARN"
+  value       = aws_iam_role.github_actions_deploy.arn
+}
 output "fabric_member_id"        { value = aws_managed_blockchain_network.fabric.member_id }
 output "sara_event_indexer_arn"  { value = aws_lambda_function.sara_event_indexer.arn }
 output "fabric_admin_secret_arn" { value = aws_secretsmanager_secret.fabric_admin.arn }

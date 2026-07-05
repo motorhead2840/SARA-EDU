@@ -1,3 +1,136 @@
+# ─── GitHub Actions OIDC — keyless auth for deploy-monorepo.yml ──────────────
+#
+# Allows GitHub Actions to assume a deploy role using OIDC (no static keys).
+# The workflow file sets `permissions: id-token: write` and uses
+# `aws-actions/configure-aws-credentials` with `role-to-assume`.
+#
+# After `terraform apply`, copy the output `github_actions_deploy_role_arn`
+# and add it as a GitHub secret named AWS_DEPLOY_ROLE_ARN in the monorepo's
+# "production" environment (Settings → Environments → production → Secrets).
+
+resource "aws_iam_openid_connect_provider" "github_actions" {
+  url = "https://token.actions.githubusercontent.com"
+
+  # GitHub's OIDC thumbprint (stable — rotating announced on GitHub blog)
+  thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"]
+
+  client_id_list = ["sts.amazonaws.com"]
+}
+
+resource "aws_iam_role" "github_actions_deploy" {
+  name        = "${var.project}-${var.environment}-github-actions-deploy"
+  description = "Assumed by GitHub Actions (OIDC) to push ECR images and update ECS services"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "GitHubOIDC"
+        Effect = "Allow"
+        Principal = {
+          Federated = aws_iam_openid_connect_provider.github_actions.arn
+        }
+        Action = "sts:AssumeRoleWithWebIdentity"
+        Condition = {
+          StringEquals = {
+            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+          }
+          StringLike = {
+            # Allow tag pushes and workflow_dispatch from the production environment.
+            # Subject format for environment-scoped runs:
+            #   repo:<org>/<repo>:environment:production
+            # Subject format for tag-triggered runs (no environment gate yet):
+            #   repo:<org>/<repo>:ref:refs/tags/v*
+            "token.actions.githubusercontent.com:sub" = [
+              "repo:${var.github_org}/${var.github_monorepo}:environment:production",
+              "repo:${var.github_org}/${var.github_monorepo}:ref:refs/tags/v*",
+            ]
+          }
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "github_actions_deploy" {
+  name = "deploy-permissions"
+  role = aws_iam_role.github_actions_deploy.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "ECRAuth"
+        Effect = "Allow"
+        Action = ["ecr:GetAuthorizationToken"]
+        Resource = "*"
+      },
+      {
+        Sid    = "ECRPush"
+        Effect = "Allow"
+        Action = [
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:InitiateLayerUpload",
+          "ecr:UploadLayerPart",
+          "ecr:CompleteLayerUpload",
+          "ecr:PutImage",
+        ]
+        Resource = [
+          aws_ecr_repository.api_server.arn,
+          aws_ecr_repository.shri_api.arn,
+        ]
+      },
+      {
+        # Describe actions have no resource-level restrictions in IAM
+        Sid    = "ECSDescribe"
+        Effect = "Allow"
+        Action = [
+          "ecs:DescribeTaskDefinition",
+          "ecs:DescribeServices",
+          "ecs:DescribeClusters",
+        ]
+        Resource = "*"
+      },
+      {
+        # Task definition registration is scoped to this project's families only
+        Sid    = "ECSRegisterTaskDef"
+        Effect = "Allow"
+        Action = [
+          "ecs:RegisterTaskDefinition",
+          "ecs:DeregisterTaskDefinition",
+        ]
+        Resource = "arn:aws:ecs:${var.aws_region}:*:task-definition/${var.project}-${var.environment}-*"
+      },
+      {
+        # UpdateService scoped to the two known services inside the production cluster
+        Sid    = "ECSUpdateService"
+        Effect = "Allow"
+        Action = ["ecs:UpdateService"]
+        Resource = [
+          "arn:aws:ecs:${var.aws_region}:*:service/${var.project}-${var.environment}/api-server",
+          "arn:aws:ecs:${var.aws_region}:*:service/${var.project}-${var.environment}/shri-api",
+        ]
+      },
+      {
+        Sid      = "PassECSRoles"
+        Effect   = "Allow"
+        Action   = ["iam:PassRole"]
+        Resource = [
+          aws_iam_role.ecs_execution.arn,
+          aws_iam_role.ecs_task.arn,
+        ]
+        Condition = {
+          StringEquals = {
+            "iam:PassedToService" = "ecs-tasks.amazonaws.com"
+          }
+        }
+      },
+    ]
+  })
+}
+
 # ─── GitHub → AWS CodeStar Connection ────────────────────────────────────────
 #
 # After `terraform apply`, open AWS Console → Developer Tools → Connections
