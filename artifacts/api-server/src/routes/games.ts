@@ -4,6 +4,7 @@
  */
 import { Router } from "express";
 import { logger } from "../lib/logger.js";
+import { kafka } from "../lib/kafkaProducer.js";
 
 const router = Router();
 
@@ -153,6 +154,8 @@ router.post("/generate", async (req, res) => {
 
     const raw = await callNemotron(systemPrompt, userPrompt);
     const gameData = parseJsonContent(raw);
+
+    void kafka.studentGamePlayed({ game_type: type, topic: sanitizedTopic, completed: true });
 
     res.json({ type, schema: responseSchema, data: gameData });
   } catch (err) {

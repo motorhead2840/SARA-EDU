@@ -136,3 +136,12 @@ variable "github_org" {
   type        = string
   default     = "motorhead2840"
 }
+
+# ─── NVIDIA NIM ───────────────────────────────────────────────────────────────
+
+variable "nvidia_api_key" {
+  description = "NVIDIA NIM API key — used by Nemotron games + mythology routes in api-server"
+  type        = string
+  sensitive   = true
+  default     = ""
+}

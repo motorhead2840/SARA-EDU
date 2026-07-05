@@ -55,3 +55,32 @@ All three new backend routers registered in `artifacts/api-server/src/routes/ind
 - `/api/mythology` → mythology.ts
 
 Forum schema init: `initForumSchema()` called in `artifacts/api-server/src/index.ts` as `void initForum()`.
+
+## Kafka Events (student activity topics)
+Three new Confluent topics declared in `infrastructure/terraform/confluent.tf`:
+- `student.game.played` — emitted in games.ts after Nemotron response, key=game_type
+- `student.forum.posted` — emitted in forum.ts after thread/reply create, key=thread_id
+- `student.mythology.viewed` — emitted in mythology.ts on episode fetch + narrative gen, key=episode_id
+
+Typed helpers added to `artifacts/api-server/src/lib/kafkaProducer.ts` (kafka.studentGamePlayed, kafka.studentForumPosted, kafka.studentMythologyViewed). All fire-and-forget (`void kafka.*()`).
+
+## AWS Deployment
+- `NVIDIA_API_KEY` stored in Secrets Manager at `${project}/${env}/nvidia_api_key` (managed by Terraform `ecs.tf`)
+- Injected into `api-server` ECS task definition via `secrets` block
+- Terraform secret version has `lifecycle { ignore_changes = [secret_string] }` — update value via console/CLI, not Terraform
+- `variable "nvidia_api_key"` added to `variables.tf` (sensitive, default "")
+
+## Dockerfiles
+- `artifacts/api-server/Dockerfile` — pnpm multi-stage build (builder → `pnpm deploy --prod` → slim runtime); build context = repo root
+- `shri-academy-api/Dockerfile` — Python 3.11-slim; pre-warms ChromaDB ONNX model during build to eliminate cold-start S3 download
+
+## CI/CD
+`.github/workflows/deploy-monorepo.yml` — triggered by `v*.*.*` semver tags (also `workflow_dispatch` with `service` input).
+- Two parallel jobs: `deploy-api-server` and `deploy-shri-api`
+- Both use OIDC (`AWS_DEPLOY_ROLE_ARN` secret in GitHub → production environment)
+- Image tags: `<registry>/<repo>:<git-tag>-<sha7>` + `:latest`
+- api-server build context: repo root (`-f artifacts/api-server/Dockerfile .`)
+- shri-api build context: `shri-academy-api/` directory
+
+**To deploy:** `git tag v1.0.0 && git push --tags`
+**To deploy one service:** use `workflow_dispatch` with `service=api-server` or `service=shri-api`

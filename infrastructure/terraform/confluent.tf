@@ -214,12 +214,16 @@ locals {
     { name = "data.cleaned",             partitions = 6, retention_ms = "604800000"   },
     { name = "opensearch.ingestion",     partitions = 6, retention_ms = "259200000"   },
     { name = "sagemaker.features",       partitions = 6, retention_ms = "604800000"   },
-    # ── Research Navigator topics (new) ───────────────────────────────────────
+    # ── Research Navigator topics ──────────────────────────────────────────────
     { name = "academic.course.viewed",   partitions = 6, retention_ms = "604800000"   },
     { name = "academic.search.query",    partitions = 3, retention_ms = "259200000"   },
     { name = "academic.plan.generated",  partitions = 3, retention_ms = "2592000000"  },
     { name = "academic.profile.saved",   partitions = 3, retention_ms = "7776000000"  },
     { name = "academic.opensearch.sync", partitions = 6, retention_ms = "259200000"   },
+    # ── Shri Academy student activity topics (new) ────────────────────────────
+    { name = "student.game.played",      partitions = 3, retention_ms = "604800000"   },
+    { name = "student.forum.posted",     partitions = 3, retention_ms = "2592000000"  },
+    { name = "student.mythology.viewed", partitions = 3, retention_ms = "604800000"   },
   ]
 }
 

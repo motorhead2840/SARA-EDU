@@ -3,6 +3,7 @@
  */
 import { Router } from "express";
 import { logger } from "../lib/logger.js";
+import { kafka } from "../lib/kafkaProducer.js";
 import {
   listCategories, listThreads, getThread,
   createThread, listPosts, createPost,
@@ -69,6 +70,7 @@ router.post("/threads", async (req, res) => {
       author_name: (author_name ?? "Anonymous").slice(0, 60),
       tags: (tags ?? []).slice(0, 5),
     });
+    void kafka.studentForumPosted({ thread_id: thread.id, category_id, post_type: 'thread', author_name });
     res.status(201).json(thread);
   } catch (err) {
     logger.error({ err }, "forum.createThread");
@@ -88,6 +90,7 @@ router.post("/threads/:id/reply", async (req, res) => {
       body: body.trim().slice(0, 8000),
       author_name: (author_name ?? "Anonymous").slice(0, 60),
     });
+    void kafka.studentForumPosted({ thread_id: threadId, category_id: 0, post_type: 'reply', author_name });
     res.status(201).json(post);
   } catch (err) {
     logger.error({ err }, "forum.createPost");

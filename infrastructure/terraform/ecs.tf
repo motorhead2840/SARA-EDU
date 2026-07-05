@@ -183,6 +183,8 @@ resource "aws_ecs_task_definition" "api_server" {
         { name = "KAFKA_BOOTSTRAP",   valueFrom = "${aws_secretsmanager_secret.confluent_app.arn}:bootstrap::" },
         { name = "KAFKA_API_KEY",     valueFrom = "${aws_secretsmanager_secret.confluent_app.arn}:api_key::" },
         { name = "KAFKA_API_SECRET",  valueFrom = "${aws_secretsmanager_secret.confluent_app.arn}:api_secret::" },
+        # NVIDIA NIM — Nemotron games + mythology
+        { name = "NVIDIA_API_KEY",    valueFrom = "${aws_secretsmanager_secret.nvidia_api_key.arn}" },
       ]
       logConfiguration = {
         logDriver = "awslogs"
@@ -326,6 +328,27 @@ resource "aws_appautoscaling_policy" "api_server_cpu" {
     }
     scale_in_cooldown  = 300
     scale_out_cooldown = 60
+  }
+}
+
+# ─── NVIDIA NIM API Key ───────────────────────────────────────────────────────
+# Set var.nvidia_api_key in terraform.tfvars (sensitive) or via TF_VAR_nvidia_api_key.
+# The secret is created empty when var.nvidia_api_key is "" — update it manually in
+# the AWS console or with: aws secretsmanager put-secret-value --secret-id <arn> --secret-string '<key>'
+
+resource "aws_secretsmanager_secret" "nvidia_api_key" {
+  name                    = "${var.project}/${var.environment}/nvidia_api_key"
+  description             = "NVIDIA NIM API key for Nemotron-powered games and mythology routes"
+  recovery_window_in_days = 7
+}
+
+resource "aws_secretsmanager_secret_version" "nvidia_api_key" {
+  secret_id     = aws_secretsmanager_secret.nvidia_api_key.id
+  secret_string = var.nvidia_api_key != "" ? var.nvidia_api_key : "PLACEHOLDER_SET_ME"
+
+  # Prevent Terraform from overwriting a key that was set manually after initial deploy
+  lifecycle {
+    ignore_changes = [secret_string]
   }
 }
 

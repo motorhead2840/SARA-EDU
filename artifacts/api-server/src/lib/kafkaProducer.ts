@@ -21,6 +21,9 @@
  *   academic.search.query      — search bar queries
  *   academic.plan.generated    — AI mentor plan generations
  *   academic.profile.saved     — research profile saves
+ *   student.game.played        — Nemotron game session completed
+ *   student.forum.posted       — forum thread or reply created
+ *   student.mythology.viewed   — mythology episode opened / narrative generated
  */
 
 import { logger as baseLogger } from './logger.js';
@@ -122,4 +125,14 @@ export const kafka = {
 
   academicProfileSaved: (data: { user_email: string; discipline_id?: string; topic_ids: string[] }) =>
     emitEvent({ topic: 'academic.profile.saved', key: data.user_email, value: { ...data, timestamp: Date.now() } }),
+
+  // ── Student activity (games, forum, mythology) ───────────────────────────────
+  studentGamePlayed: (data: { game_type: string; topic: string; session_id?: string; completed: boolean }) =>
+    emitEvent({ topic: 'student.game.played', key: data.game_type, value: { ...data, timestamp: Date.now() } }),
+
+  studentForumPosted: (data: { thread_id: number; category_id: number; post_type: 'thread' | 'reply'; author_name?: string }) =>
+    emitEvent({ topic: 'student.forum.posted', key: String(data.thread_id), value: { ...data, timestamp: Date.now() } }),
+
+  studentMythologyViewed: (data: { episode_id: string; tradition: string; narrative_requested: boolean }) =>
+    emitEvent({ topic: 'student.mythology.viewed', key: data.episode_id, value: { ...data, timestamp: Date.now() } }),
 };

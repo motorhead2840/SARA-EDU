@@ -5,6 +5,7 @@
  */
 import { Router } from "express";
 import { logger } from "../lib/logger.js";
+import { kafka } from "../lib/kafkaProducer.js";
 
 const router = Router();
 const NVIDIA_BASE = "https://integrate.api.nvidia.com/v1";
@@ -73,10 +74,15 @@ Structure your response as:
 
 // GET /api/mythology/episodes
 router.get("/episodes", (req, res) => {
-  const { tradition } = req.query as { tradition?: string };
+  const { tradition, episode_id } = req.query as { tradition?: string; episode_id?: string };
   const episodes = tradition
     ? EPISODE_CATALOG.filter((e) => e.tradition.toLowerCase() === tradition.toLowerCase())
     : EPISODE_CATALOG;
+  // Emit view event when a specific episode is opened
+  if (episode_id) {
+    const ep = EPISODE_CATALOG.find((e) => e.id === episode_id);
+    if (ep) void kafka.studentMythologyViewed({ episode_id: ep.id, tradition: ep.tradition, narrative_requested: false });
+  }
   res.json(episodes);
 });
 
@@ -97,6 +103,7 @@ router.post("/narrative", async (req, res) => {
     if (!episode) { res.status(404).json({ error: "Episode not found" }); return; }
 
     const narrative = await generateNarrative(episode.tradition, episode.title);
+    void kafka.studentMythologyViewed({ episode_id: episode.id, tradition: episode.tradition, narrative_requested: true });
     res.json({ episode, narrative });
   } catch (err) {
     logger.error({ err }, "mythology.narrative");
