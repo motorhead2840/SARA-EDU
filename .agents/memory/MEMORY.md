@@ -9,6 +9,7 @@
 - [Abhaya Gate Architecture](abhaya-gate.md) — V3.0 thermodynamic phase-cancellation middleware: equation params, numerical edge cases, API routes.
 - [Stripe Integration Quirks](stripe-integration-quirks.md) — connector field is `settings.secret` not `secret_key`; stripe-replit-sync must be esbuild-external; runMigrations has no schema param.
 - [Shri Academy Architecture](shri-academy-arch.md) — Python FastAPI proxied via api-server; LangChain 1.x imports; ChromaDB ONNX; TS2308 Orval response schema naming rule.
+- [Shri Academy Student Features](shri-academy-student-features.md) — Drawing pad, Nemotron games, Cosmos Lore mythology channel, student forum; NVIDIA_API_KEY required; forumDb uses pool from ../db.js.
 - [Confluent Cloud + Research Navigator AWS](confluent-aws-migration.md) — MSK→Confluent SASL/PLAIN migration; Bedrock primary+OpenAI fallback; academic OpenSearch indices; 17 Confluent topics; kafka_utils.py pattern.
 - [Global Subscription Architecture](subscription-arch.md) — GDP tiers, Stripe card+bank, ETH/USDC/BTC/SARA crypto; tx replay prevention; atomic confirm+activate.
 - [Mentor Auth & Portal](mentor-auth.md) — school_mentor role, PBKDF2+HMAC auth, timingSafeEqual everywhere, no upsert on register, /mentor dashboard in Shri Academy.

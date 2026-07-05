@@ -120,9 +120,15 @@ function EpisodeViewer({ ep, onClose }: { ep: Episode; onClose: () => void }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ episode_id: ep.id }),
     })
-      .then((r) => r.ok ? r.json() : r.json().then((b) => Promise.reject((b as { error?: string }).error ?? `Error ${r.status}`)))
-      .then((d: NarrativeResponse) => { if (!cancelled) setNarrative(d.narrative); })
-      .catch((e) => { if (!cancelled) setError(typeof e === 'string' ? e : 'Narrative generation failed'); })
+      .then(async (r) => {
+        if (r.ok) return r.json() as Promise<NarrativeResponse>;
+        // Try to extract error message; fall back gracefully if body is not JSON
+        let msg = `Error ${r.status}`;
+        try { const b = await r.json() as { error?: string }; msg = b.error ?? msg; } catch { /* non-JSON body */ }
+        throw new Error(msg);
+      })
+      .then((d) => { if (!cancelled) setNarrative(d.narrative); })
+      .catch((e: unknown) => { if (!cancelled) setError(e instanceof Error ? e.message : 'Narrative generation failed'); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [ep.id]);

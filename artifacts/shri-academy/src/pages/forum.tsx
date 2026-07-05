@@ -463,7 +463,11 @@ export default function ForumPage() {
           </button>
         )}
         {view === 'threads' && (
-          <button onClick={() => setShowNewThread(true)}
+          <button onClick={() => {
+            // If no category is selected (Browse All), pick the first category for the new thread
+            if (!activeCategory && categories.length > 0) setActiveCategory(categories[0]);
+            setShowNewThread(true);
+          }}
             className="flex items-center gap-1 text-xs uppercase tracking-widest text-system border border-system hover:bg-system/10 px-3 py-1.5 transition-all">
             <Plus className="w-3 h-3" /> New Thread
           </button>

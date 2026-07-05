@@ -124,7 +124,13 @@ async function callNemotron(system: string, user: string): Promise<string> {
 
 function parseJsonContent(raw: string): unknown {
   // Strip markdown code fences if present
-  const stripped = raw.replace(/^```(?:json)?\n?/m, "").replace(/\n?```$/m, "").trim();
+  let stripped = raw.replace(/^```(?:json)?\n?/m, "").replace(/\n?```$/m, "").trim();
+  // Find the first { or [ and trim any preamble text the model may have added
+  const jsonStart = stripped.search(/[{[]/);
+  if (jsonStart > 0) stripped = stripped.slice(jsonStart);
+  // Find the last } or ] and trim trailing text
+  const jsonEnd = Math.max(stripped.lastIndexOf("}"), stripped.lastIndexOf("]"));
+  if (jsonEnd >= 0 && jsonEnd < stripped.length - 1) stripped = stripped.slice(0, jsonEnd + 1);
   return JSON.parse(stripped);
 }
 

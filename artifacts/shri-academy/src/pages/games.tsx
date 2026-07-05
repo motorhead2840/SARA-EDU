@@ -179,8 +179,9 @@ function MythMatchGame({ data, onNext }: { data: MythData; onNext: () => void })
   const [matched, setMatched] = useState<Record<string, string>>({});
   const [wrong, setWrong] = useState<string | null>(null);
 
-  const shuffledTerms = [...data.pairs].sort(() => Math.random() - 0.5);
-  const shuffledMatches = [...data.pairs].sort(() => Math.random() - 0.5);
+  // Shuffle once on mount — NOT on every render
+  const [shuffledTerms] = useState(() => [...data.pairs].sort(() => Math.random() - 0.5));
+  const [shuffledMatches] = useState(() => [...data.pairs].sort(() => Math.random() - 0.5));
   const done = Object.keys(matched).length === data.pairs.length;
 
   const handleMatchClick = (matchId: string) => {

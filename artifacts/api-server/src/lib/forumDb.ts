@@ -2,12 +2,12 @@
  * Forum DB — schema, seed, and query helpers
  * Tables: forum_categories, forum_threads, forum_posts
  */
-import { getDb } from "./db.js";
+import { pool } from "../db.js";
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
 export async function initForumSchema(): Promise<void> {
-  const db = getDb();
+  const db = pool;
   await db.query(`
     CREATE TABLE IF NOT EXISTS forum_categories (
       id          SERIAL PRIMARY KEY,
@@ -53,7 +53,7 @@ export async function initForumSchema(): Promise<void> {
 }
 
 async function seedCategories(): Promise<void> {
-  const db = getDb();
+  const db = pool;
   const { rows } = await db.query("SELECT COUNT(*) FROM forum_categories");
   if (parseInt(rows[0].count) > 0) return;
 
@@ -77,7 +77,7 @@ async function seedCategories(): Promise<void> {
 // ─── Query helpers ─────────────────────────────────────────────────────────────
 
 export async function listCategories() {
-  const db = getDb();
+  const db = pool;
   const { rows } = await db.query(`
     SELECT c.*, COUNT(t.id)::int AS thread_count
     FROM forum_categories c
@@ -88,7 +88,7 @@ export async function listCategories() {
 }
 
 export async function listThreads(categorySlug?: string, limit = 30, offset = 0) {
-  const db = getDb();
+  const db = pool;
   if (categorySlug) {
     const { rows } = await db.query(`
       SELECT t.*, c.name AS category_name, c.slug AS category_slug, c.color AS category_color
@@ -109,7 +109,7 @@ export async function listThreads(categorySlug?: string, limit = 30, offset = 0)
 }
 
 export async function getThread(id: number) {
-  const db = getDb();
+  const db = pool;
   await db.query("UPDATE forum_threads SET view_count = view_count + 1 WHERE id = $1", [id]);
   const { rows } = await db.query(`
     SELECT t.*, c.name AS category_name, c.slug AS category_slug, c.color AS category_color
@@ -126,7 +126,7 @@ export async function createThread(data: {
   author_name: string;
   tags?: string[];
 }) {
-  const db = getDb();
+  const db = pool;
   const { rows } = await db.query(`
     INSERT INTO forum_threads (category_id, title, body, author_name, tags)
     VALUES ($1, $2, $3, $4, $5)
@@ -136,7 +136,7 @@ export async function createThread(data: {
 }
 
 export async function listPosts(threadId: number) {
-  const db = getDb();
+  const db = pool;
   const { rows } = await db.query(`
     SELECT * FROM forum_posts WHERE thread_id = $1 ORDER BY created_at ASC
   `, [threadId]);
@@ -148,7 +148,7 @@ export async function createPost(data: {
   body: string;
   author_name: string;
 }) {
-  const db = getDb();
+  const db = pool;
   const { rows } = await db.query(`
     INSERT INTO forum_posts (thread_id, body, author_name) VALUES ($1, $2, $3) RETURNING *
   `, [data.thread_id, data.body, data.author_name]);
@@ -160,7 +160,7 @@ export async function createPost(data: {
 }
 
 export async function upvoteThread(id: number) {
-  const db = getDb();
+  const db = pool;
   const { rows } = await db.query(
     "UPDATE forum_threads SET upvotes = upvotes + 1 WHERE id = $1 RETURNING upvotes",
     [id]
@@ -169,7 +169,7 @@ export async function upvoteThread(id: number) {
 }
 
 export async function upvotePost(id: number) {
-  const db = getDb();
+  const db = pool;
   const { rows } = await db.query(
     "UPDATE forum_posts SET upvotes = upvotes + 1 WHERE id = $1 RETURNING upvotes",
     [id]

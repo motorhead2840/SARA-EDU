@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useShriChat, useGetShriState, useResetShriSession, getGetShriStateQueryKey } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Terminal, Send, Activity, Zap, ShieldAlert, Cpu, RefreshCw, Award } from 'lucide-react';
+import { Terminal, Send, Activity, Zap, ShieldAlert, Cpu, RefreshCw, Award, Pen, Gamepad2, BookOpen, MessageSquare } from 'lucide-react';
 
 interface ChatMessage {
   id: string;
@@ -177,6 +177,32 @@ export default function Home({ isMentorObserver }: { isMentorObserver?: boolean 
             </span>
           </div>
 
+          {/* NVIDIA Feature Links */}
+          {!isMentorObserver && (
+            <>
+              <a href="/drawing" onClick={(e) => { e.preventDefault(); window.history.pushState(null,'','/drawing'); window.dispatchEvent(new Event('popstate')); }}
+                className="flex items-center gap-2 px-3 py-1.5 border border-system/40 text-system/70 hover:bg-system/10 hover:text-system transition-colors uppercase cursor-pointer"
+                data-testid="nav-drawing">
+                <Pen className="w-3 h-3" /><span className="hidden sm:inline">Draw</span>
+              </a>
+              <a href="/games" onClick={(e) => { e.preventDefault(); window.history.pushState(null,'','/games'); window.dispatchEvent(new Event('popstate')); }}
+                className="flex items-center gap-2 px-3 py-1.5 border border-user/40 text-user/70 hover:bg-user/10 hover:text-user transition-colors uppercase cursor-pointer"
+                data-testid="nav-games">
+                <Gamepad2 className="w-3 h-3" /><span className="hidden sm:inline">Games</span>
+              </a>
+              <a href="/mythology" onClick={(e) => { e.preventDefault(); window.history.pushState(null,'','/mythology'); window.dispatchEvent(new Event('popstate')); }}
+                className="flex items-center gap-2 px-3 py-1.5 border border-mentor/40 text-mentor/70 hover:bg-mentor/10 hover:text-mentor transition-colors uppercase cursor-pointer"
+                data-testid="nav-mythology">
+                <BookOpen className="w-3 h-3" /><span className="hidden sm:inline">Lore</span>
+              </a>
+              <a href="/forum" onClick={(e) => { e.preventDefault(); window.history.pushState(null,'','/forum'); window.dispatchEvent(new Event('popstate')); }}
+                className="flex items-center gap-2 px-3 py-1.5 border border-system/40 text-system/70 hover:bg-system/10 hover:text-system transition-colors uppercase cursor-pointer"
+                data-testid="nav-forum">
+                <MessageSquare className="w-3 h-3" /><span className="hidden sm:inline">Forum</span>
+              </a>
+            </>
+          )}
+
           {/* Research Navigator Link */}
           {!isMentorObserver && (
             <a
@@ -190,7 +216,7 @@ export default function Home({ isMentorObserver }: { isMentorObserver?: boolean 
               data-testid="nav-research"
             >
               <Cpu className="w-3 h-3" />
-              <span>Research</span>
+              <span className="hidden sm:inline">Research</span>
             </a>
           )}
 
@@ -207,24 +233,7 @@ export default function Home({ isMentorObserver }: { isMentorObserver?: boolean 
               data-testid="nav-scholarship"
             >
               <Award className="w-3 h-3" />
-              <span>Scholarship</span>
-            </a>
-          )}
-
-          {/* Marketplace Link */}
-          {!isMentorObserver && (
-            <a
-              href="/marketplace"
-              onClick={(e) => {
-                e.preventDefault();
-                window.history.pushState(null, '', '/marketplace');
-                window.dispatchEvent(new Event('popstate'));
-              }}
-              className="flex items-center gap-2 px-3 py-1.5 border border-system/40 text-system/70 hover:bg-system/10 hover:text-system transition-colors uppercase cursor-pointer"
-              data-testid="nav-marketplace"
-            >
-              <ShieldAlert className="w-3 h-3" />
-              <span>Market</span>
+              <span className="hidden sm:inline">Scholarship</span>
             </a>
           )}
 
@@ -241,7 +250,7 @@ export default function Home({ isMentorObserver }: { isMentorObserver?: boolean 
               data-testid="nav-subscribe"
             >
               <Zap className="w-3 h-3" />
-              <span>Upgrade</span>
+              <span className="hidden sm:inline">Upgrade</span>
             </a>
           )}
 

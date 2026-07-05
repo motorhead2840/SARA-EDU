@@ -36,7 +36,9 @@ router.get("/threads", async (req, res) => {
 // GET /api/forum/threads/:id
 router.get("/threads/:id", async (req, res) => {
   try {
-    const thread = await getThread(parseInt(req.params.id));
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id) || id <= 0) { res.status(400).json({ error: "Invalid thread id" }); return; }
+    const thread = await getThread(id);
     if (!thread) { res.status(404).json({ error: "Thread not found" }); return; }
     const posts = await listPosts(thread.id);
     res.json({ thread, posts });
@@ -77,10 +79,12 @@ router.post("/threads", async (req, res) => {
 // POST /api/forum/threads/:id/reply
 router.post("/threads/:id/reply", async (req, res) => {
   try {
+    const threadId = parseInt(req.params.id, 10);
+    if (isNaN(threadId) || threadId <= 0) { res.status(400).json({ error: "Invalid thread id" }); return; }
     const { body, author_name } = req.body as { body: string; author_name?: string };
     if (!body?.trim()) { res.status(400).json({ error: "body is required" }); return; }
     const post = await createPost({
-      thread_id: parseInt(req.params.id),
+      thread_id: threadId,
       body: body.trim().slice(0, 8000),
       author_name: (author_name ?? "Anonymous").slice(0, 60),
     });
@@ -94,7 +98,9 @@ router.post("/threads/:id/reply", async (req, res) => {
 // POST /api/forum/threads/:id/upvote
 router.post("/threads/:id/upvote", async (req, res) => {
   try {
-    const upvotes = await upvoteThread(parseInt(req.params.id));
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id) || id <= 0) { res.status(400).json({ error: "Invalid id" }); return; }
+    const upvotes = await upvoteThread(id);
     res.json({ upvotes });
   } catch (err) {
     logger.error({ err }, "forum.upvoteThread");
@@ -105,7 +111,9 @@ router.post("/threads/:id/upvote", async (req, res) => {
 // POST /api/forum/posts/:id/upvote
 router.post("/posts/:id/upvote", async (req, res) => {
   try {
-    const upvotes = await upvotePost(parseInt(req.params.id));
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id) || id <= 0) { res.status(400).json({ error: "Invalid id" }); return; }
+    const upvotes = await upvotePost(id);
     res.json({ upvotes });
   } catch (err) {
     logger.error({ err }, "forum.upvotePost");
