@@ -121,7 +121,7 @@ async def generate_data(
     bucket = _get_bucket()
     region = os.environ.get("AWS_REGION", "us-east-1")
 
-    script = Path(__file__).parent.parent / "sagemaker" / "generate_data.py"
+    script = Path(__file__).parent.parent / "mentor_sagemaker" / "generate_data.py"
     cmd = [
         sys.executable, str(script),
         "--bucket", bucket,
@@ -174,8 +174,8 @@ async def launch_training(
     hf_token = os.environ.get("HF_TOKEN")
 
     try:
-        # Import here to avoid loading sagemaker SDK at startup
-        from sagemaker.launch_training import launch  # type: ignore
+        # Import here to avoid loading AWS sagemaker SDK at startup
+        from mentor_sagemaker.launch_training import launch  # type: ignore
         result = await asyncio.get_event_loop().run_in_executor(
             None,
             lambda: launch(
@@ -215,7 +215,7 @@ async def deploy_endpoint(
     hf_token = os.environ.get("HF_TOKEN")
 
     try:
-        from sagemaker.deploy_endpoint import deploy  # type: ignore
+        from mentor_sagemaker.deploy_endpoint import deploy  # type: ignore
         result = await asyncio.get_event_loop().run_in_executor(
             None,
             lambda: deploy(
