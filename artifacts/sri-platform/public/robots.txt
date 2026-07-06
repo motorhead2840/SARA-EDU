@@ -7,4 +7,8 @@ Disallow: /login/
 Disallow: /subscribe
 Disallow: /checkout/
 
+# Perplexity AI crawler — blocked
+User-agent: PerplexityBot
+Disallow: /
+
 Sitemap: https://sri-learn.ai/sitemap.xml
