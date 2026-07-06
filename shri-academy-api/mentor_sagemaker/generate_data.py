@@ -1,18 +1,19 @@
 """
 generate_data.py — Synthetic training data generation for Shri mentor fine-tuning.
 
-Uses the NVIDIA Nemotron-4 API to produce Q&A pairs from each syllabus chunk,
-then uploads the JSONL dataset to S3 for SageMaker training.
+Uses GPT-4o to produce high-quality Q&A pairs from each syllabus chunk (teacher-student
+distillation pattern), then uploads the JSONL dataset to S3 for SageMaker training with
+Nemotron-Mini-4B.
 
 Usage:
-    python shri-academy-api/sagemaker/generate_data.py \
+    python shri-academy-api/mentor_sagemaker/generate_data.py \
         --bucket my-bucket \
         --prefix mentor-training/data \
         --pairs-per-chunk 8 \
         --region us-east-1
 
 Env vars required:
-    NVIDIA_API_KEY
+    OPENAI_API_KEY
     AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY  (or instance role)
 """
 
@@ -34,9 +35,8 @@ log = logging.getLogger(__name__)
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from syllabus import SYLLABUS_CHUNKS  # type: ignore
 
-# ── NVIDIA API client ─────────────────────────────────────────────────────────
-NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1"
-NVIDIA_MODEL = "nvidia/llama-3.1-nemotron-51b-instruct"
+# ── OpenAI client (GPT-4o as teacher model for data generation) ──────────────
+GENERATOR_MODEL = "gpt-4o"
 
 SYSTEM_PROMPT = (
     "You are Shri, a knowledgeable AI mentor for Shri Academy. "
@@ -63,10 +63,10 @@ No extra commentary. No markdown fences. Valid JSON only.
 
 
 def build_client() -> OpenAI:
-    api_key = os.environ.get("NVIDIA_API_KEY")
+    api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
-        raise EnvironmentError("NVIDIA_API_KEY is not set")
-    return OpenAI(base_url=NVIDIA_BASE_URL, api_key=api_key)
+        raise EnvironmentError("OPENAI_API_KEY is not set")
+    return OpenAI(api_key=api_key)
 
 
 def generate_pairs(client: OpenAI, chunk_text: str, n: int, retries: int = 3) -> list[dict]:
@@ -74,7 +74,7 @@ def generate_pairs(client: OpenAI, chunk_text: str, n: int, retries: int = 3) ->
     for attempt in range(1, retries + 1):
         try:
             resp = client.chat.completions.create(
-                model=NVIDIA_MODEL,
+                model=GENERATOR_MODEL,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.8,
                 max_tokens=2048,
