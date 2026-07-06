@@ -120,11 +120,11 @@ app.listen(port, (err) => {
 // ONE port (8080). Running it as a separate registered artifact service caused
 // seccomp port-detection failures in production (subprocess bind() not visible
 // to the artifact manager's seccomp filter).
-(function startPythonApi() {
+(function initPythonSidecar() {
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
   // dist/ lives at <workspace>/artifacts/api-server/dist/ — 3 levels up = workspace root
   const apiDir = path.resolve(__dirname, "..", "..", "..", "shri-academy-api");
-  // Use the absolute Nix python path — Node child_process doesn't inherit the shell PATH
+  // Absolute Nix python path — Node child_process doesn't inherit the shell PATH
   const pythonBin = "/home/runner/workspace/.pythonlibs/bin/python3";
   const uvicornArgs = [
     "-m", "uvicorn", "main:app",
@@ -134,24 +134,31 @@ app.listen(port, (err) => {
     ...(process.env["NODE_ENV"] !== "production" ? ["--reload"] : []),
   ];
 
-  logger.info({ apiDir }, "Starting Python API sidecar");
+  // Register shutdown handlers ONCE outside the restart loop to avoid
+  // MaxListenersExceededWarning when the sidecar restarts repeatedly.
+  let currentProc: ReturnType<typeof spawn> | null = null;
+  const shutdown = () => { currentProc?.kill("SIGTERM"); };
+  process.once("SIGTERM", shutdown);
+  process.once("SIGINT",  shutdown);
 
-  const proc = spawn(pythonBin, uvicornArgs, {
-    cwd: apiDir,
-    stdio: "inherit",
-    env: { ...process.env },
-  });
+  function startSidecar() {
+    logger.info({ apiDir }, "Starting Python API sidecar");
+    const proc = spawn(pythonBin, uvicornArgs, {
+      cwd: apiDir,
+      stdio: "inherit",
+      env: { ...process.env },
+    });
+    currentProc = proc;
 
-  proc.on("error", (err) => {
-    logger.error({ err }, "Python API sidecar failed to start");
-  });
+    proc.on("error", (err) => {
+      logger.error({ err }, "Python API sidecar failed to start");
+    });
 
-  proc.on("exit", (code, signal) => {
-    logger.warn({ code, signal }, "Python API sidecar exited — restarting in 3s");
-    setTimeout(startPythonApi, 3000);
-  });
+    proc.on("exit", (code, signal) => {
+      logger.warn({ code, signal }, "Python API sidecar exited — restarting in 3s");
+      setTimeout(startSidecar, 3000);
+    });
+  }
 
-  // Graceful shutdown: kill sidecar when Node exits
-  process.on("SIGTERM", () => proc.kill("SIGTERM"));
-  process.on("SIGINT",  () => proc.kill("SIGTERM"));
+  startSidecar();
 }());
