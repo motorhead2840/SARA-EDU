@@ -36,7 +36,7 @@ from syllabus import SYLLABUS_CHUNKS  # type: ignore
 
 # ── NVIDIA API client ─────────────────────────────────────────────────────────
 NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1"
-NVIDIA_MODEL = "nvidia/nemotron-4-340b-instruct"
+NVIDIA_MODEL = "nvidia/llama-3.1-nemotron-51b-instruct"
 
 SYSTEM_PROMPT = (
     "You are Shri, a knowledgeable AI mentor for Shri Academy. "
