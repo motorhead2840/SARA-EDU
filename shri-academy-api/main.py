@@ -384,22 +384,14 @@ async def chat(req: ChatInput):
     # RAG retrieval
     context, context_used = retrieve_context(req.message)
 
-    # Build Gemini chat history and system prompt
+    # Build system prompt and OpenAI message list (system + history + current)
     system_prompt = build_system_prompt(circuit, context)
-
-    # Gemini history: list of {"role": "user"|"model", "parts": [str]}
-    gemini_history = []
-    for msg in session["history"][-10:]:
-        role = "model" if msg["role"] == "assistant" else "user"
-        gemini_history.append({"role": role, "parts": [msg["content"]]})
-
-    # Plain message list for SageMaker eval (system + history + current)
     plain_messages = [{"role": "system", "content": system_prompt}]
     for msg in session["history"][-10:]:
         plain_messages.append({"role": msg["role"], "content": msg["content"]})
     plain_messages.append({"role": "user", "content": req.message})
 
-    # ── Eval mode: call Gemini + SageMaker in parallel ───────────────────────
+    # ── Eval mode: call OpenAI + SageMaker in parallel ───────────────────────
     eval_mode = os.environ.get("MENTOR_EVAL_MODE", "").lower() == "true"
     sm_endpoint = os.environ.get("SAGEMAKER_ENDPOINT_NAME")
     sm_region = os.environ.get("AWS_REGION", "us-east-1")
