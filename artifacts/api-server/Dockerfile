@@ -15,7 +15,7 @@ ARG BUILD_DATE=unknown
 WORKDIR /build
 
 # pnpm via corepack (matches the version in package.json#packageManager if set)
-RUN corepack enable && corepack prepare pnpm@9 --activate
+RUN corepack enable && corepack prepare pnpm@10 --activate
 
 # ① Workspace manifests — copied first for better layer cache
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
