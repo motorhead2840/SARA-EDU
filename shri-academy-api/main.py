@@ -1,7 +1,7 @@
 """
 Shri Academy AI Mentor Backend
-FastAPI + ChromaDB (local ONNX embeddings) + LangChain + OpenAI
-Eval mode: parallel GPT-4o + SageMaker Nemotron endpoint comparison
+FastAPI + ChromaDB (local ONNX embeddings) + Google Gemini
+Eval mode: parallel Gemini + SageMaker Nemotron endpoint comparison
 """
 
 import asyncio
@@ -21,8 +21,8 @@ try:
 except ImportError:
     boto3 = None  # type: ignore
     _boto3_available = False
-from langchain_openai import ChatOpenAI
-from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+from google import genai
+from google.genai import types as genai_types
 import re as _re
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -121,16 +121,13 @@ app.include_router(research_router, prefix="/shri-api/research")
 app.include_router(sagemaker_router, prefix="/shri-api/sagemaker")
 
 # ─── LLM Factory ────────────────────────────────────────────────────────────────
-def get_llm() -> ChatOpenAI:
-    api_key = os.environ.get("OPENAI_API_KEY")
+GEMINI_MODEL = "gemini-2.0-flash"
+
+def get_gemini_client() -> genai.Client:
+    api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
-        raise RuntimeError("OPENAI_API_KEY is not configured")
-    return ChatOpenAI(
-        api_key=api_key,
-        model="gpt-4o",
-        max_tokens=2048,
-        temperature=0.7,
-    )
+        raise RuntimeError("GEMINI_API_KEY is not configured")
+    return genai.Client(api_key=api_key)
 
 # ─── SageMaker Eval Inference ────────────────────────────────────────────────────
 async def call_sagemaker_endpoint(
@@ -388,49 +385,65 @@ async def chat(req: ChatInput):
     # RAG retrieval
     context, context_used = retrieve_context(req.message)
 
-    # Build messages for LangChain
+    # Build Gemini chat history and system prompt
     system_prompt = build_system_prompt(circuit, context)
-    lc_messages = [SystemMessage(content=system_prompt)]
 
-    # Include recent conversation history (last 5 exchanges = up to 10 messages)
+    # Gemini history: list of {"role": "user"|"model", "parts": [str]}
+    gemini_history = []
     for msg in session["history"][-10:]:
-        if msg["role"] == "user":
-            lc_messages.append(HumanMessage(content=msg["content"]))
-        elif msg["role"] == "assistant":
-            lc_messages.append(AIMessage(content=msg["content"]))
+        role = "model" if msg["role"] == "assistant" else "user"
+        gemini_history.append({"role": role, "parts": [msg["content"]]})
 
-    lc_messages.append(HumanMessage(content=req.message))
+    # Plain message list for SageMaker eval (system + history + current)
+    plain_messages = [{"role": "system", "content": system_prompt}]
+    for msg in session["history"][-10:]:
+        plain_messages.append({"role": msg["role"], "content": msg["content"]})
+    plain_messages.append({"role": "user", "content": req.message})
 
-    # ── Eval mode: call GPT-4o + SageMaker in parallel ───────────────────────
+    # ── Eval mode: call Gemini + SageMaker in parallel ───────────────────────
     eval_mode = os.environ.get("MENTOR_EVAL_MODE", "").lower() == "true"
     sm_endpoint = os.environ.get("SAGEMAKER_ENDPOINT_NAME")
     sm_region = os.environ.get("AWS_REGION", "us-east-1")
 
-    async def _gpt4o_call() -> str:
+    async def _gemini_call() -> str:
         try:
-            llm = get_llm()
-            resp = await asyncio.get_event_loop().run_in_executor(
-                None, lambda: llm.invoke(lc_messages)
+            client = get_gemini_client()
+            # Build history in google-genai Content format
+            history_contents = [
+                genai_types.Content(
+                    role=msg["role"],  # "user" or "model"
+                    parts=[genai_types.Part(text=msg["content"])],
+                )
+                for msg in gemini_history
+            ]
+            chat_session = client.chats.create(
+                model=GEMINI_MODEL,
+                config=genai_types.GenerateContentConfig(
+                    system_instruction=system_prompt,
+                    max_output_tokens=2048,
+                    temperature=0.7,
+                ),
+                history=history_contents,
             )
-            return resp.content
+            resp = await asyncio.get_event_loop().run_in_executor(
+                None, lambda: chat_session.send_message(req.message)
+            )
+            return resp.text
         except Exception as e:
-            log.error(f"GPT-4o error: {e}")
+            log.error(f"Gemini error: {e}")
             raise HTTPException(status_code=502, detail=f"AI mentor unavailable: {str(e)}")
 
-    # Convert LangChain messages to plain dicts for SageMaker
-    plain_messages = [{"role": "system" if isinstance(m, SystemMessage) else ("user" if isinstance(m, HumanMessage) else "assistant"), "content": m.content} for m in lc_messages]
-
     if eval_mode and sm_endpoint:
-        gpt_task = asyncio.create_task(_gpt4o_call())
+        gemini_task = asyncio.create_task(_gemini_call())
         sm_task = asyncio.create_task(
             call_sagemaker_endpoint(plain_messages, sm_endpoint, sm_region)
         )
-        answer, sm_answer = await asyncio.gather(gpt_task, sm_task)
+        answer, sm_answer = await asyncio.gather(gemini_task, sm_task)
     else:
-        answer = await _gpt4o_call()
+        answer = await _gemini_call()
         sm_answer = None
 
-    # Persist to history (GPT-4o response is canonical)
+    # Persist to history (Gemini response is canonical)
     session["history"].append({"role": "user", "content": req.message})
     session["history"].append({"role": "assistant", "content": answer})
 
