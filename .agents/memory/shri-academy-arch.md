@@ -6,8 +6,10 @@ description: Architecture decisions for the Shri Academy AI Mentor prototype —
 ## Architecture
 
 - **Frontend**: `react-vite` artifact at `/shri-academy/` (port 25572)
-- **Python backend**: `shri-academy-api/main.py` — FastAPI on port 8000, managed by `configureWorkflow` ("Shri Academy Python API"), NOT a registered artifact (no shared-proxy exposure)
-- **Proxy**: Node.js api-server forwards `/api/shri/*` → `http://localhost:8000/shri-api/*` via `artifacts/api-server/src/routes/shri.ts`; registered in `routes/index.ts` under `/shri`
+- **Python backend**: `shri-academy-api/main.py` — FastAPI on port **8001**, registered as second service in `artifacts/api-server/.replit-artifact/artifact.toml` (name: "Python API"). The old standalone `configureWorkflow` "Shri Academy Python API" was neutralised to an echo no-op — do not re-enable it or it will steal port 8001.
+- **Proxy**: Node.js api-server forwards `/api/shri/*` → `http://localhost:8001/shri-api/*` via `artifacts/api-server/src/routes/shri.ts`; registered in `routes/index.ts` under `/shri`
+- **Why port 8001 not 8000**: Port 8000 was held by the old standalone workflow and couldn't be freed reliably in Replit's sandbox. Moving to 8001 was the clean fix.
+- **Production deployment**: Python API runs via artifact service (production.run args: bash -c cd ... && uvicorn --port 8001 --workers 2). Standalone workflow does NOT run in production — artifact services are required.
 - **OpenAPI**: Shri endpoints added to `lib/api-spec/openapi.yaml` under `/shri/chat`, `/shri/state`, `/shri/reset`; response schema named `ShriMessage` (NOT `ShriChatResponse` — Orval auto-derives `ShriChatResponse` from operationId `shriChat`, causing TS2308 collision)
 
 ## LangChain 1.x Imports

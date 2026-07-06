@@ -24,13 +24,12 @@ args = "Shri Academy Python API"
 name = "Shri Academy Python API"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd shri-academy-api && python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
-waitForPort = 8000
-
 [workflows.workflow.metadata]
 outputType = "console"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "echo 'Replaced by artifacts/api-server: Python API service'"
 
 [agent]
 stack = "PNPM_WORKSPACE"
