@@ -41,7 +41,10 @@ run = "cd /home/runner/workspace/shri-academy-api && python -m uvicorn main:app 
 [services.production]
 
 [services.production.run]
-args = ["bash", "-c", "cd /home/runner/workspace/shri-academy-api && python -m uvicorn main:app --host 0.0.0.0 --port 8001 --workers 2"]
+# No --workers flag: single-process uvicorn so Replit's seccomp port detection
+# sees the bind() syscall directly. Multi-process (--workers 2) forks after bind
+# and seccomp misses it, causing the deployment startup timeout.
+args = ["bash", "-c", "cd /home/runner/workspace/shri-academy-api && python -m uvicorn main:app --host 0.0.0.0 --port 8001"]
 
 [services.production.run.env]
 PORT = "8001"
