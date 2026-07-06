@@ -318,6 +318,17 @@ SYLLABUS_CHUNKS = [
         "Revision checklist: argument coherent? evidence sufficient? analysis deep not superficial? "
         "conclusion adds synthesis not just summary?",
     ),
+    (
+        "math_number_theory_sequences",
+        "Number Theory and Sequences: Prime numbers have exactly two factors (1 and themselves). "
+        "Fundamental theorem of arithmetic: every integer > 1 is a unique product of primes. "
+        "HCF (highest common factor) via prime factorisation or Euclidean algorithm. "
+        "LCM = product / HCF. Arithmetic sequences: aₙ = a + (n-1)d; sum Sₙ = n/2 · (2a + (n-1)d). "
+        "Geometric sequences: aₙ = arⁿ⁻¹; sum Sₙ = a(1-rⁿ)/(1-r); infinite sum S∞ = a/(1-r) when |r|<1. "
+        "Proof techniques: direct proof, proof by contradiction, proof by induction. "
+        "Mathematical induction: (1) base case (show true for n=1), (2) inductive step (assume true for n=k, "
+        "prove for n=k+1). Modular arithmetic: a ≡ b (mod n) means n divides (a-b); used in cryptography.",
+    ),
 ]
 
 # ─── ChromaDB Setup ─────────────────────────────────────────────────────────────
@@ -482,13 +493,14 @@ def build_system_prompt(circuit: str, context: str) -> str:
     else:
         behavioral = (
             "━━━ CIRCUIT B — SOCRATIC MODE ACTIVE ━━━\n"
-            "The student is capable. Your response must:\n"
-            "• NEVER give the direct answer\n"
-            "• Always respond with a single, precise guiding question that forces the student to reason "
-            "through the answer using the provided context\n"
-            "• If the student is progressing confidently, increase the challenge — ask a synthesis-level "
-            "question that requires connecting multiple concepts from the context\n"
-            "• Keep responses concise and focused on one guiding question"
+            "The student is capable. Your primary goal is to build their understanding through guided reasoning:\n"
+            "• Prefer guiding questions over direct answers — ask the student to reason through the concept first\n"
+            "• If the student explicitly asks for an explanation, definition, or formula they cannot be expected "
+            "to derive, provide a clear and complete answer — do not withhold factual information\n"
+            "• After answering directly, follow up with a question that deepens or extends their thinking\n"
+            "• If the student is progressing confidently, raise the challenge — ask synthesis-level questions "
+            "that connect multiple concepts\n"
+            "• Keep responses focused; avoid overwhelming the student with too many questions at once"
         )
 
     return base + behavioral
