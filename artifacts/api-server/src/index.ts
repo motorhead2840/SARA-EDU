@@ -122,9 +122,10 @@ app.listen(port, (err) => {
 // to the artifact manager's seccomp filter).
 (function startPythonApi() {
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
-  // Resolve from dist/ back to repo root, then into shri-academy-api
-  const apiDir = path.resolve(__dirname, "..", "..", "..", "..", "shri-academy-api");
-  const pythonBin = "python3";
+  // dist/ lives at <workspace>/artifacts/api-server/dist/ — 3 levels up = workspace root
+  const apiDir = path.resolve(__dirname, "..", "..", "..", "shri-academy-api");
+  // Use the absolute Nix python path — Node child_process doesn't inherit the shell PATH
+  const pythonBin = "/home/runner/workspace/.pythonlibs/bin/python3";
   const uvicornArgs = [
     "-m", "uvicorn", "main:app",
     "--host", "0.0.0.0",
