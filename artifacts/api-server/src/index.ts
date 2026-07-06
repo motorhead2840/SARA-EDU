@@ -1,3 +1,6 @@
+import { spawn } from "node:child_process";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { runMigrations } from "stripe-replit-sync";
 import { getStripeSync } from "./stripeClient.js";
 import { initSubscriptionSchema } from "./lib/subscriptionDb.js";
@@ -111,3 +114,43 @@ app.listen(port, (err) => {
   if (err) { logger.error({ err }, "Error listening"); process.exit(1); }
   logger.info({ port }, "Server listening");
 });
+
+// ── Python API sidecar ────────────────────────────────────────────────────────
+// Spawn uvicorn as a child process so Replit's deployment only needs to detect
+// ONE port (8080). Running it as a separate registered artifact service caused
+// seccomp port-detection failures in production (subprocess bind() not visible
+// to the artifact manager's seccomp filter).
+(function startPythonApi() {
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  // Resolve from dist/ back to repo root, then into shri-academy-api
+  const apiDir = path.resolve(__dirname, "..", "..", "..", "..", "shri-academy-api");
+  const pythonBin = "python3";
+  const uvicornArgs = [
+    "-m", "uvicorn", "main:app",
+    "--host", "0.0.0.0",
+    "--port", "8001",
+    // --reload only in dev; in production the file watcher wastes memory
+    ...(process.env["NODE_ENV"] !== "production" ? ["--reload"] : []),
+  ];
+
+  logger.info({ apiDir }, "Starting Python API sidecar");
+
+  const proc = spawn(pythonBin, uvicornArgs, {
+    cwd: apiDir,
+    stdio: "inherit",
+    env: { ...process.env },
+  });
+
+  proc.on("error", (err) => {
+    logger.error({ err }, "Python API sidecar failed to start");
+  });
+
+  proc.on("exit", (code, signal) => {
+    logger.warn({ code, signal }, "Python API sidecar exited — restarting in 3s");
+    setTimeout(startPythonApi, 3000);
+  });
+
+  // Graceful shutdown: kill sidecar when Node exits
+  process.on("SIGTERM", () => proc.kill("SIGTERM"));
+  process.on("SIGINT",  () => proc.kill("SIGTERM"));
+}());
