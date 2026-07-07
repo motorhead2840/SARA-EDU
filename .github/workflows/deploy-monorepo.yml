@@ -49,8 +49,8 @@ jobs:
 
       - name: Assert commit is reachable from main
         run: |
-          git fetch origin main
-          git merge-base --is-ancestor "${{ github.sha }}" "$(git rev-parse origin/main)" \
+          git fetch origin main:main
+          git merge-base --is-ancestor "${{ github.sha }}" "$(git rev-parse main)" \
             || { echo "❌ Tag ${{ github.ref_name }} is not on main — aborting deploy."; exit 1; }
 
   # ── api-server (Node.js) ───────────────────────────────────────────────────

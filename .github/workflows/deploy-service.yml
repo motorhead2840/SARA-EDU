@@ -101,6 +101,7 @@ jobs:
 
       - name: Resolve image tags and build metadata
         id: meta
+        shell: bash
         run: |
           REF="${{ github.ref_name }}"
           SHA7="${GITHUB_SHA::7}"
