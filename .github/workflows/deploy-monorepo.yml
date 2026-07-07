@@ -36,37 +36,65 @@ permissions:
 # ─────────────────────────────────────────────────────────────────────────────
 jobs:
 
+  # ── Guard: ensure tag-triggered deploys only fire from main ─────────────────
+  guard:
+    name: Verify tag is on main
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Assert commit is reachable from main
+        run: |
+          git fetch origin main
+          git merge-base --is-ancestor "${{ github.sha }}" "$(git rev-parse origin/main)" \
+            || { echo "❌ Tag ${{ github.ref_name }} is not on main — aborting deploy."; exit 1; }
+
   # ── api-server (Node.js) ───────────────────────────────────────────────────
   deploy-api-server:
     name: api-server
-    # Skip if manual dispatch requested only shri-api
-    if: ${{ github.event_name != 'workflow_dispatch' || inputs.service == 'both' || inputs.service == 'api-server' }}
+    needs: guard
+    # Run when: guard passed (tag on main) OR guard was skipped (workflow_dispatch),
+    # AND the dispatch didn't target only shri-api.
+    if: >-
+      always() &&
+      (needs.guard.result == 'success' || needs.guard.result == 'skipped') &&
+      (github.event_name != 'workflow_dispatch' || inputs.service == 'both' || inputs.service == 'api-server')
     uses: ./.github/workflows/deploy-service.yml
     with:
-      service_label:   api-server
-      docker_context:  .
-      dockerfile:      artifacts/api-server/Dockerfile
-      ecr_repo:        sri/api-server
-      ecs_service:     api-server
-      task_def_family: sri-production-api-server
-      container_name:  api-server
-      push_latest:     ${{ inputs.push_latest || false }}
+      service_label:    api-server
+      docker_context:   .
+      dockerfile:       artifacts/api-server/Dockerfile
+      ecr_repo:         sri/api-server
+      ecs_service:      api-server
+      task_def_family:  sri-production-api-server
+      container_name:   api-server
+      push_latest:      ${{ inputs.push_latest || false }}
+      health_check_url: https://sriplatform.com/api/healthz
     secrets:
       AWS_DEPLOY_ROLE_ARN: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
 
   # ── shri-academy-api (Python FastAPI) ─────────────────────────────────────
   deploy-shri-api:
     name: shri-academy-api
-    if: ${{ github.event_name != 'workflow_dispatch' || inputs.service == 'both' || inputs.service == 'shri-api' }}
+    needs: guard
+    if: >-
+      always() &&
+      (needs.guard.result == 'success' || needs.guard.result == 'skipped') &&
+      (github.event_name != 'workflow_dispatch' || inputs.service == 'both' || inputs.service == 'shri-api')
     uses: ./.github/workflows/deploy-service.yml
     with:
-      service_label:   shri-api
-      docker_context:  shri-academy-api/
-      dockerfile:      shri-academy-api/Dockerfile
-      ecr_repo:        sri/shri-academy-api
-      ecs_service:     shri-api
-      task_def_family: sri-production-shri-api
-      container_name:  shri-api
-      push_latest:     ${{ inputs.push_latest || false }}
+      service_label:    shri-api
+      docker_context:   shri-academy-api/
+      dockerfile:       shri-academy-api/Dockerfile
+      ecr_repo:         sri/shri-academy-api
+      ecs_service:      shri-api
+      task_def_family:  sri-production-shri-api
+      container_name:   shri-api
+      push_latest:      ${{ inputs.push_latest || false }}
+      health_check_url: https://sriplatform.com/shri-api/health
     secrets:
       AWS_DEPLOY_ROLE_ARN: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}

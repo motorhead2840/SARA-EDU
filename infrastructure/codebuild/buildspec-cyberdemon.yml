@@ -15,13 +15,12 @@ phases:
   build:
     commands:
       - echo "Build started on $(date)"
-      - docker build -t $ECR_REPO_URI:$IMAGE_TAG -t $ECR_REPO_URI:latest .
+      - docker build -t $ECR_REPO_URI:$IMAGE_TAG .
 
   post_build:
     commands:
       - echo "Pushing image..."
       - docker push $ECR_REPO_URI:$IMAGE_TAG
-      - docker push $ECR_REPO_URI:latest
       - echo "Writing imagedefinitions.json"
       - |
         printf '[{"name":"api-server","imageUri":"%s"}]' \

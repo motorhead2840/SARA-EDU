@@ -57,6 +57,13 @@ on:
         type: boolean
         default: false
 
+      # Optional URL to curl after ECS deploy to verify the service is healthy
+      health_check_url:
+        description: 'URL to hit after ECS deploy (smoke test). Leave empty to skip.'
+        required: false
+        type: string
+        default: ''
+
       aws_region:
         required: false
         type: string
@@ -92,15 +99,25 @@ jobs:
         id: ecr-login
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Resolve image tags
+      - name: Resolve image tags and build metadata
         id: meta
         run: |
           REF="${{ github.ref_name }}"
           SHA7="${GITHUB_SHA::7}"
-          VERSIONED_TAG="${{ steps.ecr-login.outputs.registry }}/${{ inputs.ecr_repo }}:${REF}-${SHA7}"
-          LATEST_TAG="${{ steps.ecr-login.outputs.registry }}/${{ inputs.ecr_repo }}:latest"
+          BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          REGISTRY="${{ steps.ecr-login.outputs.registry }}"
+          VERSIONED_TAG="${REGISTRY}/${{ inputs.ecr_repo }}:${REF}-${SHA7}"
+          LATEST_TAG="${REGISTRY}/${{ inputs.ecr_repo }}:latest"
           echo "versioned=${VERSIONED_TAG}" >> "$GITHUB_OUTPUT"
           echo "latest=${LATEST_TAG}"       >> "$GITHUB_OUTPUT"
+          echo "build_date=${BUILD_DATE}"   >> "$GITHUB_OUTPUT"
+          # Build a clean tag list — only include :latest when push_latest is true
+          {
+            echo "tags<<EOF"
+            echo "${VERSIONED_TAG}"
+            [[ "${{ inputs.push_latest }}" == "true" ]] && echo "${LATEST_TAG}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -111,14 +128,31 @@ jobs:
           context: ${{ inputs.docker_context }}
           file: ${{ inputs.dockerfile }}
           push: true
-          tags: >-
-            ${{ steps.meta.outputs.versioned }}
-            ${{ inputs.push_latest && steps.meta.outputs.latest || '' }}
+          tags: ${{ steps.meta.outputs.tags }}
           build-args: |
             BUILD_SHA=${{ github.sha }}
-            BUILD_DATE=${{ github.event.head_commit.timestamp || 'unknown' }}
+            BUILD_DATE=${{ steps.meta.outputs.build_date }}
           cache-from: type=gha,scope=${{ inputs.service_label }}
           cache-to: type=gha,mode=max,scope=${{ inputs.service_label }}
+
+      - name: Scan image for vulnerabilities (Trivy)
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          image-ref: ${{ steps.meta.outputs.versioned }}
+          format: table
+          exit-code: '1'
+          severity: CRITICAL
+          ignore-unfixed: true
+
+      - name: Capture current ECS task definition ARN (for rollback)
+        id: current-task-def
+        run: |
+          PREVIOUS_ARN=$(aws ecs describe-services \
+            --cluster "${{ inputs.ecs_cluster }}" \
+            --services "${{ inputs.ecs_service }}" \
+            --query 'services[0].taskDefinition' \
+            --output text)
+          echo "previous_arn=${PREVIOUS_ARN}" >> "$GITHUB_OUTPUT"
 
       - name: Download current ECS task definition
         run: |
@@ -151,6 +185,31 @@ jobs:
           service:                    ${{ inputs.ecs_service }}
           cluster:                    ${{ inputs.ecs_cluster }}
           wait-for-service-stability: true
+
+      - name: Smoke test — verify new version is responding
+        if: inputs.health_check_url != ''
+        run: |
+          echo "=== Smoke test: ${{ inputs.health_check_url }} ==="
+          for i in 1 2 3 4 5; do
+            if curl -fsS --max-time 10 "${{ inputs.health_check_url }}"; then
+              echo "✅ Health check passed"
+              exit 0
+            fi
+            echo "Attempt ${i} failed, retrying in 15s..."
+            sleep 15
+          done
+          echo "❌ Smoke test failed after 5 attempts"
+          exit 1
+
+      - name: Rollback to previous task definition on failure
+        if: failure() && steps.current-task-def.outputs.previous_arn != ''
+        run: |
+          echo "=== Rolling back to ${{ steps.current-task-def.outputs.previous_arn }} ==="
+          aws ecs update-service \
+            --cluster "${{ inputs.ecs_cluster }}" \
+            --service  "${{ inputs.ecs_service }}" \
+            --task-definition "${{ steps.current-task-def.outputs.previous_arn }}" \
+            --force-new-deployment
 
       - name: Print ECS events on failure
         if: failure()
