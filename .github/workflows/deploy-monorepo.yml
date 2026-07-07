@@ -1,7 +1,7 @@
 name: Shri Academy Monorepo — Build, Push & Deploy
 
 # Triggered by a semver tag (e.g. git tag v1.2.3 && git push --tags)
-# Both services build and deploy in parallel.
+# Both services build and deploy in parallel via the reusable deploy-service workflow.
 on:
   push:
     tags:
@@ -10,191 +10,63 @@ on:
   workflow_dispatch:
     inputs:
       service:
-        description: 'Which service to deploy (both | api-server | shri-api)'
+        description: 'Which service to deploy'
         required: false
         default: 'both'
+        type: choice
+        options:
+          - both
+          - api-server
+          - shri-api
+      push_latest:
+        description: 'Also push a mutable :latest tag to ECR'
+        required: false
+        default: false
+        type: boolean
+
+# Never let two deploys race on the same ref; never cancel an in-flight deploy.
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   id-token: write   # OIDC — required for aws-actions/configure-aws-credentials
   contents: read
-
-env:
-  AWS_REGION:  us-east-1
-  ECS_CLUSTER: sri-production
 
 # ─────────────────────────────────────────────────────────────────────────────
 jobs:
 
   # ── api-server (Node.js) ───────────────────────────────────────────────────
   deploy-api-server:
-    name: api-server → ECR → ECS
-    runs-on: ubuntu-latest
-    environment: production
+    name: api-server
     # Skip if manual dispatch requested only shri-api
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.service == 'both' || inputs.service == 'api-server' }}
-
-    env:
-      ECR_REPO:        sri/api-server
-      ECS_SERVICE:     api-server
-      TASK_DEF_FAMILY: sri-production-api-server
-      CONTAINER_NAME:  api-server
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Login to Amazon ECR
-        id: ecr-login
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Resolve image tags
-        id: meta
-        run: |
-          # Tag: <registry>/sri/api-server:<git-tag>-<sha7>
-          REF="${{ github.ref_name }}"
-          SHA7="${GITHUB_SHA::7}"
-          VERSIONED_TAG="${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPO }}:${REF}-${SHA7}"
-          LATEST_TAG="${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPO }}:latest"
-          echo "versioned=${VERSIONED_TAG}" >> $GITHUB_OUTPUT
-          echo "latest=${LATEST_TAG}"       >> $GITHUB_OUTPUT
-
-      - name: Build Docker image
-        # Build context is the repo root so pnpm workspace resolution works
-        run: |
-          docker build \
-            --build-arg BUILD_SHA=${{ github.sha }} \
-            --build-arg BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ) \
-            -f artifacts/api-server/Dockerfile \
-            -t ${{ steps.meta.outputs.versioned }} \
-            -t ${{ steps.meta.outputs.latest }} \
-            .
-
-      - name: Push to ECR
-        run: |
-          docker push ${{ steps.meta.outputs.versioned }}
-          docker push ${{ steps.meta.outputs.latest }}
-
-      - name: Download current ECS task definition
-        run: |
-          aws ecs describe-task-definition \
-            --task-definition ${{ env.TASK_DEF_FAMILY }} \
-            --query taskDefinition \
-            > task-def.json
-
-      - name: Render updated task definition
-        id: task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: task-def.json
-          container-name:  ${{ env.CONTAINER_NAME }}
-          image:           ${{ steps.meta.outputs.versioned }}
-
-      - name: Deploy to ECS (blue/green via circuit-breaker)
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-        with:
-          task-definition:            ${{ steps.task-def.outputs.task-definition }}
-          service:                    ${{ env.ECS_SERVICE }}
-          cluster:                    ${{ env.ECS_CLUSTER }}
-          wait-for-service-stability: true
-
-      - name: Print ECS events on failure
-        if: failure()
-        run: |
-          echo "=== ECS service events (last 5) ==="
-          aws ecs describe-services \
-            --cluster ${{ env.ECS_CLUSTER }} \
-            --services ${{ env.ECS_SERVICE }} \
-            --query 'services[0].events[:5]' \
-            --output table
+    uses: ./.github/workflows/deploy-service.yml
+    with:
+      service_label:   api-server
+      docker_context:  .
+      dockerfile:      artifacts/api-server/Dockerfile
+      ecr_repo:        sri/api-server
+      ecs_service:     api-server
+      task_def_family: sri-production-api-server
+      container_name:  api-server
+      push_latest:     ${{ inputs.push_latest || false }}
+    secrets:
+      AWS_DEPLOY_ROLE_ARN: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
 
   # ── shri-academy-api (Python FastAPI) ─────────────────────────────────────
   deploy-shri-api:
-    name: shri-academy-api → ECR → ECS
-    runs-on: ubuntu-latest
-    environment: production
+    name: shri-academy-api
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.service == 'both' || inputs.service == 'shri-api' }}
-
-    env:
-      ECR_REPO:        sri/shri-academy-api
-      ECS_SERVICE:     shri-api
-      TASK_DEF_FAMILY: sri-production-shri-api
-      CONTAINER_NAME:  shri-api
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Login to Amazon ECR
-        id: ecr-login
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Resolve image tags
-        id: meta
-        run: |
-          REF="${{ github.ref_name }}"
-          SHA7="${GITHUB_SHA::7}"
-          VERSIONED_TAG="${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPO }}:${REF}-${SHA7}"
-          LATEST_TAG="${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPO }}:latest"
-          echo "versioned=${VERSIONED_TAG}" >> $GITHUB_OUTPUT
-          echo "latest=${LATEST_TAG}"       >> $GITHUB_OUTPUT
-
-      - name: Build Docker image
-        # Build context is shri-academy-api/ (self-contained Python package)
-        # ChromaDB ONNX model is pre-warmed during the build (see Dockerfile)
-        run: |
-          docker build \
-            --build-arg BUILD_SHA=${{ github.sha }} \
-            --build-arg BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ) \
-            -t ${{ steps.meta.outputs.versioned }} \
-            -t ${{ steps.meta.outputs.latest }} \
-            shri-academy-api/
-
-      - name: Push to ECR
-        run: |
-          docker push ${{ steps.meta.outputs.versioned }}
-          docker push ${{ steps.meta.outputs.latest }}
-
-      - name: Download current ECS task definition
-        run: |
-          aws ecs describe-task-definition \
-            --task-definition ${{ env.TASK_DEF_FAMILY }} \
-            --query taskDefinition \
-            > task-def.json
-
-      - name: Render updated task definition
-        id: task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: task-def.json
-          container-name:  ${{ env.CONTAINER_NAME }}
-          image:           ${{ steps.meta.outputs.versioned }}
-
-      - name: Deploy to ECS (blue/green via circuit-breaker)
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-        with:
-          task-definition:            ${{ steps.task-def.outputs.task-definition }}
-          service:                    ${{ env.ECS_SERVICE }}
-          cluster:                    ${{ env.ECS_CLUSTER }}
-          wait-for-service-stability: true
-
-      - name: Print ECS events on failure
-        if: failure()
-        run: |
-          echo "=== ECS service events (last 5) ==="
-          aws ecs describe-services \
-            --cluster ${{ env.ECS_CLUSTER }} \
-            --services ${{ env.ECS_SERVICE }} \
-            --query 'services[0].events[:5]' \
-            --output table
+    uses: ./.github/workflows/deploy-service.yml
+    with:
+      service_label:   shri-api
+      docker_context:  shri-academy-api/
+      dockerfile:      shri-academy-api/Dockerfile
+      ecr_repo:        sri/shri-academy-api
+      ecs_service:     shri-api
+      task_def_family: sri-production-shri-api
+      container_name:  shri-api
+      push_latest:     ${{ inputs.push_latest || false }}
+    secrets:
+      AWS_DEPLOY_ROLE_ARN: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}

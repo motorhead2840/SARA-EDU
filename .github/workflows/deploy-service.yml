@@ -1,0 +1,163 @@
+name: Deploy service → ECR → ECS (reusable)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Reusable workflow called by deploy-monorepo.yml for each service.
+# Callers pass service-specific values via `with:` inputs and share
+# the AWS_DEPLOY_ROLE_ARN secret.
+# ─────────────────────────────────────────────────────────────────────────────
+on:
+  workflow_call:
+    inputs:
+      # Human-readable label used in the job name
+      service_label:
+        description: 'Human-readable service name (e.g. api-server)'
+        required: true
+        type: string
+
+      # Docker build context path (relative to repo root)
+      docker_context:
+        description: 'Docker build context path (e.g. . or shri-academy-api/)'
+        required: true
+        type: string
+
+      # Dockerfile path (relative to repo root)
+      dockerfile:
+        description: 'Path to Dockerfile (relative to repo root)'
+        required: true
+        type: string
+
+      # ECR repository name (e.g. sri/api-server)
+      ecr_repo:
+        description: 'ECR repository name'
+        required: true
+        type: string
+
+      # ECS service name
+      ecs_service:
+        description: 'ECS service name'
+        required: true
+        type: string
+
+      # ECS task definition family name
+      task_def_family:
+        description: 'ECS task definition family'
+        required: true
+        type: string
+
+      # Container name in the task definition to update
+      container_name:
+        description: 'Container name to update in the task definition'
+        required: true
+        type: string
+
+      # Whether to also push a mutable :latest tag
+      push_latest:
+        description: 'Push a mutable :latest tag in addition to the versioned tag'
+        required: false
+        type: boolean
+        default: false
+
+      aws_region:
+        required: false
+        type: string
+        default: us-east-1
+
+      ecs_cluster:
+        required: false
+        type: string
+        default: sri-production
+
+    secrets:
+      AWS_DEPLOY_ROLE_ARN:
+        required: true
+
+# ─────────────────────────────────────────────────────────────────────────────
+jobs:
+  deploy:
+    name: ${{ inputs.service_label }} → ECR → ECS
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ inputs.aws_region }}
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Resolve image tags
+        id: meta
+        run: |
+          REF="${{ github.ref_name }}"
+          SHA7="${GITHUB_SHA::7}"
+          VERSIONED_TAG="${{ steps.ecr-login.outputs.registry }}/${{ inputs.ecr_repo }}:${REF}-${SHA7}"
+          LATEST_TAG="${{ steps.ecr-login.outputs.registry }}/${{ inputs.ecr_repo }}:latest"
+          echo "versioned=${VERSIONED_TAG}" >> "$GITHUB_OUTPUT"
+          echo "latest=${LATEST_TAG}"       >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ inputs.docker_context }}
+          file: ${{ inputs.dockerfile }}
+          push: true
+          tags: >-
+            ${{ steps.meta.outputs.versioned }}
+            ${{ inputs.push_latest && steps.meta.outputs.latest || '' }}
+          build-args: |
+            BUILD_SHA=${{ github.sha }}
+            BUILD_DATE=${{ github.event.head_commit.timestamp || 'unknown' }}
+          cache-from: type=gha,scope=${{ inputs.service_label }}
+          cache-to: type=gha,mode=max,scope=${{ inputs.service_label }}
+
+      - name: Download current ECS task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition "${{ inputs.task_def_family }}" \
+            --query taskDefinition \
+          | jq 'del(
+              .taskDefinitionArn,
+              .revision,
+              .status,
+              .registeredAt,
+              .registeredBy,
+              .compatibilities,
+              .requiresAttributes
+            )' \
+          > task-def.json
+
+      - name: Render updated task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-def.json
+          container-name:  ${{ inputs.container_name }}
+          image:           ${{ steps.meta.outputs.versioned }}
+
+      - name: Deploy to ECS (circuit-breaker enabled)
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition:            ${{ steps.task-def.outputs.task-definition }}
+          service:                    ${{ inputs.ecs_service }}
+          cluster:                    ${{ inputs.ecs_cluster }}
+          wait-for-service-stability: true
+
+      - name: Print ECS events on failure
+        if: failure()
+        run: |
+          echo "=== ECS service events (last 5) ==="
+          aws ecs describe-services \
+            --cluster "${{ inputs.ecs_cluster }}" \
+            --services "${{ inputs.ecs_service }}" \
+            --query 'services[0].events[:5]' \
+            --output table
