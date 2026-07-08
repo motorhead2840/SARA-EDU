@@ -271,4 +271,108 @@ SYLLABUS_CHUNKS: list[tuple[str, str]] = [
         "Revision checklist: argument coherent? evidence sufficient? analysis deep not superficial? "
         "conclusion adds synthesis not just summary?",
     ),
+    # ── Motivational Speech (Admiral William H. McRaven) ──────────────────────────
+    (
+        "motivational_mcraven_lesson1_make_bed",
+        "Lesson 1 from Admiral William H. McRaven's 2014 UT Austin Commencement Address "
+        "(YouTube Video: https://youtu.be/TBuIGBCF9jc): If you want to change the world, start off "
+        "by making your bed. If you make your bed every morning, you will have accomplished the first "
+        "task of the day. It will give you a small sense of pride, and it will encourage you to do "
+        "another task, and another, and another. By the end of the day, that one task completed will "
+        "have turned into many tasks completed. Making your bed will also reinforce the fact that the "
+        "little things in life matter. If you can't do the little things right, you will never do "
+        "the big things right. And, if by chance you have a miserable day, you will come home to a bed "
+        "that is made — that you made — and a made bed gives you encouragement that tomorrow will be better.",
+    ),
+    (
+        "motivational_mcraven_lesson2_find_someone",
+        "Lesson 2 from Admiral William H. McRaven's 2014 UT Austin Commencement Address "
+        "(YouTube Video: https://youtu.be/TBuIGBCF9jc): You can't go it alone. Find someone to help you "
+        "paddle. In Navy SEAL training, the importance of teamwork is learned quickly. No one can make "
+        "it through training alone, and no one can make it through life alone. You need people who will "
+        "help you row, who will support you in times of hardship, and who will be there for you when things "
+        "get tough. Find someone to share your journey, respect everyone, and remember that collaboration "
+        "and mutual support are essential for overcoming life's greatest challenges.",
+    ),
+    (
+        "motivational_mcraven_lesson3_heart_size",
+        "Lesson 3 from Admiral William H. McRaven's 2014 UT Austin Commencement Address "
+        "(YouTube Video: https://youtu.be/TBuIGBCF9jc): Only the size of your heart matters. During SEAL "
+        "training, candidates of all physical shapes, backgrounds, and sizes are tested. What matters is "
+        "not your height, your physical strength, or your background, but the size of your heart — your "
+        "determination, your willpower, and your spirit. Do not judge people by their appearance or "
+        "limitations. True greatness is found in the courage and resilience of the heart. A strong spirit "
+        "can overcome any physical limitation.",
+    ),
+    (
+        "motivational_mcraven_lesson4_sugar_cookie",
+        "Lesson 4 from Admiral William H. McRaven's 2014 UT Austin Commencement Address "
+        "(YouTube Video: https://youtu.be/TBuIGBCF9jc): Get over being a sugar cookie and keep moving "
+        "forward. In SEAL training, if a student fails a uniform inspection, they must run into the ocean "
+        "fully clothed, then roll around in the sand until they are covered in sand from head to toe — "
+        "known as a 'sugar cookie'. The student has to stay in that uniform all day. The lesson is that "
+        "life is not always fair. Sometimes, no matter how hard you prepare or how well you perform, you "
+        "will fail or be treated unfairly. Get over it, accept the setback, and keep moving forward. Do "
+        "not complain; keep fighting.",
+    ),
+    (
+        "motivational_mcraven_lesson5_the_circus",
+        "Lesson 5 from Admiral William H. McRaven's 2014 UT Austin Commencement Address "
+        "(YouTube Video: https://youtu.be/TBuIGBCF9jc): Don't be afraid of the circus. In SEAL training, "
+        "the 'circus' is extra physical training at the end of the day for those who failed to meet the "
+        "daily standards. It is exhausting and designed to make you quit. But those who persevered "
+        "through the circuses found that the extra workouts actually made them stronger, faster, and more "
+        "resilient. Do not fear failure or extra hardship. Embrace adversity as an opportunity for growth; "
+        "persistence through additional challenges makes you stronger.",
+    ),
+    (
+        "motivational_mcraven_lesson6_obstacle_headfirst",
+        "Lesson 6 from Admiral William H. McRaven's 2014 UT Austin Commencement Address "
+        "(YouTube Video: https://youtu.be/TBuIGBCF9jc): Sometimes you have to slide down the obstacle "
+        "head first. To break a speed record on a dangerous obstacle course, a student decided to slide "
+        "down a high wire head-first instead of feet-first, which was a risky and unconventional move. "
+        "It worked. The lesson is that to achieve great things, you must be willing to take calculated "
+        "risks, challenge traditional norms, and act decisively in the face of fear. Do not let fear "
+        "hold you back from finding bold solutions.",
+    ),
+    (
+        "motivational_mcraven_lesson7_sharks",
+        "Lesson 7 from Admiral William H. McRaven's 2014 UT Austin Commencement Address "
+        "(YouTube Video: https://youtu.be/TBuIGBCF9jc): Don't back down from the sharks. During SEAL "
+        "training, candidates must complete a night swim in waters known to have sharks. They are taught "
+        "that if a shark begins to circle them, they must stand their ground, not swim away in fear, "
+        "and if it attacks, punch it in the snout. The lesson is to confront your fears and difficulties "
+        "head-on. Do not let bullies or intimidating challenges scare you into backing down. Show courage "
+        "in the face of danger.",
+    ),
+    (
+        "motivational_mcraven_lesson8_darkest_moments",
+        "Lesson 8 from Admiral William H. McRaven's 2014 UT Austin Commencement Address "
+        "(YouTube Video: https://youtu.be/TBuIGBCF9jc): Be your very best in the darkest moments. One of "
+        "the toughest SEAL training missions involves swimming underwater beneath a ship to place an "
+        "explosive, in total darkness and deafening noise. It is a moment where you can easily become "
+        "disoriented and panic. The lesson is that in your life's most difficult, painful, and darkest "
+        "moments, you must find your inner strength, maintain composure, and be your absolute best. "
+        "Let your discipline and commitment guide you through the darkness.",
+    ),
+    (
+        "motivational_mcraven_lesson9_sing_in_mud",
+        "Lesson 9 from Admiral William H. McRaven's 2014 UT Austin Commencement Address "
+        "(YouTube Video: https://youtu.be/TBuIGBCF9jc): Start singing when you're up to your neck in mud. "
+        "During 'Hell Week', candidates are forced to spend hours in freezing, deep mud while instructors "
+        "try to pressure them into quitting. In a moment of extreme despair, one candidate began to "
+        "sing, and others joined in. The song gave everyone hope, warmth, and the strength to endure. "
+        "One person can make a difference and lift an entire group's spirits. Maintain hope and optimism, "
+        "and inspire others to keep going when times are toughest.",
+    ),
+    (
+        "motivational_mcraven_lesson10_never_quit",
+        "Lesson 10 from Admiral William H. McRaven's 2014 UT Austin Commencement Address "
+        "(YouTube Video: https://youtu.be/TBuIGBCF9jc): Don't ever, ever ring the bell. In SEAL training, "
+        "there is a brass bell hanging in the center of the compound. If you want to quit, all you have "
+        "to do is walk up and ring the bell three times, and you can leave immediately. But if you ring "
+        "it, you will regret it for the rest of your life. The ultimate lesson is: never give up. No "
+        "matter how hard the challenge, how deep the pain, or how long the struggle, never quit on your "
+        "dreams or yourself.",
+    ),
 ]
