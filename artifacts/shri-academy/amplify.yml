@@ -11,11 +11,14 @@ frontend:
         - cd artifacts/shri-academy
     build:
       commands:
+        # Return to app root to ensure build is executed in the correct context
+        - cd $AMPLIFY_START_DIR || cd ../../artifacts/shri-academy
         # Set default fallback values for required build variables if not provided in the console environment
         - export PORT=${PORT:-8080}
         - export BASE_PATH=${BASE_PATH:-/}
         - pnpm --filter @workspace/shri-academy run build
   artifacts:
+    # Path is relative to the app root (artifacts/shri-academy)
     baseDirectory: dist/public
     files:
       - '**/*'

@@ -423,7 +423,7 @@ Both frontend applications—**Shri Academy** (`artifacts/shri-academy`) and **S
 ### 1. Connect the Repository in AWS Amplify
 1. Open the **AWS Console** and navigate to the **AWS Amplify** service.
 2. Click **Create new app** or **Host web app**.
-3. Select **GitHub** as your repository provider, authorize AWS Amplify, and select the `motorhead2840/SARA-EDU` repository.
+3. Select **GitHub** as your repository provider, authorize AWS Amplify, and select the `<your-org>/<your-repo>` repository.
 4. Select the branch you wish to deploy (e.g., `main`).
 
 ### 2. Configure Monorepo Build Settings
@@ -435,7 +435,7 @@ Amplify automatically detects the workspace-based monorepo configuration using t
 3. Amplify will automatically load the build configurations. Note that:
    - It installs `pnpm` globally.
    - It runs `pnpm install --frozen-lockfile` to install all dependencies cleanly.
-   - It defaults `PORT` to `8080` and `BASE_PATH` to `/` to satisfy Vite build constraints, and outputs the built artifacts to `dist/public`.
+   - It defaults `PORT` to `8080` and `BASE_PATH` to `/` to satisfy Vite build constraints. It outputs built artifacts to `dist/public` (which resolves to `artifacts/shri-academy/dist/public` or `artifacts/sri-platform/dist/public` relative to the configured app root).
 
 ### 3. Configure Environment Variables
 If your frontends require customized API endpoints or external integrations:
