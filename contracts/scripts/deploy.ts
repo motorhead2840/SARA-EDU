@@ -5,7 +5,7 @@
  *   SEPOLIA_RPC_URL=https://... DEPLOYER_PRIVATE_KEY=0x... npx hardhat run scripts/deploy.ts --network sepolia
  *
  * After deployment:
- *   1. Copy the printed CONTRACT_ADDRESS into your Replit env vars:
+ *   1. Copy the printed CONTRACT_ADDRESS into your environment variables:
  *        SARA_CONTRACT_ADDRESS=<address>
  *        VITE_SARA_CONTRACT_ADDRESS=<address>
  *   2. Verify on Etherscan:
@@ -45,8 +45,8 @@ async function main() {
   console.log("═══════════════════════════════════════════════════════════");
   console.log("");
   console.log("  Next steps:");
-  console.log("  1. Set SARA_CONTRACT_ADDRESS=" + address + " in Replit env vars");
-  console.log("  2. Set VITE_SARA_CONTRACT_ADDRESS=" + address + " in Replit env vars");
+  console.log("  1. Set SARA_CONTRACT_ADDRESS=" + address + " in environment variables");
+  console.log("  2. Set VITE_SARA_CONTRACT_ADDRESS=" + address + " in environment variables");
   console.log("  3. Verify: npx hardhat verify --network sepolia " + address + " " + deployer.address);
   console.log("═══════════════════════════════════════════════════════════");
 }

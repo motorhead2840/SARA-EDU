@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { runMigrations } from "stripe-replit-sync";
+import { runMigrations } from "stripe-sync";
 import { getStripeSync } from "./stripeClient.js";
 import { initSubscriptionSchema } from "./lib/subscriptionDb.js";
 import { initSecopsSchema } from "./lib/secopsDb.js";
@@ -32,16 +32,16 @@ async function initStripe() {
 
     const stripeSync = await getStripeSync();
 
-    const webhookBaseUrl = process.env.WEBHOOK_BASE_URL 
-      || process.env.APP_URL 
-      || (process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(",")[0]}` : null);
-
-    if (webhookBaseUrl) {
-      await stripeSync.findOrCreateManagedWebhook(`${webhookBaseUrl}/api/stripe/webhook`);
-      logger.info({ webhookBaseUrl }, "Stripe webhook configured");
-    } else {
-      logger.warn("Neither WEBHOOK_BASE_URL, APP_URL, nor REPLIT_DOMAINS is set — skipping Stripe webhook configuration. At least one of these environment variables should be configured for production deployments to ensure payment events are processed.");
+    let webhookBaseUrl = process.env.WEBHOOK_BASE_URL;
+    if (!webhookBaseUrl) {
+      if (process.env.NODE_ENV === "production") {
+        throw new Error("WEBHOOK_BASE_URL environment variable is required in production");
+      }
+      webhookBaseUrl = `http://localhost:${port}`;
+      logger.warn(`WEBHOOK_BASE_URL is not set. Falling back to development webhook base URL: ${webhookBaseUrl}`);
     }
+    await stripeSync.findOrCreateManagedWebhook(`${webhookBaseUrl}/api/stripe/webhook`);
+    logger.info("Stripe webhook configured");
 
     // Run backfill in background — don't block server startup
     stripeSync.syncBackfill()
@@ -123,19 +123,15 @@ const server = app.listen(port, (err) => {
 });
 
 // ── Python API sidecar ────────────────────────────────────────────────────────
-// Spawns uvicorn so Replit's deployment only needs ONE port (8080).
-// Disabled in Docker/ECS where Python runs as a separate container.
-// Enable by setting PYTHON_SIDECAR_ENABLED=true in the runtime env.
-// Auto-start in dev; in Docker/ECS (NODE_ENV=production) requires explicit opt-in.
-// Replit production sets PYTHON_SIDECAR_ENABLED=true in artifact.toml.
+// Spawns uvicorn so local development can run both services on a single entrypoint.
+// Disabled in production (Docker/ECS) where Python runs as a separate container.
+// Enable explicitly by setting PYTHON_SIDECAR_ENABLED=true in the runtime env.
 if (process.env["PYTHON_SIDECAR_ENABLED"] === "true" || process.env["NODE_ENV"] !== "production") {
   (function initPythonSidecar() {
     const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-    // Configurable via env — required in Replit prod where paths are known.
-    // In Docker the var is absent so this block never executes.
-    const pythonBin = process.env["PYTHON_BIN"]
-      ?? "/home/runner/workspace/.pythonlibs/bin/python3";
+    // Configurable via env — default to standard "python3" and local relative path.
+    const pythonBin = process.env["PYTHON_BIN"] ?? "python3";
     const apiDir = process.env["PY_API_DIR"]
       ?? path.resolve(__dirname, "..", "..", "..", "shri-academy-api");
 

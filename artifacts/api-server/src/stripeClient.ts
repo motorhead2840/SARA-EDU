@@ -1,15 +1,17 @@
 import Stripe from 'stripe';
-import { StripeSync } from 'stripe-replit-sync';
+import { StripeSync } from 'stripe-sync';
 
 async function getStripeCredentials(): Promise<{ secretKey: string; webhookSecret?: string }> {
-  const secretKey = process.env.STRIPE_SECRET_KEY;
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-  if (!secretKey) {
-    throw new Error('Missing STRIPE_SECRET_KEY environment variable.');
+  if (process.env.STRIPE_SECRET_KEY) {
+    return {
+      secretKey: process.env.STRIPE_SECRET_KEY,
+      webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+    };
   }
 
-  return { secretKey, webhookSecret };
+  throw new Error(
+    'Missing Stripe credentials. Please configure STRIPE_SECRET_KEY.'
+  );
 }
 
 export async function getUncachableStripeClient(): Promise<Stripe> {

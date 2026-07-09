@@ -1,13 +1,11 @@
 import Stripe from 'stripe';
 
 async function getStripeCredentials(): Promise<{ secretKey: string }> {
-  const secretKey = process.env.STRIPE_SECRET_KEY;
-
-  if (!secretKey) {
-    throw new Error('Missing STRIPE_SECRET_KEY environment variable.');
+  if (process.env.STRIPE_SECRET_KEY) {
+    return { secretKey: process.env.STRIPE_SECRET_KEY };
   }
 
-  return { secretKey };
+  throw new Error('Missing Stripe credentials. Please configure STRIPE_SECRET_KEY.');
 }
 
 export async function getUncachableStripeClient(): Promise<Stripe> {

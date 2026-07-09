@@ -86,13 +86,14 @@ contract SaraToken is ERC20, ERC20Burnable, ERC20Permit, ERC20Votes, Ownable2Ste
         uint256 amount,
         bytes32 reason
     ) external onlyOwner {
-        // totalSupply() < MAX_SUPPLY is already guaranteed by the error branch,
-        // so the addition cannot overflow — safe to use unchecked.
-        unchecked {
-            uint256 supply = totalSupply();
-            if (supply + amount > MAX_SUPPLY) {
-                revert ExceedsMaxSupply(amount, MAX_SUPPLY - supply);
-            }
+        uint256 supply = totalSupply();
+        // Invariant: supply <= MAX_SUPPLY is guaranteed because:
+        // 1. Initial supply is GENESIS_MINT (10,000,000 SARA), which is < MAX_SUPPLY.
+        // 2. This function is the only entrypoint to mint new tokens, and it strictly
+        //    reverts if the newly requested amount would exceed the remaining supply.
+        // Therefore, MAX_SUPPLY - supply is safe from underflow.
+        if (amount > MAX_SUPPLY - supply) {
+            revert ExceedsMaxSupply(amount, MAX_SUPPLY - supply);
         }
         _mint(to, amount);
         emit TokensMinted(to, amount, reason);

@@ -1,5 +1,5 @@
 function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  // Use root-relative /api/... — the Replit proxy routes this to the api-server
+  // Use root-relative /api/... so frontend and API share the same origin path.
   return fetch(`/api${path}`, {
     headers: { 'Content-Type': 'application/json' },
     ...init,

@@ -35,7 +35,7 @@ COPY artifacts/api-server/src/ artifacts/api-server/src/
 RUN pnpm --filter @workspace/api-server run build
 
 # ⑥ Deploy: extract only this package's production node_modules into /deploy
-#    This includes externalized packages (stripe-replit-sync, @aws-sdk/*, etc.)
+#    This includes externalized packages (stripe-sync, @aws-sdk/*, etc.)
 RUN pnpm --filter @workspace/api-server deploy --prod --legacy /deploy/api-server
 
 # ── Stage 2: runtime ──────────────────────────────────────────────────────────

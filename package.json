@@ -17,6 +17,6 @@
     "@types/pg": "^8.20.0",
     "pg": "^8.22.0",
     "stripe": "^22.3.0",
-    "stripe-replit-sync": "^1.0.0"
+    "stripe-sync": "npm:stripe-replit-sync@^1.0.0"
   }
 }
