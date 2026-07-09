@@ -1,5 +1,5 @@
 import Stripe from 'stripe';
-import { StripeSync } from 'stripe-replit-sync';
+import { StripeSync } from 'stripe-sync';
 
 async function getStripeCredentials(): Promise<{ secretKey: string; webhookSecret?: string }> {
   if (process.env.STRIPE_SECRET_KEY) {

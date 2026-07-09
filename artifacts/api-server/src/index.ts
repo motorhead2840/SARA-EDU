@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { runMigrations } from "stripe-replit-sync";
+import { runMigrations } from "stripe-sync";
 import { getStripeSync } from "./stripeClient.js";
 import { initSubscriptionSchema } from "./lib/subscriptionDb.js";
 import { initSecopsSchema } from "./lib/secopsDb.js";

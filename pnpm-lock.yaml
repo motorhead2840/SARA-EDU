@@ -157,9 +157,9 @@ importers:
       stripe:
         specifier: ^22.3.0
         version: 22.3.0(@types/node@25.9.4)
-      stripe-replit-sync:
-        specifier: ^1.0.0
-        version: 1.0.0(stripe@22.3.0(@types/node@25.9.4))
+      stripe-sync:
+        specifier: npm:stripe-replit-sync@^1.0.0
+        version: stripe-replit-sync@1.0.0(stripe@22.3.0(@types/node@25.9.4))
     devDependencies:
       prettier:
         specifier: ^3.8.4
