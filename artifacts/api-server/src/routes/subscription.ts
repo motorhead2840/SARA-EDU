@@ -104,9 +104,11 @@ router.post('/checkout/fiat', async (req, res) => {
     const priceMap = await getTierPriceMap();
     const priceId  = priceMap[tier];
 
+    const domain = process.env.REPLIT_DOMAINS?.split(',')[0];
     const baseUrl =
       req.headers.origin ||
-      `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}`;
+      process.env.APP_URL ||
+      (domain ? `https://${domain}` : `${req.protocol}://${req.get('host')}`);
 
     const url = await stripeService.createCheckoutSession({
       email,

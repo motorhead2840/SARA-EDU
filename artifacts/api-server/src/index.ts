@@ -32,7 +32,15 @@ async function initStripe() {
 
     const stripeSync = await getStripeSync();
 
-    const webhookBaseUrl = `https://${process.env.REPLIT_DOMAINS?.split(",")[0]}`;
+    let webhookBaseUrl = process.env.WEBHOOK_BASE_URL;
+    if (!webhookBaseUrl) {
+      if (process.env.REPLIT_DOMAINS) {
+        webhookBaseUrl = `https://${process.env.REPLIT_DOMAINS.split(",")[0]}`;
+      } else {
+        webhookBaseUrl = `http://localhost:${port}`;
+        logger.warn(`Neither WEBHOOK_BASE_URL nor REPLIT_DOMAINS is set. Falling back to development webhook base URL: ${webhookBaseUrl}`);
+      }
+    }
     await stripeSync.findOrCreateManagedWebhook(`${webhookBaseUrl}/api/stripe/webhook`);
     logger.info("Stripe webhook configured");
 

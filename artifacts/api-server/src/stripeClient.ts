@@ -2,6 +2,13 @@ import Stripe from 'stripe';
 import { StripeSync } from 'stripe-replit-sync';
 
 async function getStripeCredentials(): Promise<{ secretKey: string; webhookSecret?: string }> {
+  if (process.env.STRIPE_SECRET_KEY) {
+    return {
+      secretKey: process.env.STRIPE_SECRET_KEY,
+      webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+    };
+  }
+
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
   const xReplitToken = process.env.REPL_IDENTITY
     ? "repl " + process.env.REPL_IDENTITY
@@ -11,7 +18,7 @@ async function getStripeCredentials(): Promise<{ secretKey: string; webhookSecre
 
   if (!hostname || !xReplitToken) {
     throw new Error(
-      'Missing Replit environment variables. Ensure the Stripe integration is connected via the Integrations tab.'
+      'Missing Stripe credentials. Please configure STRIPE_SECRET_KEY.'
     );
   }
 
@@ -27,7 +34,14 @@ async function getStripeCredentials(): Promise<{ secretKey: string; webhookSecre
     throw new Error(`Failed to fetch Stripe credentials: ${resp.status} ${resp.statusText}`);
   }
 
-  const data = await resp.json();
+  const data = (await resp.json()) as {
+    items?: Array<{
+      settings?: {
+        secret?: string;
+        webhook_secret?: string;
+      };
+    }>;
+  };
   const settings = data.items?.[0]?.settings;
 
   // Connector returns { secret, publishable, account_id, ... }

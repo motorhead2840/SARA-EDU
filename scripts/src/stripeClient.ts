@@ -1,6 +1,10 @@
 import Stripe from 'stripe';
 
 async function getStripeCredentials(): Promise<{ secretKey: string }> {
+  if (process.env.STRIPE_SECRET_KEY) {
+    return { secretKey: process.env.STRIPE_SECRET_KEY };
+  }
+
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
   const xReplitToken = process.env.REPL_IDENTITY
     ? "repl " + process.env.REPL_IDENTITY
@@ -9,7 +13,7 @@ async function getStripeCredentials(): Promise<{ secretKey: string }> {
       : null;
 
   if (!hostname || !xReplitToken) {
-    throw new Error('Missing Replit env vars. Ensure the Stripe integration is connected.');
+    throw new Error('Missing Stripe credentials. Please configure STRIPE_SECRET_KEY.');
   }
 
   const resp = await fetch(
