@@ -102,13 +102,17 @@ jobs:
       - name: Resolve image tags and build metadata
         id: meta
         shell: bash
+        env:
+          REF_NAME: ${{ github.ref_name }}
+          ECR_REPO: ${{ inputs.ecr_repo }}
+          PUSH_LATEST: ${{ inputs.push_latest }}
+          REGISTRY: ${{ steps.ecr-login.outputs.registry }}
         run: |
-          REF="${{ github.ref_name }}"
+          REF="$REF_NAME"
           SHA7="${GITHUB_SHA::7}"
           BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          REGISTRY="${{ steps.ecr-login.outputs.registry }}"
-          VERSIONED_TAG="${REGISTRY}/${{ inputs.ecr_repo }}:${REF}-${SHA7}"
-          LATEST_TAG="${REGISTRY}/${{ inputs.ecr_repo }}:latest"
+          VERSIONED_TAG="${REGISTRY}/${ECR_REPO}:${REF}-${SHA7}"
+          LATEST_TAG="${REGISTRY}/${ECR_REPO}:latest"
           echo "versioned=${VERSIONED_TAG}" >> "$GITHUB_OUTPUT"
           echo "latest=${LATEST_TAG}"       >> "$GITHUB_OUTPUT"
           echo "build_date=${BUILD_DATE}"   >> "$GITHUB_OUTPUT"
@@ -116,7 +120,7 @@ jobs:
           {
             echo "tags<<EOF"
             echo "${VERSIONED_TAG}"
-            [[ "${{ inputs.push_latest }}" == "true" ]] && echo "${LATEST_TAG}"
+            [[ "$PUSH_LATEST" == "true" ]] && echo "${LATEST_TAG}"
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
@@ -147,18 +151,23 @@ jobs:
 
       - name: Capture current ECS task definition ARN (for rollback)
         id: current-task-def
+        env:
+          ECS_CLUSTER: ${{ inputs.ecs_cluster }}
+          ECS_SERVICE: ${{ inputs.ecs_service }}
         run: |
           PREVIOUS_ARN=$(aws ecs describe-services \
-            --cluster "${{ inputs.ecs_cluster }}" \
-            --services "${{ inputs.ecs_service }}" \
+            --cluster "$ECS_CLUSTER" \
+            --services "$ECS_SERVICE" \
             --query 'services[0].taskDefinition' \
             --output text)
           echo "previous_arn=${PREVIOUS_ARN}" >> "$GITHUB_OUTPUT"
 
       - name: Download current ECS task definition
+        env:
+          TASK_DEF_FAMILY: ${{ inputs.task_def_family }}
         run: |
           aws ecs describe-task-definition \
-            --task-definition "${{ inputs.task_def_family }}" \
+            --task-definition "$TASK_DEF_FAMILY" \
             --query taskDefinition \
           | jq 'del(
               .taskDefinitionArn,
@@ -189,10 +198,12 @@ jobs:
 
       - name: Smoke test — verify new version is responding
         if: inputs.health_check_url != ''
+        env:
+          HEALTH_CHECK_URL: ${{ inputs.health_check_url }}
         run: |
-          echo "=== Smoke test: ${{ inputs.health_check_url }} ==="
+          echo "=== Smoke test: $HEALTH_CHECK_URL ==="
           for i in 1 2 3 4 5; do
-            if curl -fsS --max-time 10 "${{ inputs.health_check_url }}"; then
+            if curl -fsS --max-time 10 "$HEALTH_CHECK_URL"; then
               echo "✅ Health check passed"
               exit 0
             fi
@@ -204,20 +215,27 @@ jobs:
 
       - name: Rollback to previous task definition on failure
         if: failure() && steps.current-task-def.outputs.previous_arn != ''
+        env:
+          PREVIOUS_ARN: ${{ steps.current-task-def.outputs.previous_arn }}
+          ECS_CLUSTER: ${{ inputs.ecs_cluster }}
+          ECS_SERVICE: ${{ inputs.ecs_service }}
         run: |
-          echo "=== Rolling back to ${{ steps.current-task-def.outputs.previous_arn }} ==="
+          echo "=== Rolling back to $PREVIOUS_ARN ==="
           aws ecs update-service \
-            --cluster "${{ inputs.ecs_cluster }}" \
-            --service  "${{ inputs.ecs_service }}" \
-            --task-definition "${{ steps.current-task-def.outputs.previous_arn }}" \
+            --cluster "$ECS_CLUSTER" \
+            --service  "$ECS_SERVICE" \
+            --task-definition "$PREVIOUS_ARN" \
             --force-new-deployment
 
       - name: Print ECS events on failure
         if: failure()
+        env:
+          ECS_CLUSTER: ${{ inputs.ecs_cluster }}
+          ECS_SERVICE: ${{ inputs.ecs_service }}
         run: |
           echo "=== ECS service events (last 5) ==="
           aws ecs describe-services \
-            --cluster "${{ inputs.ecs_cluster }}" \
-            --services "${{ inputs.ecs_service }}" \
+            --cluster "$ECS_CLUSTER" \
+            --services "$ECS_SERVICE" \
             --query 'services[0].events[:5]' \
             --output table
