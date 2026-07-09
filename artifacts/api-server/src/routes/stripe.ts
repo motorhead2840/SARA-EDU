@@ -35,8 +35,7 @@ router.post("/checkout", async (req, res) => {
       return;
     }
 
-    const domain = process.env.REPLIT_DOMAINS?.split(",")[0];
-    const baseUrl = process.env.APP_URL || (domain ? `https://${domain}` : `${req.protocol}://${req.get("host")}`);
+    const baseUrl = process.env.APP_URL || `${req.protocol}://${req.get("host")}`;
     const url = await stripeService.createCheckoutSession({
       email,
       priceId,
@@ -64,8 +63,7 @@ router.post("/portal", async (req, res) => {
       return;
     }
 
-    const domain = process.env.REPLIT_DOMAINS?.split(",")[0];
-    const baseUrl = process.env.APP_URL || (domain ? `https://${domain}` : `${req.protocol}://${req.get("host")}`);
+    const baseUrl = process.env.APP_URL || `${req.protocol}://${req.get("host")}`;
     const url = await stripeService.createPortalSession(email, `${baseUrl}/pricing`);
     res.json({ url });
   } catch (err) {

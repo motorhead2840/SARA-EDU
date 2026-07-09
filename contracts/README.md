@@ -92,7 +92,7 @@ https://bn-ethereum-sepolia.<node-id>.managedblockchain.<region>.amazonaws.com
 ## After Deployment
 
 1. Copy the `CONTRACT_ADDRESS` printed by the deploy script
-2. Set it in Replit environment variables:
+2. Set it in environment variables:
    ```
    SARA_CONTRACT_ADDRESS=0x...       (for API server)
    VITE_SARA_CONTRACT_ADDRESS=0x...  (for frontend)
