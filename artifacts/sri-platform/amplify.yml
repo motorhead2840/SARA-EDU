@@ -1,0 +1,28 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        # Move up to the monorepo root to run install
+        - cd ../..
+        - npm install -g pnpm@10
+        - pnpm config set store-dir .pnpm-store
+        - pnpm install --frozen-lockfile
+        - cd artifacts/sri-platform
+    build:
+      commands:
+        # Return to app root to ensure build is executed in the correct context
+        - cd $AMPLIFY_START_DIR || cd ../../artifacts/sri-platform
+        # Set default fallback values for required build variables if not provided in the console environment
+        - export PORT=${PORT:-8080}
+        - export BASE_PATH=${BASE_PATH:-/}
+        - pnpm --filter @workspace/sri-platform run build
+  artifacts:
+    # Path is relative to the app root (artifacts/sri-platform)
+    baseDirectory: dist/public
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - ../../.pnpm-store/**/*
+      - ../../node_modules/**/*

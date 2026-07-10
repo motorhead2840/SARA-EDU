@@ -415,3 +415,42 @@ When AWS delivers and activates the Outpost rack:
    outpost_local_gateway_route_table_id = "lgt-XXXX"
    ```
 4. Run: `terraform apply -target=aws_subnet.outpost -target=aws_db_instance.outpost`
+
+## AWS Amplify Deployment (Frontend Apps)
+
+Both frontend applications—**Shri Academy** (`artifacts/shri-academy`) and **SRI Platform** (`artifacts/sri-platform`)—are built with Vite and are configured to deploy seamlessly to AWS Amplify.
+
+### 1. Connect the Repository in AWS Amplify
+1. Open the **AWS Console** and navigate to the **AWS Amplify** service.
+2. Click **Create new app** or **Host web app**.
+3. Select **GitHub** as your repository provider, authorize AWS Amplify, and select the `<your-org>/<your-repo>` repository.
+4. Select the branch you wish to deploy (e.g., `main`).
+
+### 2. Configure Monorepo Build Settings
+Amplify automatically detects the workspace-based monorepo configuration using the root-level `amplify.yml` or the sub-folder specific `amplify.yml` files we've configured. Under the **Build Settings** step in the setup wizard:
+1. Enable the **Monorepo** setting checkbox.
+2. Specify the path to the app's root directory:
+   - For **Shri Academy**: `artifacts/shri-academy`
+   - For **SRI Platform**: `artifacts/sri-platform`
+3. Amplify will automatically load the build configurations. Note that:
+   - It installs `pnpm` globally.
+   - It runs `pnpm install --frozen-lockfile` to install all dependencies cleanly.
+   - It defaults `PORT` to `8080` and `BASE_PATH` to `/` to satisfy Vite build constraints. It outputs built artifacts to `dist/public` (which resolves to `artifacts/shri-academy/dist/public` or `artifacts/sri-platform/dist/public` relative to the configured app root).
+
+### 3. Configure Environment Variables
+If your frontends require customized API endpoints or external integrations:
+1. Go to **App Settings** > **Environment variables** in the Amplify Console.
+2. Add any build-time or runtime configuration variables (e.g. `PORT`, `BASE_PATH`, or api endpoints).
+
+### 4. Set Up Single Page Application (SPA) Redirects
+Since Vite applications use client-side routing, any direct navigation to nested sub-routes (e.g., `/dashboard` or `/pricing`) will result in a 404 error if not handled by the host server.
+1. Navigate to **App Settings** > **Rewrites and redirects**.
+2. Add the following redirect rule:
+   - **Source address**: `</^[^.]+$|\.(?!(css|gif|ico|jpg|js|png|txt|svg|woff|woff2|ttf|map|json)$)([^.]+$)/>`
+   - **Target address**: `/index.html`
+   - **Type**: `200 (Rewrite)`
+
+### 5. Trigger and Verify Deployment
+1. Click **Save and deploy**.
+2. Once the pipeline completes, open the provided `amplifyapp.com` URL to test your live application.
+
