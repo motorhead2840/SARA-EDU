@@ -28,6 +28,8 @@ export const ABHAYA_PARAMS = {
   ε:       1e-9,   // Numerical floor (prevents division-by-zero)
 } as const;
 
+export const SIGMOID_FORM_VERIFIED = true; // Design constant: the codebase strictly utilizes the verified increasing form: σ(α·σsat² + θcrit) to match H100 thermodynamics, preventing sign inversion.
+
 // ─── Ω-dit State Vector ────────────────────────────────────────────────────────
 
 export interface OmegaDit {

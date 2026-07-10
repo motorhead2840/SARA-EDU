@@ -26,6 +26,7 @@ import Pricing from '@/pages/Pricing';
 import CheckoutSuccess from '@/pages/CheckoutSuccess';
 import CheckoutCancel from '@/pages/CheckoutCancel';
 import Subscribe from '@/pages/Subscribe';
+import PrivateStats from '@/pages/PrivateStats';
 
 const queryClient = new QueryClient();
 
@@ -51,6 +52,7 @@ function Router() {
       <Route path="/subscribe" component={Subscribe} />
       <Route path="/checkout/success" component={CheckoutSuccess} />
       <Route path="/checkout/cancel" component={CheckoutCancel} />
+      <Route path="/private-stats" component={PrivateStats} />
       <Route component={NotFound} />
     </Switch>
   );

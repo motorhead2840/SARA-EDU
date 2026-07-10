@@ -12,6 +12,7 @@ import academicRouter from "./academic.js";
 import forumRouter from "./forum.js";
 import gamesRouter from "./games.js";
 import mythologyRouter from "./mythology.js";
+import privateStatsRouter from "./privateStats.js";
 
 const router: IRouter = Router();
 
@@ -28,5 +29,6 @@ router.use("/academic", academicRouter);
 router.use("/forum", forumRouter);
 router.use("/games", gamesRouter);
 router.use("/mythology", mythologyRouter);
+router.use("/private-stats", privateStatsRouter);
 
 export default router;
