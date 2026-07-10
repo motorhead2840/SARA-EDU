@@ -7,7 +7,7 @@
 import { Router } from "express";
 import { timingSafeEqual } from "node:crypto";
 import { pool } from "../db.js";
-import { getManifoldStatus, ABHAYA_PARAMS } from "../lib/abhayaGate.js";
+import { getManifoldStatus, ABHAYA_PARAMS, SIGMOID_FORM_VERIFIED } from "../lib/abhayaGate.js";
 
 const router = Router();
 
@@ -174,7 +174,7 @@ router.get("/", requireStatsAuth, async (_req, res) => {
           gradient_variance: abhayaStatus.gradient_variance,
           manifold_stability: abhayaStatus.manifold_stability,
           circuit_b_primed: abhayaStatus.circuit_b_primed,
-          increasing_sigmoid_verified: true, // Design constant: the codebase strictly utilizes the verified increasing form: σ(α·σsat² + θcrit) to match H100 thermodynamics, preventing sign inversion.
+          increasing_sigmoid_verified: SIGMOID_FORM_VERIFIED,
         },
       },
     });

@@ -420,7 +420,7 @@ export default function PrivateStats() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                   {Object.entries(data.crypto_payments_30d.by_currency).map(([currency, item]) => {
                     const numVal = Number(item.usd);
-                    const formattedUsd = isNaN(numVal) ? "0.00" : numVal.toFixed(2);
+                    const formattedUsd = isNaN(numVal) ? "0.00" : numVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                     return (
                       <div key={currency} className="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-1">
                         <div className="text-xs font-black uppercase text-amber-500 tracking-wider">
