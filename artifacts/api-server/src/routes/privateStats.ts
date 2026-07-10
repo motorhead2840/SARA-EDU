@@ -30,7 +30,12 @@ function requireStatsAuth(req: any, res: any, next: any) {
 
   const keyMatch = (() => {
     try {
-      if (suppliedBuffer.length !== configuredBuffer.length) return false;
+      if (suppliedBuffer.length !== configuredBuffer.length) {
+        // Run a dummy comparison against itself to consume comparable CPU time
+        // and prevent revealing the correct key's length through timing.
+        timingSafeEqual(suppliedBuffer, suppliedBuffer);
+        return false;
+      }
       return timingSafeEqual(suppliedBuffer, configuredBuffer);
     } catch {
       return false;
