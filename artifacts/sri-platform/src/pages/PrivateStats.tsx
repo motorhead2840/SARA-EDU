@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { 
   Lock, 
@@ -73,14 +73,14 @@ interface StatsData {
 }
 
 export default function PrivateStats() {
-  const [key, setKey] = useState<string>(() => localStorage.getItem("sara_private_stats_key") ?? "");
+  const [key, setKey] = useState<string>(() => sessionStorage.getItem("sara_private_stats_key") ?? "");
   const [inputKey, setInputKey] = useState("");
   const [data, setData] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"overview" | "billing" | "abhaya" | "system">("overview");
 
-  const fetchStats = async (statsKey: string) => {
+  const fetchStats = useCallback(async (statsKey: string) => {
     setLoading(true);
     setError(null);
     try {
@@ -100,20 +100,20 @@ export default function PrivateStats() {
       const stats = await res.json();
       setData(stats);
       setKey(statsKey);
-      localStorage.setItem("sara_private_stats_key", statsKey);
+      sessionStorage.setItem("sara_private_stats_key", statsKey);
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred.");
       setData(null);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (key) {
       fetchStats(key);
     }
-  }, [key]);
+  }, [key, fetchStats]);
 
   const handleUnlock = (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,7 +127,7 @@ export default function PrivateStats() {
     setInputKey("");
     setData(null);
     setError(null);
-    localStorage.removeItem("sara_private_stats_key");
+    sessionStorage.removeItem("sara_private_stats_key");
   };
 
   const formatUptime = (seconds: number) => {
@@ -153,7 +153,7 @@ export default function PrivateStats() {
         >
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-600 to-indigo-600" />
           
-          <div className="w-16 h-14 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+          <div className="w-16 h-16 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
             <Lock className="w-8 h-8 text-indigo-400" />
           </div>
 
@@ -418,17 +418,21 @@ export default function PrivateStats() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                  {Object.entries(data.crypto_payments_30d.by_currency).map(([currency, item]) => (
-                    <div key={currency} className="bg-slate-950 border border-slate-850 p-4 rounded-xl space-y-1">
-                      <div className="text-xs font-black uppercase text-amber-500 tracking-wider">
-                        {currency}
+                  {Object.entries(data.crypto_payments_30d.by_currency).map(([currency, item]) => {
+                    const numVal = Number(item.usd);
+                    const formattedUsd = isNaN(numVal) ? "0.00" : numVal.toFixed(2);
+                    return (
+                      <div key={currency} className="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-1">
+                        <div className="text-xs font-black uppercase text-amber-500 tracking-wider">
+                          {currency}
+                        </div>
+                        <div className="text-lg font-black text-slate-100">${formattedUsd}</div>
+                        <div className="text-[10px] text-slate-500 font-medium">
+                          {item.count} Transactions
+                        </div>
                       </div>
-                      <div className="text-lg font-black text-slate-100">${parseFloat(item.usd).toFixed(2)}</div>
-                      <div className="text-[10px] text-slate-500 font-medium">
-                        {item.count} Transactions
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -484,23 +488,23 @@ export default function PrivateStats() {
                   Gate Parameters (V3.0)
                 </h3>
                 <div className="space-y-2 text-xs">
-                  <div className="flex justify-between border-b border-slate-850 pb-1.5">
+                  <div className="flex justify-between border-b border-slate-800 pb-1.5">
                     <span className="text-slate-500">Baseline Rate (λ0):</span>
                     <span className="font-bold text-slate-200">{data.abhaya.params.lambda0}</span>
                   </div>
-                  <div className="flex justify-between border-b border-slate-850 pb-1.5">
+                  <div className="flex justify-between border-b border-slate-800 pb-1.5">
                     <span className="text-slate-500">Damping Coefficient (κ):</span>
                     <span className="font-bold text-slate-200">{data.abhaya.params.kappa}</span>
                   </div>
-                  <div className="flex justify-between border-b border-slate-850 pb-1.5">
+                  <div className="flex justify-between border-b border-slate-800 pb-1.5">
                     <span className="text-slate-500">Max Capping limit (Λmax):</span>
                     <span className="font-bold text-slate-200">{data.abhaya.params.lambdaMax}</span>
                   </div>
-                  <div className="flex justify-between border-b border-slate-850 pb-1.5">
+                  <div className="flex justify-between border-b border-slate-800 pb-1.5">
                     <span className="text-slate-500">Overdrive Gain (α):</span>
                     <span className="font-bold text-slate-200">{data.abhaya.params.alpha}</span>
                   </div>
-                  <div className="flex justify-between border-b border-slate-850 pb-1.5">
+                  <div className="flex justify-between border-b border-slate-800 pb-1.5">
                     <span className="text-slate-500">Threshold Trigger (θcrit):</span>
                     <span className="font-bold text-slate-200">{data.abhaya.params.thetaCrit}</span>
                   </div>
@@ -545,11 +549,11 @@ export default function PrivateStats() {
                 <Server className="w-5 h-5 text-indigo-400" /> Environment Details
               </h3>
               <div className="space-y-3 text-sm">
-                <div className="flex justify-between border-b border-slate-850 pb-2">
+                <div className="flex justify-between border-b border-slate-800 pb-2">
                   <span className="text-slate-400">Node Runtime Version</span>
                   <span className="font-bold text-slate-200">{data.system.node_version}</span>
                 </div>
-                <div className="flex justify-between border-b border-slate-850 pb-2">
+                <div className="flex justify-between border-b border-slate-800 pb-2">
                   <span className="text-slate-400">Process Uptime</span>
                   <span className="font-bold text-slate-200">{data.system.uptime_seconds.toLocaleString()} seconds</span>
                 </div>
@@ -566,11 +570,11 @@ export default function PrivateStats() {
                 <Cpu className="w-5 h-5 text-rose-400" /> Node Memory Allocation
               </h3>
               <div className="space-y-3 text-sm">
-                <div className="flex justify-between border-b border-slate-850 pb-2">
+                <div className="flex justify-between border-b border-slate-800 pb-2">
                   <span className="text-slate-400">Resident Set Size (RSS)</span>
                   <span className="font-bold text-slate-200">{data.system.memory.rss_mb} MB</span>
                 </div>
-                <div className="flex justify-between border-b border-slate-850 pb-2">
+                <div className="flex justify-between border-b border-slate-800 pb-2">
                   <span className="text-slate-400">Heap Total size</span>
                   <span className="font-bold text-slate-200">{data.system.memory.heap_total_mb} MB</span>
                 </div>

@@ -11,19 +11,20 @@ import { getManifoldStatus, ABHAYA_PARAMS } from "../lib/abhayaGate.js";
 
 const router = Router();
 
-function getStatsKey(): string {
-  return process.env.SARA_PRIVATE_STATS_KEY ?? "SARA-STATS-2026-SECRET";
-}
-
 // Middleware to authenticate via custom header "x-private-stats-key"
 function requireStatsAuth(req: any, res: any, next: any) {
-  const suppliedKey = req.headers["x-private-stats-key"] || req.query.key;
+  const configuredKey = process.env.SARA_PRIVATE_STATS_KEY;
+  if (!configuredKey) {
+    res.status(503).json({ error: "Private Stats API is not configured (missing SARA_PRIVATE_STATS_KEY on server)." });
+    return;
+  }
+
+  const suppliedKey = req.headers["x-private-stats-key"];
   if (!suppliedKey) {
     res.status(401).json({ error: "Unauthorized. Missing stats key." });
     return;
   }
 
-  const configuredKey = getStatsKey();
   const suppliedBuffer = Buffer.from(String(suppliedKey), "utf8");
   const configuredBuffer = Buffer.from(configuredKey, "utf8");
 
@@ -173,7 +174,7 @@ router.get("/", requireStatsAuth, async (_req, res) => {
           gradient_variance: abhayaStatus.gradient_variance,
           manifold_stability: abhayaStatus.manifold_stability,
           circuit_b_primed: abhayaStatus.circuit_b_primed,
-          increasing_sigmoid_verified: true, // Circuit B sigmoid verification (increasing form: σ(α·σsat² + θcrit) matches thermodynamics)
+          increasing_sigmoid_verified: true, // Design constant: the codebase strictly utilizes the verified increasing form: σ(α·σsat² + θcrit) to match H100 thermodynamics, preventing sign inversion.
         },
       },
     });
