@@ -8,7 +8,7 @@ import {
   GraduationCap, Trophy, Plus, BookOpen, Trash2, Play, Square,
   Award, ChevronDown, ChevronUp, Send, Clock, Gift,
 } from 'lucide-react';
-import { getMentorMe, getMentorMetrics } from '@/lib/mentor-api';
+import { getMentorMe, getMentorMetrics, getSageMakerStatus, generateSageMakerData, trainSageMakerModel, deploySageMakerEndpoint } from '@/lib/mentor-api';
 import Home from '@/pages/home';
 import {
   listExams, createExam, addQuestion, getMentorQuestions, deleteQuestion,
@@ -36,7 +36,7 @@ export default function MentorDashboard() {
   const [, setLocation] = useLocation();
   const [isVerifying, setIsVerifying] = useState(true);
   const [email, setEmail] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'mentoring' | 'metrics' | 'security' | 'scholarship'>('mentoring');
+  const [activeTab, setActiveTab] = useState<'mentoring' | 'metrics' | 'security' | 'scholarship' | 'sagemaker'>('mentoring');
 
   const [metrics, setMetrics] = useState<any>(null);
   const [metricsLoading, setMetricsLoading] = useState(false);
@@ -173,6 +173,16 @@ export default function MentorDashboard() {
         >
           <GraduationCap className="w-4 h-4" /> SCHOLARSHIP_MGMT
         </button>
+        <button
+          onClick={() => setActiveTab('sagemaker')}
+          className={`flex-1 min-w-max py-3 px-4 uppercase tracking-widest text-sm font-bold flex items-center justify-center gap-2 transition-all ${
+            activeTab === 'sagemaker'
+              ? 'border-b-2 border-system text-system bg-system/10 text-glow-system'
+              : 'text-system/40 hover:text-system/70 hover:bg-system/5'
+          }`}
+        >
+          <Brain className="w-4 h-4" /> SAGEMAKER_PIPELINE
+        </button>
       </div>
 
       {/* Content Area */}
@@ -191,6 +201,10 @@ export default function MentorDashboard() {
         ) : activeTab === 'scholarship' ? (
           <div className="h-full overflow-y-auto p-4 sm:p-6 lg:p-8 relative z-10">
             <ScholarshipMgmtTab />
+          </div>
+        ) : activeTab === 'sagemaker' ? (
+          <div className="h-full overflow-y-auto p-4 sm:p-6 lg:p-8 relative z-10">
+            <SageMakerTab />
           </div>
         ) : (
           <div className="h-full overflow-y-auto p-4 sm:p-6 lg:p-8 relative z-10">
@@ -1166,6 +1180,457 @@ function SecurityInfraTab() {
         </a>
       </div>
 
+    </div>
+  );
+}
+
+const DEFAULT_PAIRS_PER_CHUNK = 8;
+const STATUS_POLL_INTERVAL_MS = 30000;
+
+function SageMakerTab() {
+  const [status, setStatus] = useState<any>(null);
+  const [statusLoading, setStatusLoading] = useState(false);
+  const [statusError, setStatusError] = useState<string | null>(null);
+
+  // Step 1 states
+  const [pairsPerChunk, setPairsPerChunk] = useState<number | undefined>(DEFAULT_PAIRS_PER_CHUNK);
+  const [s3Prefix, setS3Prefix] = useState('mentor-training/data');
+  const [generatingData, setGeneratingData] = useState(false);
+  const [genDataResult, setGenDataResult] = useState<any>(null);
+  const [genDataError, setGenDataError] = useState<string | null>(null);
+
+  // Step 2 states
+  const [dataS3Uri, setDataS3Uri] = useState('');
+  const [modelId, setModelId] = useState('nvidia/Nemotron-Mini-4B-Instruct');
+  const [trainingInstance, setTrainingInstance] = useState('ml.g4dn.2xlarge');
+  const [training, setTraining] = useState(false);
+  const [trainResult, setTrainResult] = useState<any>(null);
+  const [trainError, setTrainError] = useState<string | null>(null);
+
+  // Step 3 states
+  const [modelDataS3, setModelDataS3] = useState('');
+  const [endpointName, setEndpointName] = useState('shri-mentor-v1');
+  const [deployInstance, setDeployInstance] = useState('ml.g4dn.xlarge');
+  const [deploying, setDeploying] = useState(false);
+  const [deployResult, setDeployResult] = useState<any>(null);
+  const [deployError, setDeployError] = useState<string | null>(null);
+
+  // Console terminal logs
+  const [logs, setLogs] = useState<string[]>(['[SYSTEM] SageMaker Mentor Training pipeline console initialized.']);
+
+  const addLog = useCallback((msg: string) => {
+    const timestamp = new Date().toLocaleTimeString();
+    setLogs(prev => [...prev, `[${timestamp}] ${msg}`]);
+  }, []);
+
+  const fetchStatus = useCallback(async () => {
+    const token = localStorage.getItem('mentor_token');
+    if (!token) return;
+    setStatusLoading(true);
+    setStatusError(null);
+    try {
+      const data = await getSageMakerStatus(token);
+      setStatus(data);
+      addLog(`Status refreshed: Job: ${data.job_name || 'NONE'} (${data.job_status || 'N/A'}), Endpoint: ${data.endpoint_name || 'NONE'} (${data.endpoint_status || 'N/A'})`);
+      if (data.s3_uri && !dataS3Uri) {
+        setDataS3Uri(data.s3_uri);
+      }
+    } catch (err: any) {
+      setStatusError(err.message || 'Failed to fetch SageMaker status');
+      addLog(`ERROR: Status fetch failed - ${err.message || 'unknown error'}`);
+    } finally {
+      setStatusLoading(false);
+    }
+  }, [addLog, dataS3Uri]);
+
+  // Call fetchStatus once on mount or when fetchStatus definition changes
+  useEffect(() => {
+    fetchStatus();
+  }, [fetchStatus]);
+
+  // Handle periodic auto-polling, with conditional interval creation depending on active state
+  useEffect(() => {
+    if (generatingData || training || deploying) {
+      return; // Pause auto-polling during active operations to avoid unnecessary APIs and potential race conditions
+    }
+    const interval = setInterval(fetchStatus, STATUS_POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [fetchStatus, generatingData, training, deploying]);
+
+  const handleGenerateData = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const token = localStorage.getItem('mentor_token');
+    if (!token) return;
+    setGeneratingData(true);
+    setGenDataError(null);
+    setGenDataResult(null);
+    const pairs = pairsPerChunk || DEFAULT_PAIRS_PER_CHUNK;
+    addLog(`Kicked off synthetic Q&A generation from syllabus chunks (pairs_per_chunk: ${pairs}). Please wait, this takes 2-3 minutes...`);
+    try {
+      const res = await generateSageMakerData(token, { pairs_per_chunk: pairs, s3_prefix: s3Prefix });
+      setGenDataResult(res);
+      setDataS3Uri(res.s3_uri);
+      addLog(`SUCCESS: Generated ${res.record_count} Q&A pairs. S3 URI: ${res.s3_uri}`);
+      fetchStatus();
+    } catch (err: any) {
+      setGenDataError(err.message || 'Failed to generate synthetic data');
+      addLog(`ERROR: Data generation failed - ${err.message || 'unknown error'}`);
+    } finally {
+      setGeneratingData(false);
+    }
+  };
+
+  const handleLaunchTraining = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!dataS3Uri) {
+      setTrainError('Data S3 URI is required');
+      return;
+    }
+    const token = localStorage.getItem('mentor_token');
+    if (!token) return;
+    setTraining(true);
+    setTrainError(null);
+    setTrainResult(null);
+    addLog(`Launching SageMaker training job using model: ${modelId}...`);
+    try {
+      const res = await trainSageMakerModel(token, {
+        data_s3_uri: dataS3Uri,
+        model_id: modelId,
+        instance_type: trainingInstance
+      });
+      setTrainResult(res);
+      setModelDataS3(res.model_output_s3);
+      addLog(`SUCCESS: Training job '${res.job_name}' submitted. Output S3: ${res.model_output_s3}`);
+      fetchStatus();
+    } catch (err: any) {
+      setTrainError(err.message || 'Failed to start SageMaker training');
+      addLog(`ERROR: Training launch failed - ${err.message || 'unknown error'}`);
+    } finally {
+      setTraining(false);
+    }
+  };
+
+  const handleDeployEndpoint = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!modelDataS3) {
+      setDeployError('Model data S3 URI is required');
+      return;
+    }
+    const token = localStorage.getItem('mentor_token');
+    if (!token) return;
+    setDeploying(true);
+    setDeployError(null);
+    setDeployResult(null);
+    addLog(`Deploying SageMaker endpoint '${endpointName}' on ${deployInstance}...`);
+    try {
+      const res = await deploySageMakerEndpoint(token, {
+        model_data_s3: modelDataS3,
+        endpoint_name: endpointName,
+        instance_type: deployInstance
+      });
+      setDeployResult(res);
+      addLog(`SUCCESS: Endpoint '${res.endpoint_name}' deployment initialized. Status: ${res.status}`);
+      fetchStatus();
+    } catch (err: any) {
+      setDeployError(err.message || 'Failed to deploy SageMaker endpoint');
+      addLog(`ERROR: Endpoint deployment failed - ${err.message || 'unknown error'}`);
+    } finally {
+      setDeploying(false);
+    }
+  };
+
+  return (
+    <div className="max-w-6xl mx-auto space-y-8">
+      {/* Header */}
+      <div className="border-b border-system/30 pb-5">
+        <div className="flex items-center gap-3 mb-2">
+          <Brain className="w-6 h-6 text-system text-glow-system" />
+          <h2 className="text-xl text-system font-bold tracking-widest uppercase text-glow-system">
+            SAGEMAKER_MENTOR_PIPELINE
+          </h2>
+        </div>
+        <p className="text-system/50 text-xs leading-relaxed max-w-3xl">
+          Complete model lifecycle command center for the Shri AI Mentor.
+          Generate synthetic datasets from our proprietary curriculum → launch LoRA fine-tuning jobs on AWS SageMaker → deploy high-performance real-time endpoints.
+        </p>
+      </div>
+
+      {/* Status Overview cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="border border-system/20 bg-system/5 p-4 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-1 h-full bg-system"></div>
+          <div className="text-[10px] text-system/50 tracking-widest uppercase mb-1">Active SageMaker Endpoint</div>
+          <div className="text-sm font-bold truncate text-glow-system text-system">
+            {status?.endpoint_name || 'NONE'}
+          </div>
+          <div className="mt-1 text-xs uppercase flex items-center gap-1.5">
+            <span className={`inline-block w-2 h-2 rounded-full ${status?.endpoint_status === 'InService' ? 'bg-green-400' : 'bg-system/30'}`} />
+            <span className="text-system/70">{status?.endpoint_status || 'NOT_DEPLOYED'}</span>
+          </div>
+        </div>
+
+        <div className="border border-system/20 bg-system/5 p-4 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-1 h-full bg-system"></div>
+          <div className="text-[10px] text-system/50 tracking-widest uppercase mb-1">Latest Training Job</div>
+          <div className="text-sm font-bold truncate text-glow-system text-system">
+            {status?.job_name || 'NONE'}
+          </div>
+          <div className="mt-1 text-xs uppercase flex items-center gap-1.5">
+            <span className={`inline-block w-2 h-2 rounded-full ${status?.job_status === 'Completed' ? 'bg-green-400' : status?.job_status === 'InProgress' ? 'bg-yellow-400 animate-pulse' : 'bg-system/30'}`} />
+            <span className="text-system/70">{status?.job_status || 'NO_JOBS_FOUND'}</span>
+          </div>
+        </div>
+
+        <div className="border border-system/20 bg-system/5 p-4 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-1 h-full bg-system"></div>
+          <div className="text-[10px] text-system/50 tracking-widest uppercase mb-1">Mentor Eval Mode</div>
+          <div className="text-sm font-bold text-glow-system text-system uppercase">
+            {status?.eval_mode_active ? 'ACTIVE_EVAL' : 'STANDARD_MODE'}
+          </div>
+          <p className="text-[10px] text-system/40 mt-1 uppercase">
+            {status?.eval_mode_active ? 'AI Mentor routed to fine-tuned endpoint' : 'AI Mentor routed to baseline model'}
+          </p>
+        </div>
+      </div>
+
+      {/* Three Pipeline Steps */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        {/* Step 1: Generate Data */}
+        <div className="border border-system/20 bg-black/40 p-5 space-y-4 flex flex-col justify-between">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 border-b border-system/20 pb-2">
+              <span className="border border-system text-system font-bold text-xs px-2 py-0.5 rounded-none">STEP_01</span>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-system">Synthetic Data Generation</h3>
+            </div>
+            <p className="text-[11px] text-system/60 leading-relaxed">
+              Uses the NVIDIA Nemotron API to extract high-quality curriculum Q&A pairs from all 25 syllabus chapters.
+            </p>
+
+            <form onSubmit={handleGenerateData} className="space-y-3 pt-2">
+              <div>
+                <label className="block text-[10px] uppercase text-system/50 mb-1">Pairs per syllabus chunk</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={pairsPerChunk ?? ''}
+                  onChange={e => {
+                    const val = e.target.value;
+                    if (val === '') {
+                      setPairsPerChunk(undefined);
+                    } else {
+                      const num = parseInt(val);
+                      if (!isNaN(num)) {
+                        setPairsPerChunk(Math.max(1, num));
+                      }
+                    }
+                  }}
+                  className="w-full bg-black border border-system/30 px-3 py-1.5 text-xs text-system font-mono focus:border-system focus:outline-none"
+                  disabled={generatingData}
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] uppercase text-system/50 mb-1">S3 Destination Prefix</label>
+                <input
+                  type="text"
+                  value={s3Prefix}
+                  onChange={e => setS3Prefix(e.target.value)}
+                  className="w-full bg-black border border-system/30 px-3 py-1.5 text-xs text-system font-mono focus:border-system focus:outline-none"
+                  disabled={generatingData}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={generatingData}
+                className="w-full border border-system bg-system/10 text-system uppercase tracking-widest text-xs font-bold py-2 hover:bg-system/25 transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                {generatingData ? 'GENERATING_DATA...' : 'RUN GENERATION'}
+              </button>
+            </form>
+          </div>
+
+          {genDataResult && (
+            <div className="border border-green-500/30 bg-green-500/5 p-3 text-[10px] space-y-1">
+              <div className="text-green-400 font-bold uppercase">Generation Complete</div>
+              <div>Records: {genDataResult.record_count} | Chunks: {genDataResult.chunks_processed}</div>
+              <div className="truncate font-mono">URI: {genDataResult.s3_uri}</div>
+            </div>
+          )}
+
+          {genDataError && (
+            <div className="border border-red-500/30 bg-red-500/5 p-3 text-[10px] text-red-400 font-mono">
+              {genDataError}
+            </div>
+          )}
+        </div>
+
+        {/* Step 2: LoRA Fine-Tuning */}
+        <div className="border border-system/20 bg-black/40 p-5 space-y-4 flex flex-col justify-between">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 border-b border-system/20 pb-2">
+              <span className="border border-system text-system font-bold text-xs px-2 py-0.5 rounded-none">STEP_02</span>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-system">LoRA Fine-Tuning</h3>
+            </div>
+            <p className="text-[11px] text-system/60 leading-relaxed">
+              Submits an asynchronous Hugging Face Training Job on SageMaker. Pins PyTorch 2.1 and transformers 4.37.0.
+            </p>
+
+            <form onSubmit={handleLaunchTraining} className="space-y-3 pt-2">
+              <div>
+                <label className="block text-[10px] uppercase text-system/50 mb-1">Dataset S3 URI</label>
+                <input
+                  type="text"
+                  placeholder="s3://..."
+                  value={dataS3Uri}
+                  onChange={e => setDataS3Uri(e.target.value)}
+                  className="w-full bg-black border border-system/30 px-3 py-1.5 text-xs text-system font-mono focus:border-system focus:outline-none"
+                  disabled={training}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] uppercase text-system/50 mb-1">Base Model ID</label>
+                <input
+                  type="text"
+                  value={modelId}
+                  onChange={e => setModelId(e.target.value)}
+                  className="w-full bg-black border border-system/30 px-3 py-1.5 text-xs text-system font-mono focus:border-system focus:outline-none"
+                  disabled={training}
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] uppercase text-system/50 mb-1">Instance Type</label>
+                <select
+                  value={trainingInstance}
+                  onChange={e => setTrainingInstance(e.target.value)}
+                  className="w-full bg-black border border-system/30 px-3 py-1.5 text-xs text-system font-mono focus:border-system focus:outline-none"
+                  disabled={training}
+                >
+                  <option value="ml.g4dn.2xlarge">ml.g4dn.2xlarge (1x T4 16GB)</option>
+                  <option value="ml.g5.2xlarge">ml.g5.2xlarge (1x A10G 24GB)</option>
+                  <option value="ml.g5.4xlarge">ml.g5.4xlarge (1x A10G 64GB)</option>
+                </select>
+              </div>
+              <button
+                type="submit"
+                disabled={training}
+                className="w-full border border-system bg-system/10 text-system uppercase tracking-widest text-xs font-bold py-2 hover:bg-system/25 transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                {training ? 'LAUNCHING...' : 'LAUNCH TRAINING JOB'}
+              </button>
+            </form>
+          </div>
+
+          {trainResult && (
+            <div className="border border-green-500/30 bg-green-500/5 p-3 text-[10px] space-y-1">
+              <div className="text-green-400 font-bold uppercase">Training Launched</div>
+              <div className="truncate">Job Name: {trainResult.job_name}</div>
+              <div className="truncate font-mono text-[9px]">Artifact S3: {trainResult.model_output_s3}</div>
+            </div>
+          )}
+
+          {trainError && (
+            <div className="border border-red-500/30 bg-red-500/5 p-3 text-[10px] text-red-400 font-mono">
+              {trainError}
+            </div>
+          )}
+        </div>
+
+        {/* Step 3: Endpoint Deployment */}
+        <div className="border border-system/20 bg-black/40 p-5 space-y-4 flex flex-col justify-between">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 border-b border-system/20 pb-2">
+              <span className="border border-system text-system font-bold text-xs px-2 py-0.5 rounded-none">STEP_03</span>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-system">Real-time Endpoint Deployment</h3>
+            </div>
+            <p className="text-[11px] text-system/60 leading-relaxed">
+              Spins up a secure SageMaker real-time inference endpoint using the trained model archive weights.
+            </p>
+
+            <form onSubmit={handleDeployEndpoint} className="space-y-3 pt-2">
+              <div>
+                <label className="block text-[10px] uppercase text-system/50 mb-1">Model Artifact S3 URI (tar.gz)</label>
+                <input
+                  type="text"
+                  placeholder="s3://.../model.tar.gz"
+                  value={modelDataS3}
+                  onChange={e => setModelDataS3(e.target.value)}
+                  className="w-full bg-black border border-system/30 px-3 py-1.5 text-xs text-system font-mono focus:border-system focus:outline-none"
+                  disabled={deploying}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] uppercase text-system/50 mb-1">Endpoint Name</label>
+                <input
+                  type="text"
+                  value={endpointName}
+                  onChange={e => setEndpointName(e.target.value)}
+                  className="w-full bg-black border border-system/30 px-3 py-1.5 text-xs text-system font-mono focus:border-system focus:outline-none"
+                  disabled={deploying}
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] uppercase text-system/50 mb-1">Inference Instance Type</label>
+                <select
+                  value={deployInstance}
+                  onChange={e => setDeployInstance(e.target.value)}
+                  className="w-full bg-black border border-system/30 px-3 py-1.5 text-xs text-system font-mono focus:border-system focus:outline-none"
+                  disabled={deploying}
+                >
+                  <option value="ml.g4dn.xlarge">ml.g4dn.xlarge (1x T4 16GB)</option>
+                  <option value="ml.g5.xlarge">ml.g5.xlarge (1x A10G 24GB)</option>
+                  <option value="ml.m5.large">ml.m5.large (CPU fallback)</option>
+                </select>
+              </div>
+              <button
+                type="submit"
+                disabled={deploying}
+                className="w-full border border-system bg-system/10 text-system uppercase tracking-widest text-xs font-bold py-2 hover:bg-system/25 transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                {deploying ? 'DEPLOYING...' : 'DEPLOY ENDPOINT'}
+              </button>
+            </form>
+          </div>
+
+          {deployResult && (
+            <div className="border border-green-500/30 bg-green-500/5 p-3 text-[10px] space-y-1">
+              <div className="text-green-400 font-bold uppercase">Deployment Initialized</div>
+              <div className="truncate">Name: {deployResult.endpoint_name}</div>
+              <div>Status: {deployResult.status}</div>
+            </div>
+          )}
+
+          {deployError && (
+            <div className="border border-red-500/30 bg-red-500/5 p-3 text-[10px] text-red-400 font-mono">
+              {deployError}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Live System Console Logs */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="text-[10px] uppercase text-system/60 tracking-wider font-bold flex items-center gap-1.5">
+            <Terminal className="w-3.5 h-3.5 text-system animate-pulse" /> LIVE_PIPELINE_CONSOLE
+          </div>
+          <button
+            onClick={() => setLogs([`[SYSTEM] Console logs cleared. Pipeline active.`])}
+            className="text-[9px] border border-system/20 hover:border-system/50 hover:bg-system/5 px-2 py-0.5 text-system/60 hover:text-system transition-all uppercase"
+          >
+            Clear logs
+          </button>
+        </div>
+        <div className="border border-system/30 bg-black p-4 h-48 overflow-y-auto font-mono text-[10px] leading-relaxed space-y-1 text-system/85 select-all scrollbar-thin scrollbar-thumb-system/20 scrollbar-track-transparent">
+          {logs.map((log, i) => (
+            <div key={i} className={log.includes('ERROR:') ? 'text-red-400' : log.includes('SUCCESS:') ? 'text-green-400' : ''}>
+              {log}
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

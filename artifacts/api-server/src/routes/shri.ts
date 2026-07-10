@@ -8,6 +8,7 @@
  */
 import { Router, Request, Response, NextFunction } from "express";
 import { logger } from "../lib/logger.js";
+import { requireMentor } from "../middleware/requireMentor.js";
 
 const router = Router();
 const PYTHON_BASE = "http://localhost:8001/shri-api";
@@ -92,6 +93,37 @@ async function proxyPost(path: string, body: unknown) {
   return res.json();
 }
 
+async function proxyGetWithMentorAuth(path: string) {
+  const secret = process.env.MENTOR_API_SECRET ?? "";
+  const res = await fetch(`${PYTHON_BASE}${path}`, {
+    headers: {
+      "X-Mentor-Token": secret,
+    },
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw Object.assign(new Error(`Python backend error ${res.status}`), { status: res.status, body: text });
+  }
+  return res.json();
+}
+
+async function proxyPostWithMentorAuth(path: string, body: unknown) {
+  const secret = process.env.MENTOR_API_SECRET ?? "";
+  const res = await fetch(`${PYTHON_BASE}${path}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Mentor-Token": secret,
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw Object.assign(new Error(`Python backend error ${res.status}`), { status: res.status, body: text });
+  }
+  return res.json();
+}
+
 // GET /api/shri/health
 router.get("/health", async (_req, res) => {
   try {
@@ -167,6 +199,54 @@ router.get("/research/search", async (req, res) => {
   } catch (err) {
     logger.error({ err }, "Research search error");
     res.status(502).json({ error: "Research search unavailable" });
+  }
+});
+
+// GET /api/shri/sagemaker/status — poll SageMaker training job / endpoint status
+router.get("/sagemaker/status", requireMentor, async (_req, res) => {
+  try {
+    const data = await proxyGetWithMentorAuth("/sagemaker/status");
+    res.json(data);
+  } catch (err: unknown) {
+    logger.error({ err }, "SageMaker status error");
+    const e = err as { status?: number };
+    res.status(e.status ?? 502).json({ error: "SageMaker status unavailable" });
+  }
+});
+
+// POST /api/shri/sagemaker/generate-data — kick off synthetic training data generation
+router.post("/sagemaker/generate-data", requireMentor, async (req, res) => {
+  try {
+    const data = await proxyPostWithMentorAuth("/sagemaker/generate-data", req.body);
+    res.json(data);
+  } catch (err: unknown) {
+    logger.error({ err }, "SageMaker generate data error");
+    const e = err as { status?: number };
+    res.status(e.status ?? 502).json({ error: "SageMaker generate data failed" });
+  }
+});
+
+// POST /api/shri/sagemaker/train — submit SageMaker training job
+router.post("/sagemaker/train", requireMentor, async (req, res) => {
+  try {
+    const data = await proxyPostWithMentorAuth("/sagemaker/train", req.body);
+    res.json(data);
+  } catch (err: unknown) {
+    logger.error({ err }, "SageMaker train error");
+    const e = err as { status?: number };
+    res.status(e.status ?? 502).json({ error: "SageMaker training launch failed" });
+  }
+});
+
+// POST /api/shri/sagemaker/deploy — deploy trained model to SageMaker real-time endpoint
+router.post("/sagemaker/deploy", requireMentor, async (req, res) => {
+  try {
+    const data = await proxyPostWithMentorAuth("/sagemaker/deploy", req.body);
+    res.json(data);
+  } catch (err: unknown) {
+    logger.error({ err }, "SageMaker deploy error");
+    const e = err as { status?: number };
+    res.status(e.status ?? 502).json({ error: "SageMaker deployment failed" });
   }
 });
 
