@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "rrFr6RBwjlTtGQTGKMR5Z"
+uri = "file://contracts/SaraToken.flat.sol"
+type = "unspecified"
+title = "SaraToken v2 (Gas-Optimised) — Paste into Remix & Etherscan"

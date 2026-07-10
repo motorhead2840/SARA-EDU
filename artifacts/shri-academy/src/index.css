@@ -1,0 +1,198 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-card-border: hsl(var(--card-border));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-popover-border: hsl(var(--popover-border));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-primary-border: var(--primary-border);
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-secondary-border: var(--secondary-border);
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-muted-border: var(--muted-border);
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-accent-border: var(--accent-border);
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-destructive-border: var(--destructive-border);
+
+  /* Shri Colors */
+  --color-user: hsl(var(--user));
+  --color-mentor: hsl(var(--mentor));
+  --color-system: hsl(var(--system));
+
+  --font-sans: var(--app-font-sans);
+  --font-serif: var(--app-font-serif);
+  --font-mono: var(--app-font-mono);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  /* Forced dark mode for this app */
+  --button-outline: rgba(255, 255, 255, 0.1);
+  --badge-outline: rgba(255, 255, 255, 0.05);
+  --opaque-button-border-intensity: 9;
+  --elevate-1: rgba(255, 255, 255, 0.04);
+  --elevate-2: rgba(255, 255, 255, 0.09);
+
+  /* Pitch Black Background */
+  --background: 0 0% 0%; 
+  --foreground: 0 0% 95%;
+
+  /* Dark muted borders */
+  --border: 0 0% 15%;
+  --input: 0 0% 15%;
+  --ring: 188 94% 43%; /* Cyan ring */
+
+  --card: 0 0% 2%;
+  --card-foreground: 0 0% 95%;
+  --card-border: 0 0% 15%;
+
+  --sidebar: 0 0% 2%;
+  --sidebar-foreground: 0 0% 95%;
+  --sidebar-border: 0 0% 15%;
+  --sidebar-primary: 0 0% 98%;
+  --sidebar-primary-foreground: 0 0% 9%;
+  --sidebar-accent: 0 0% 15%;
+  --sidebar-accent-foreground: 0 0% 98%;
+  --sidebar-ring: 188 94% 43%;
+
+  --popover: 0 0% 2%;
+  --popover-foreground: 0 0% 95%;
+  --popover-border: 0 0% 15%;
+
+  /* Default components to system cyan if needed */
+  --primary: 188 94% 43%;
+  --primary-foreground: 0 0% 0%;
+
+  --secondary: 0 0% 10%;
+  --secondary-foreground: 0 0% 98%;
+
+  --muted: 0 0% 10%;
+  --muted-foreground: 0 0% 60%;
+
+  --accent: 0 0% 15%;
+  --accent-foreground: 0 0% 98%;
+
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+
+  /* Custom App Colors */
+  --user: 38 92% 50%; /* #F59E0B Neon Amber */
+  --mentor: 258 90% 66%; /* #8B5CF6 Neon Violet */
+  --system: 188 94% 43%; /* #06B6D4 Neon Cyan */
+
+  --app-font-sans: 'Space Mono', monospace;
+  --app-font-serif: 'Space Mono', monospace;
+  --app-font-mono: 'Space Mono', monospace;
+  --radius: 0; /* Sharp, terminal-like */
+
+  /* Drop shadows for glowing text effects */
+  --glow-user: 0 0 10px rgba(245, 158, 11, 0.4);
+  --glow-mentor: 0 0 10px rgba(139, 92, 246, 0.4);
+  --glow-system: 0 0 10px rgba(6, 182, 212, 0.4);
+}
+
+.dark {
+  /* It is exactly the same as :root because we force dark mode */
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply font-mono antialiased bg-background text-foreground;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #222;
+    border-radius: 0px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #333;
+  }
+}
+
+/* Animations */
+@keyframes typewriter {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes blink-caret {
+  from, to { border-color: transparent; }
+  50% { border-color: currentColor; }
+}
+
+@keyframes scan {
+  0% { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(100px); opacity: 0; }
+}
+
+.typing-animation {
+  overflow: hidden;
+  white-space: pre-wrap;
+  animation: fade-in 0.3s ease-out forwards;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@layer utilities {
+  .text-glow-user {
+    text-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+  }
+  .text-glow-mentor {
+    text-shadow: 0 0 8px rgba(139, 92, 246, 0.5);
+  }
+  .text-glow-system {
+    text-shadow: 0 0 8px rgba(6, 182, 212, 0.5);
+  }
+  .border-glow-system {
+    box-shadow: 0 0 10px rgba(6, 182, 212, 0.3);
+  }
+  .border-glow-user {
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
+  }
+  .border-glow-mentor {
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
+  }
+}

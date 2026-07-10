@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/shri-academy/"
+title = "Shri Academy – AI Mentor"
+version = "1.0.0"
+id = "artifacts/shri-academy"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/shri-academy/" ]
+localPort = 25572
+
+[services.development]
+run = "pnpm --filter @workspace/shri-academy run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/shri-academy", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/shri-academy/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25572"
+BASE_PATH = "/shri-academy/"

@@ -1,0 +1,24 @@
+{
+  "name": "sara-contracts",
+  "version": "1.0.0",
+  "description": "SARA Token smart contracts — SRI Adaptive Response Asset on Ethereum Sepolia",
+  "private": true,
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:sepolia": "hardhat run scripts/deploy.ts --network sepolia",
+    "verify": "hardhat verify --network sepolia",
+    "typechain": "hardhat typechain",
+    "clean": "hardhat clean"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@openzeppelin/contracts": "^5.3.0",
+    "hardhat": "^2.24.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2"
+  }
+}

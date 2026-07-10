@@ -1,0 +1,34 @@
+# SRI Learn — AI-Powered Contemplative Learning DAO
+
+SRI Learn is a decentralized autonomous organization for education. Learners earn SARA tokens for peer-reviewed research, completing learning tracks, and on-chain credential verification. The platform integrates contemplative pedagogy, AI mentorship, and blockchain-based credentialing into a unified learning protocol.
+
+## About
+
+SRI Learn positions learning as a sacred, measurable act. The platform combines rigorous academic frameworks with the SARA token economy to reward genuine knowledge acquisition and peer-reviewed contribution.
+
+## Pages
+
+- https://sri-learn.ai/: Homepage — platform overview, learner paths, and the SRI mission
+- https://sri-learn.ai/choose-path: Learner path selection (Academia vs Self Development)
+- https://sri-learn.ai/architecture: Technical architecture of the SRI learning protocol and on-chain credential system
+- https://sri-learn.ai/pedagogy: Pedagogical framework, contemplative learning science, and teaching philosophy
+- https://sri-learn.ai/blueprint: Platform blueprint, development roadmap, and governance structure
+- https://sri-learn.ai/token: SARA token mechanics, tokenomics, and earning pathways
+- https://sri-learn.ai/pricing: Subscription plans — Free, Scholar, and Academic Pro tiers
+- https://sri-learn.ai/knowledge-feed: Peer-reviewed academic article feed curated for the SRI community
+- https://sri-learn.ai/news-feed: Current events and platform news
+- https://sri-learn.ai/abhaya: Abhaya Gate — advanced contemplative practice track
+- https://sri-learn.ai/pitch: Investor pitch deck and platform vision
+- https://sri-learn.ai/brag-sheet: Platform metrics, achievements, and traction data
+
+## Key Concepts
+
+- SARA Token: The native utility and reward token of the SRI learning ecosystem
+- Abhaya Gate: A thermodynamic phase-cancellation model for contemplative AI alignment
+- Learning Tracks: Structured curriculum paths verified on-chain upon completion
+- Peer Review: Community-validated research contributions rewarded with SARA tokens
+- Shri Academy: The AI mentor layer powered by GPT-4o with Socratic and Supportive teaching circuits
+
+## Contact
+
+For partnership, research collaboration, or press inquiries, visit https://sri-learn.ai

@@ -1,0 +1,179 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: shri
+    description: Shri Academy AI Mentor operations
+  - name: subscription
+    description: Global GDP-tiered subscription (fiat + crypto)
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /shri/chat:
+    post:
+      operationId: shriChat
+      tags: [shri]
+      summary: Chat with Shri AI Mentor
+      description: Send a message to the Shri AI Mentor and receive a Socratic or supportive response based on Circuit A/B mode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShriChatInput"
+      responses:
+        "200":
+          description: AI mentor response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShriMessage"
+        "502":
+          description: AI mentor backend unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShriError"
+  /shri/state:
+    get:
+      operationId: getShriState
+      tags: [shri]
+      summary: Get current session state
+      description: Returns the current circuit mode, frustration level, and streak for a session
+      parameters:
+        - in: query
+          name: session_id
+          schema:
+            type: string
+          required: false
+          description: Session identifier (defaults to "default")
+      responses:
+        "200":
+          description: Current session state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShriState"
+  /shri/reset:
+    post:
+      operationId: resetShriSession
+      tags: [shri]
+      summary: Reset session state
+      description: Clears frustration level, streak, and conversation history for a session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShriResetInput"
+      responses:
+        "200":
+          description: Session successfully reset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShriResetResponse"
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    ShriChatInput:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          minLength: 1
+          description: The student's message or question
+        session_id:
+          type: string
+          description: Session identifier (defaults to "default")
+    ShriMessage:
+      type: object
+      required: [response, circuit, frustration_level, correct_streak, session_id, context_used]
+      properties:
+        response:
+          type: string
+          description: The AI mentor's Socratic or supportive response
+        circuit:
+          type: string
+          enum: [A, B]
+          description: "Circuit A = Supportive mode (student struggling), Circuit B = Socratic/Rigorous mode"
+        frustration_level:
+          type: integer
+          minimum: 0
+          maximum: 5
+          description: Current frustration score (0-5); triggers Circuit A at ≥2
+        correct_streak:
+          type: integer
+          minimum: 0
+          description: Consecutive non-frustrated responses
+        session_id:
+          type: string
+        context_used:
+          type: array
+          items:
+            type: string
+          description: The syllabus chunks retrieved via RAG for this response
+    ShriState:
+      type: object
+      required: [circuit, frustration_level, correct_streak, message_count, session_id]
+      properties:
+        circuit:
+          type: string
+          enum: [A, B]
+        frustration_level:
+          type: integer
+          minimum: 0
+        correct_streak:
+          type: integer
+          minimum: 0
+        message_count:
+          type: integer
+          minimum: 0
+        session_id:
+          type: string
+    ShriResetInput:
+      type: object
+      properties:
+        session_id:
+          type: string
+          description: Session to reset (defaults to "default")
+    ShriResetResponse:
+      type: object
+      required: [status, session_id]
+      properties:
+        status:
+          type: string
+        session_id:
+          type: string
+    ShriError:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string

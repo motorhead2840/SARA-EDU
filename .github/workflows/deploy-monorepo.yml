@@ -1,0 +1,103 @@
+name: Shri Academy Monorepo — Build, Push & Deploy
+
+# Triggered by a semver tag (e.g. git tag v1.2.3 && git push --tags)
+# Both services build and deploy in parallel via the reusable deploy-service workflow.
+on:
+  push:
+    tags:
+      - 'v*.*.*'          # e.g. v1.2.3
+      - 'v*.*.*-*'        # pre-release tags: v1.2.3-rc.1
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 'Which service to deploy'
+        required: false
+        default: 'both'
+        type: choice
+        options:
+          - both
+          - api-server
+          - shri-api
+      push_latest:
+        description: 'Also push a mutable :latest tag to ECR'
+        required: false
+        default: false
+        type: boolean
+
+# Never let two deploys race on the same ref; never cancel an in-flight deploy.
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  id-token: write   # OIDC — required for aws-actions/configure-aws-credentials
+  contents: read
+
+# ─────────────────────────────────────────────────────────────────────────────
+jobs:
+
+  # ── Guard: ensure tag-triggered deploys only fire from main ─────────────────
+  guard:
+    name: Verify tag is on main
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Assert commit is reachable from main
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          git fetch origin main:main
+          git merge-base --is-ancestor "$COMMIT_SHA" "$(git rev-parse main)" \
+            || { echo "❌ Tag $REF_NAME is not on main — aborting deploy."; exit 1; }
+
+  # ── api-server (Node.js) ───────────────────────────────────────────────────
+  deploy-api-server:
+    name: api-server
+    needs: guard
+    # Run when: guard passed (tag on main) OR guard was skipped (workflow_dispatch),
+    # AND the dispatch didn't target only shri-api.
+    if: >-
+      always() &&
+      (needs.guard.result == 'success' || needs.guard.result == 'skipped') &&
+      (github.event_name != 'workflow_dispatch' || inputs.service == 'both' || inputs.service == 'api-server')
+    uses: ./.github/workflows/deploy-service.yml
+    with:
+      service_label:    api-server
+      docker_context:   .
+      dockerfile:       artifacts/api-server/Dockerfile
+      ecr_repo:         sri/api-server
+      ecs_service:      api-server
+      task_def_family:  sri-production-api-server
+      container_name:   api-server
+      push_latest:      ${{ inputs.push_latest || false }}
+      health_check_url: https://sriplatform.com/api/healthz
+    secrets:
+      AWS_DEPLOY_ROLE_ARN: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+
+  # ── shri-academy-api (Python FastAPI) ─────────────────────────────────────
+  deploy-shri-api:
+    name: shri-academy-api
+    needs: guard
+    if: >-
+      always() &&
+      (needs.guard.result == 'success' || needs.guard.result == 'skipped') &&
+      (github.event_name != 'workflow_dispatch' || inputs.service == 'both' || inputs.service == 'shri-api')
+    uses: ./.github/workflows/deploy-service.yml
+    with:
+      service_label:    shri-api
+      docker_context:   shri-academy-api/
+      dockerfile:       shri-academy-api/Dockerfile
+      ecr_repo:         sri/shri-academy-api
+      ecs_service:      shri-api
+      task_def_family:  sri-production-shri-api
+      container_name:   shri-api
+      push_latest:      ${{ inputs.push_latest || false }}
+      health_check_url: https://sriplatform.com/shri-api/health
+    secrets:
+      AWS_DEPLOY_ROLE_ARN: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}

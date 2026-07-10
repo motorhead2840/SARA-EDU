@@ -1,0 +1,77 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from '@/components/ui/toaster';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import NotFound from '@/pages/not-found';
+import { Route, Switch, Router as WouterRouter } from 'wouter';
+import { Layout } from '@/components/layout/Layout';
+import { WalletProvider } from '@/context/WalletContext';
+import { WalletModal } from '@/components/wallet/WalletModal';
+
+import Home from '@/pages/Home';
+import Architecture from '@/pages/Architecture';
+import Pedagogy from '@/pages/Pedagogy';
+import Blueprint from '@/pages/Blueprint';
+import Pitch from '@/pages/Pitch';
+import Login from '@/pages/Login';
+import LoginSchool from '@/pages/LoginSchool';
+import LoginParent from '@/pages/LoginParent';
+import LoginStudent from '@/pages/LoginStudent';
+import Token from '@/pages/Token';
+import Abhaya from '@/pages/Abhaya';
+import ChoosePath from '@/pages/ChoosePath';
+import BragSheet from '@/pages/BragSheet';
+import KnowledgeFeed from '@/pages/KnowledgeFeed';
+import NewsFeed from '@/pages/NewsFeed';
+import Pricing from '@/pages/Pricing';
+import CheckoutSuccess from '@/pages/CheckoutSuccess';
+import CheckoutCancel from '@/pages/CheckoutCancel';
+import Subscribe from '@/pages/Subscribe';
+
+const queryClient = new QueryClient();
+
+function Router() {
+  return (
+    <Switch>
+      <Route path="/" component={Home} />
+      <Route path="/choose-path" component={ChoosePath} />
+      <Route path="/brag-sheet" component={BragSheet} />
+      <Route path="/knowledge-feed" component={KnowledgeFeed} />
+      <Route path="/news-feed" component={NewsFeed} />
+      <Route path="/architecture" component={Architecture} />
+      <Route path="/pedagogy" component={Pedagogy} />
+      <Route path="/blueprint" component={Blueprint} />
+      <Route path="/pitch" component={Pitch} />
+      <Route path="/login" component={Login} />
+      <Route path="/login/school" component={LoginSchool} />
+      <Route path="/login/parent" component={LoginParent} />
+      <Route path="/login/student" component={LoginStudent} />
+      <Route path="/token" component={Token} />
+      <Route path="/abhaya" component={Abhaya} />
+      <Route path="/pricing" component={Pricing} />
+      <Route path="/subscribe" component={Subscribe} />
+      <Route path="/checkout/success" component={CheckoutSuccess} />
+      <Route path="/checkout/cancel" component={CheckoutCancel} />
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <WalletProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+            <Layout>
+              <Router />
+            </Layout>
+          </WouterRouter>
+          <WalletModal />
+        </WalletProvider>
+        <Toaster />
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
+
+export default App;
