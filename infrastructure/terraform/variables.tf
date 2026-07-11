@@ -48,7 +48,7 @@ variable "db_username" {
 variable "db_instance_class" {
   description = "RDS instance class"
   type        = string
-  default     = "db.t3.medium"
+  default     = "db.r6g.2xlarge"
 }
 
 # ─── ElastiCache ──────────────────────────────────────────────────────────────
@@ -56,7 +56,7 @@ variable "db_instance_class" {
 variable "redis_node_type" {
   description = "ElastiCache Redis node type"
   type        = string
-  default     = "cache.t3.medium"
+  default     = "cache.r6g.xlarge"
 }
 
 # ─── Confluent Cloud (replaces MSK) ──────────────────────────────────────────
