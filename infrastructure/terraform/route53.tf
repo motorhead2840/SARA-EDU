@@ -8,9 +8,15 @@ resource "aws_route53_record" "apex" {
   zone_id = aws_route53_zone.main.zone_id
   name    = var.domain_name
   type    = "A"
+
+  set_identifier = "${var.aws_region}-${var.environment}"
+  latency_routing_policy {
+    region = var.aws_region
+  }
+
   alias {
-    name                   = aws_lb.main.dns_name
-    zone_id                = aws_lb.main.zone_id
+    name                   = aws_globalaccelerator_accelerator.main.dns_name
+    zone_id                = aws_globalaccelerator_accelerator.main.hosted_zone_id
     evaluate_target_health = true
   }
 }
@@ -19,9 +25,15 @@ resource "aws_route53_record" "api" {
   zone_id = aws_route53_zone.main.zone_id
   name    = "api.${var.domain_name}"
   type    = "A"
+
+  set_identifier = "${var.aws_region}-${var.environment}"
+  latency_routing_policy {
+    region = var.aws_region
+  }
+
   alias {
-    name                   = aws_lb.main.dns_name
-    zone_id                = aws_lb.main.zone_id
+    name                   = aws_globalaccelerator_accelerator.main.dns_name
+    zone_id                = aws_globalaccelerator_accelerator.main.hosted_zone_id
     evaluate_target_health = true
   }
 }
