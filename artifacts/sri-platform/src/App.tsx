@@ -27,6 +27,7 @@ import CheckoutSuccess from '@/pages/CheckoutSuccess';
 import CheckoutCancel from '@/pages/CheckoutCancel';
 import Subscribe from '@/pages/Subscribe';
 import PrivateStats from '@/pages/PrivateStats';
+import Sv from '@/pages/Sv';
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/sv" component={Sv} />
       <Route path="/choose-path" component={ChoosePath} />
       <Route path="/brag-sheet" component={BragSheet} />
       <Route path="/knowledge-feed" component={KnowledgeFeed} />

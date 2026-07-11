@@ -131,6 +131,15 @@ const ROUTES = [
     body:
       'Your on-chain academic portfolio: verified credentials, merit scores, published research, and SARA token earnings. All achievements are cryptographically verified and permanently on-chain.',
   },
+  {
+    path: '/sv',
+    title: 'SRI Learn — AI-driven utbildnings-DAO | Tjäna SARA-tokens',
+    description:
+      'SRI Learn är världens första AI-drivna lärande-DAO – tjäna SARA-tokens för expertgranskad forskning, verifierade on-chain-meriter och genomförda kurser.',
+    h1: 'Världens första AI-drivna lärande-DAO.',
+    body:
+      'Ett decentraliserat utbildningsprotokoll där kunskap belönas, verifieras och ägs av studenterna. Tjäna SARA-tokens genom att slutföra kurser, publicera expertgranskad forskning och uppnå verifierade meriter på blockkedjan.',
+  },
 ];
 
 // ── HTML manipulation helpers ─────────────────────────────────────────────────
