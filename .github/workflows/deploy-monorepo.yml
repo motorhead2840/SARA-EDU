@@ -76,7 +76,7 @@ jobs:
       task_def_family:  sri-production-api-server
       container_name:   api-server
       push_latest:      ${{ inputs.push_latest || false }}
-      health_check_url: https://sriplatform.com/api/healthz
+      health_check_url: https://sri-learn.ai/api/healthz
     secrets:
       AWS_DEPLOY_ROLE_ARN: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
 
@@ -98,6 +98,6 @@ jobs:
       task_def_family:  sri-production-shri-api
       container_name:   shri-api
       push_latest:      ${{ inputs.push_latest || false }}
-      health_check_url: https://sriplatform.com/shri-api/health
+      health_check_url: https://sri-learn.ai/shri-api/health
     secrets:
       AWS_DEPLOY_ROLE_ARN: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
