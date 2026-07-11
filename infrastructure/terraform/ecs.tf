@@ -337,8 +337,8 @@ resource "aws_ecs_service" "shri_api" {
 # ─── Auto Scaling ─────────────────────────────────────────────────────────────
 
 resource "aws_appautoscaling_target" "api_server" {
-  max_capacity       = 10
-  min_capacity       = 2
+  max_capacity       = 30
+  min_capacity       = 10
   resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.api_server.name}"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
