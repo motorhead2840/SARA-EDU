@@ -29,9 +29,7 @@ resource "confluent_kafka_cluster" "main" {
   cloud        = "AWS"
   region       = var.aws_region
 
-  dedicated {
-    cku = var.confluent_cluster_ckus
-  }
+  standard {}
 
   environment {
     id = confluent_environment.main.id
@@ -202,12 +200,12 @@ resource "aws_ssm_parameter" "confluent_bootstrap" {
 locals {
   confluent_topics = [
     # ── Core platform topics (carried over from MSK) ──────────────────────────
-    { name = "shri.session.events",      partitions = 6, retention_ms = "604800000"   },
+    { name = "shri.session.events",      partitions = 12, retention_ms = "604800000"   },
     { name = "shri.chat.messages",       partitions = 6, retention_ms = "604800000"   },
     { name = "shri.frustration.events",  partitions = 3, retention_ms = "604800000"   },
-    { name = "subscription.created",     partitions = 3, retention_ms = "2592000000"  },
+    { name = "subscription.created",     partitions = 12, retention_ms = "2592000000"  },
     { name = "subscription.cancelled",   partitions = 3, retention_ms = "2592000000"  },
-    { name = "payment.fiat.events",      partitions = 3, retention_ms = "2592000000"  },
+    { name = "payment.fiat.events",      partitions = 12, retention_ms = "2592000000"  },
     { name = "payment.crypto.events",    partitions = 3, retention_ms = "2592000000"  },
     { name = "mentor.metrics.snapshots", partitions = 3, retention_ms = "2592000000"  },
     { name = "blockchain.token.events",  partitions = 6, retention_ms = "7776000000"  },
