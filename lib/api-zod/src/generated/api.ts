@@ -85,3 +85,992 @@ export const ResetShriSessionResponse = zod.object({
 })
 
 
+/**
+ * @summary Get GDP-tiered plans
+ */
+export const GetSubscriptionPlansQueryParams = zod.object({
+  "country_code": zod.coerce.string().optional()
+})
+
+export const GetSubscriptionPlansResponse = zod.object({
+  "detected_country": zod.string(),
+  "tier": zod.string(),
+  "tier_label": zod.string(),
+  "usd_price": zod.number(),
+  "billing_period": zod.string(),
+  "features": zod.array(zod.string()),
+  "fiat": zod.object({
+  "currency": zod.string().optional(),
+  "amount": zod.number().optional(),
+  "provider": zod.string().optional()
+}),
+  "crypto": zod.object({
+  "eth": zod.object({
+  "amount": zod.string().optional(),
+  "usd_rate": zod.number().optional(),
+  "wallet": zod.string().optional(),
+  "network": zod.string().optional(),
+  "decimals": zod.number().optional()
+}).optional(),
+  "usdc": zod.object({
+  "amount": zod.string().optional(),
+  "usd_rate": zod.number().optional(),
+  "wallet": zod.string().optional(),
+  "network": zod.string().optional(),
+  "decimals": zod.number().optional()
+}).optional(),
+  "btc": zod.object({
+  "amount": zod.string().optional(),
+  "usd_rate": zod.number().optional(),
+  "wallet": zod.string().optional(),
+  "network": zod.string().optional(),
+  "decimals": zod.number().optional()
+}).optional(),
+  "sara": zod.object({
+  "amount": zod.string().optional(),
+  "usd_rate": zod.number().optional(),
+  "wallet": zod.string().optional(),
+  "network": zod.string().optional(),
+  "decimals": zod.number().optional()
+}).optional()
+})
+})
+
+
+/**
+ * @summary Create Stripe checkout session
+ */
+export const CheckoutFiatBody = zod.object({
+  "email": zod.string(),
+  "country_code": zod.string().optional(),
+  "payment_category": zod.enum(['card', 'bank']).optional()
+})
+
+export const CheckoutFiatResponse = zod.object({
+  "url": zod.string(),
+  "tier": zod.string(),
+  "usd_price": zod.number(),
+  "payment_category": zod.string().optional()
+})
+
+
+/**
+ * @summary Create crypto payment record
+ */
+export const CheckoutCryptoBody = zod.object({
+  "email": zod.string(),
+  "currency": zod.enum(['eth', 'usdc', 'btc', 'sara']),
+  "country_code": zod.string().optional()
+})
+
+export const CheckoutCryptoResponse = zod.object({
+  "payment_id": zod.number(),
+  "currency": zod.string(),
+  "network": zod.string(),
+  "wallet_address": zod.string(),
+  "amount": zod.string(),
+  "usd_equivalent": zod.number(),
+  "tier": zod.string(),
+  "expires_at": zod.string(),
+  "instructions": zod.string()
+})
+
+
+/**
+ * @summary Poll on-chain payment status
+ */
+export const GetCryptoPaymentStatusParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetCryptoPaymentStatusResponse = zod.object({
+  "status": zod.enum(['confirmed', 'expired', 'pending', 'error']),
+  "tx_hash": zod.string().optional(),
+  "error": zod.string().optional(),
+  "expires_in_ms": zod.number().optional(),
+  "payment": zod.object({
+
+}).passthrough().optional()
+})
+
+
+/**
+ * @summary Unified subscription status
+ */
+export const GetSubscriptionStatusQueryParams = zod.object({
+  "email": zod.coerce.string()
+})
+
+export const GetSubscriptionStatusResponse = zod.object({
+  "subscribed": zod.boolean().optional(),
+  "tier": zod.string().optional(),
+  "source": zod.string().optional(),
+  "expires_at": zod.string().optional()
+})
+
+
+export const GetBlockchainTokenInfoResponse = zod.object({
+  "name": zod.string(),
+  "symbol": zod.string(),
+  "decimals": zod.number(),
+  "totalSupply": zod.string(),
+  "contractAddress": zod.string()
+})
+
+
+export const GetBlockchainBalanceParams = zod.object({
+  "address": zod.coerce.string()
+})
+
+export const GetBlockchainBalanceResponse = zod.object({
+  "address": zod.string(),
+  "formattedBalance": zod.string(),
+  "rawBalance": zod.string()
+})
+
+
+export const GetBlockchainVotesParams = zod.object({
+  "address": zod.coerce.string()
+})
+
+export const GetBlockchainVotesResponse = zod.object({
+  "address": zod.string(),
+  "votingPower": zod.string(),
+  "votingPowerWei": zod.string()
+})
+
+
+export const GetBlockchainHoldersQueryParams = zod.object({
+  "limit": zod.coerce.number().optional()
+})
+
+export const GetBlockchainHoldersResponse = zod.object({
+  "holders": zod.array(zod.object({
+  "address": zod.string().optional(),
+  "balance": zod.string().optional(),
+  "percentage": zod.number().optional()
+})),
+  "count": zod.number()
+})
+
+
+export const GetBlockchainTransactionsParams = zod.object({
+  "address": zod.coerce.string()
+})
+
+export const GetBlockchainTransactionsQueryParams = zod.object({
+  "limit": zod.coerce.number().optional()
+})
+
+export const GetBlockchainTransactionsResponse = zod.object({
+  "address": zod.string(),
+  "transactions": zod.array(zod.object({
+
+}).passthrough()),
+  "count": zod.number()
+})
+
+
+export const GetBlockchainContractAbiResponse = zod.object({
+  "abi": zod.array(zod.object({
+
+}).passthrough()),
+  "contractAddress": zod.string()
+})
+
+
+export const GetBlockchainVerificationStatusResponse = zod.object({
+  "isVerified": zod.boolean().optional(),
+  "contractAddress": zod.string().optional(),
+  "etherscanUrl": zod.string().optional()
+})
+
+
+export const PostBlockchainEthCallBody = zod.object({
+  "to": zod.string(),
+  "data": zod.string()
+})
+
+export const PostBlockchainEthCallResponse = zod.object({
+  "result": zod.string()
+})
+
+
+export const AnalyzeAbhayaPayloadBody = zod.object({
+  "payload": zod.object({
+
+}).passthrough(),
+  "threshold": zod.number().optional()
+})
+
+export const AnalyzeAbhayaPayloadResponse = zod.object({
+  "gate": zod.string(),
+  "input": zod.object({
+
+}).passthrough(),
+  "result": zod.object({
+  "passed": zod.boolean(),
+  "stability": zod.number(),
+  "xi_flux": zod.number(),
+  "sigma_sat": zod.number(),
+  "chi_v3": zod.number(),
+  "circuit_a": zod.number(),
+  "circuit_b": zod.number(),
+  "circuit_b_active": zod.boolean(),
+  "phase_cancelled": zod.boolean(),
+  "damping_ratio": zod.number(),
+  "gradient_variance": zod.number(),
+  "free_energy": zod.number(),
+  "cycles": zod.number(),
+  "timestamp": zod.string()
+})
+})
+
+
+export const AnalyzeAbhayaTextBody = zod.object({
+  "text": zod.string(),
+  "threshold": zod.number().optional()
+})
+
+export const AnalyzeAbhayaTextResponse = zod.object({
+  "gate": zod.string(),
+  "input": zod.object({
+
+}).passthrough(),
+  "result": zod.object({
+  "passed": zod.boolean(),
+  "stability": zod.number(),
+  "xi_flux": zod.number(),
+  "sigma_sat": zod.number(),
+  "chi_v3": zod.number(),
+  "circuit_a": zod.number(),
+  "circuit_b": zod.number(),
+  "circuit_b_active": zod.boolean(),
+  "phase_cancelled": zod.boolean(),
+  "damping_ratio": zod.number(),
+  "gradient_variance": zod.number(),
+  "free_energy": zod.number(),
+  "cycles": zod.number(),
+  "timestamp": zod.string()
+})
+})
+
+
+export const StabilizeAbhayaSignalBody = zod.object({
+  "signal": zod.array(zod.number()),
+  "threshold": zod.number().optional(),
+  "gradient_hint": zod.number().optional()
+})
+
+export const StabilizeAbhayaSignalResponse = zod.object({
+  "gate": zod.string(),
+  "input": zod.object({
+
+}).passthrough(),
+  "result": zod.object({
+  "passed": zod.boolean(),
+  "stability": zod.number(),
+  "xi_flux": zod.number(),
+  "sigma_sat": zod.number(),
+  "chi_v3": zod.number(),
+  "circuit_a": zod.number(),
+  "circuit_b": zod.number(),
+  "circuit_b_active": zod.boolean(),
+  "phase_cancelled": zod.boolean(),
+  "damping_ratio": zod.number(),
+  "gradient_variance": zod.number(),
+  "free_energy": zod.number(),
+  "cycles": zod.number(),
+  "timestamp": zod.string()
+}),
+  "stabilised": zod.array(zod.number())
+})
+
+
+export const GetAbhayaStatusResponse = zod.object({
+  "gate": zod.string(),
+  "version": zod.string(),
+  "params": zod.object({
+
+}).passthrough(),
+  "manifold": zod.object({
+  "cycles": zod.number().optional(),
+  "gradient_variance": zod.number().optional(),
+  "manifold_stability": zod.number().optional(),
+  "circuit_b_primed": zod.boolean().optional()
+}),
+  "description": zod.object({
+
+}).passthrough()
+})
+
+
+export const SimulateAbhayaCyclesBody = zod.object({
+  "cycles": zod.number().optional(),
+  "noise_level": zod.number().optional()
+})
+
+export const SimulateAbhayaCyclesResponse = zod.object({
+  "gate": zod.string(),
+  "simulation": zod.string(),
+  "params": zod.object({
+
+}).passthrough(),
+  "summary": zod.object({
+  "total_cycles": zod.number().optional(),
+  "phase_cancellations": zod.number().optional(),
+  "peak_chi_v3": zod.number().optional(),
+  "final_stability": zod.number().optional(),
+  "final_free_energy": zod.number().optional(),
+  "circuit_b_activations": zod.number().optional(),
+  "converged": zod.boolean().optional()
+}),
+  "telemetry": zod.array(zod.object({
+
+}).passthrough())
+})
+
+
+export const GetStripeProductsResponse = zod.object({
+  "data": zod.array(zod.object({
+
+}).passthrough())
+})
+
+
+export const PostStripeCheckoutBody = zod.object({
+  "email": zod.string(),
+  "priceId": zod.string()
+})
+
+export const PostStripeCheckoutResponse = zod.object({
+  "url": zod.string()
+})
+
+
+export const PostStripePortalBody = zod.object({
+  "email": zod.string()
+})
+
+export const PostStripePortalResponse = zod.object({
+  "url": zod.string()
+})
+
+
+export const GetStripeStatusQueryParams = zod.object({
+  "email": zod.coerce.string()
+})
+
+export const GetStripeStatusResponse = zod.object({
+  "subscribed": zod.boolean().optional(),
+  "status": zod.string().optional(),
+  "price_id": zod.string().optional(),
+  "expires_at": zod.string().optional()
+})
+
+
+export const RegisterMentorBody = zod.object({
+  "email": zod.string(),
+  "password": zod.string(),
+  "registration_code": zod.string()
+})
+
+export const RegisterMentorResponse = zod.object({
+  "token": zod.string(),
+  "email": zod.string(),
+  "role": zod.string(),
+  "message": zod.string().optional()
+})
+
+
+export const LoginMentorBody = zod.object({
+  "email": zod.string(),
+  "password": zod.string()
+})
+
+export const LoginMentorResponse = zod.object({
+  "token": zod.string(),
+  "email": zod.string(),
+  "role": zod.string(),
+  "message": zod.string().optional()
+})
+
+
+export const GetMentorProfileResponse = zod.object({
+  "email": zod.string(),
+  "role": zod.string()
+})
+
+
+export const GetMentorMetricsResponse = zod.object({
+  "generated_at": zod.string(),
+  "users": zod.object({
+  "total": zod.number().optional(),
+  "students": zod.number().optional(),
+  "mentors": zod.number().optional()
+}),
+  "subscriptions": zod.object({
+  "active_total": zod.number().optional(),
+  "via_stripe": zod.number().optional(),
+  "via_crypto": zod.number().optional(),
+  "by_tier": zod.object({
+  "high": zod.number().optional(),
+  "middle": zod.number().optional(),
+  "low": zod.number().optional()
+}).optional()
+}),
+  "crypto_payments_30d": zod.object({
+  "total_transactions": zod.number().optional(),
+  "total_usd_volume": zod.number().optional(),
+  "by_currency": zod.object({
+
+}).passthrough().optional()
+}),
+  "pricing_tiers": zod.object({
+
+}).passthrough()
+})
+
+
+export const IngestSecopsContentBody = zod.object({
+  "text": zod.string(),
+  "sourceId": zod.string().optional(),
+  "sourceType": zod.enum(['chat', 'mentor_input', 'lex_intake', 'api_payload']).optional()
+})
+
+export const IngestSecopsContentResponse = zod.object({
+  "contentId": zod.number().nullable(),
+  "tier": zod.string(),
+  "compositeRisk": zod.number(),
+  "pmiScore": zod.number(),
+  "profanityScore": zod.number(),
+  "vulgarityScore": zod.number(),
+  "flags": zod.array(zod.string()),
+  "blocked": zod.boolean()
+})
+
+
+export const ListSecopsFlaggedQueryParams = zod.object({
+  "tier": zod.coerce.string().optional(),
+  "reviewed": zod.coerce.boolean().optional(),
+  "limit": zod.coerce.number().optional(),
+  "offset": zod.coerce.number().optional()
+})
+
+export const ListSecopsFlaggedResponse = zod.object({
+  "flagged": zod.array(zod.object({
+
+}).passthrough()),
+  "count": zod.number()
+})
+
+
+export const LabelSecopsContentParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const LabelSecopsContentBody = zod.object({
+  "labelProfanity": zod.number(),
+  "labelVulgarity": zod.number(),
+  "labelPmi": zod.number(),
+  "notes": zod.string().optional()
+})
+
+export const LabelSecopsContentResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+export const AddSecopsPatternBody = zod.object({
+  "patternRegex": zod.string(),
+  "category": zod.enum(['profanity', 'vulgarity', 'pmi']),
+  "label": zod.string(),
+  "weight": zod.number()
+})
+
+export const AddSecopsPatternResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+export const GetSecopsStatsResponse = zod.object({
+  "total_ingested": zod.number().optional(),
+  "flagged_count": zod.number().optional(),
+  "by_tier": zod.object({
+
+}).passthrough().optional()
+})
+
+
+export const GetSecopsCyberdemonQueueResponse = zod.object({
+  "events": zod.array(zod.object({
+
+}).passthrough()),
+  "count": zod.number()
+})
+
+
+export const FlushSecopsCyberdemonBody = zod.object({
+  "eventIds": zod.array(zod.number())
+})
+
+export const FlushSecopsCyberdemonResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+export const ExportSecopsRagethesageResponse = zod.object({
+  "ok": zod.boolean(),
+  "exported": zod.number(),
+  "s3Key": zod.string().optional(),
+  "message": zod.string().optional()
+})
+
+
+export const TrainSecopsRagethesageResponse = zod.object({
+  "ok": zod.boolean(),
+  "executionArn": zod.string(),
+  "executionName": zod.string()
+})
+
+
+export const GetScholarshipCurrentExamResponse = zod.object({
+  "exam": zod.object({
+
+}).passthrough().optional()
+})
+
+
+export const GetScholarshipExamQuestionsParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetScholarshipExamQuestionsResponse = zod.object({
+  "questions": zod.array(zod.object({
+
+}).passthrough())
+})
+
+
+export const SubmitScholarshipExamBody = zod.object({
+  "exam_id": zod.string(),
+  "full_name": zod.string(),
+  "email": zod.string(),
+  "age": zod.number(),
+  "answers": zod.object({
+
+}).passthrough()
+})
+
+export const SubmitScholarshipExamResponse = zod.object({
+  "success": zod.boolean(),
+  "submission_id": zod.string(),
+  "auto_score": zod.number()
+})
+
+
+export const GetScholarshipWinnersQueryParams = zod.object({
+  "exam_id": zod.coerce.string().optional()
+})
+
+export const GetScholarshipWinnersResponse = zod.object({
+  "winners": zod.array(zod.object({
+
+}).passthrough())
+})
+
+
+export const GetScholarshipExamsListResponse = zod.object({
+  "exams": zod.array(zod.object({
+
+}).passthrough())
+})
+
+
+export const CreateScholarshipExamBody = zod.object({
+  "title": zod.string(),
+  "description": zod.string().optional(),
+  "month": zod.number(),
+  "year": zod.number(),
+  "opens_at": zod.string().optional(),
+  "closes_at": zod.string().optional()
+})
+
+export const CreateScholarshipExamResponse = zod.object({
+  "exam": zod.object({
+
+}).passthrough().optional()
+})
+
+
+export const AddScholarshipQuestionParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const AddScholarshipQuestionBody = zod.object({
+  "order_num": zod.number(),
+  "question_text": zod.string(),
+  "question_type": zod.enum(['mcq', 'short_answer']),
+  "options": zod.array(zod.string()).optional(),
+  "correct_option": zod.number().optional(),
+  "max_score": zod.number().optional()
+})
+
+export const AddScholarshipQuestionResponse = zod.object({
+  "question": zod.object({
+
+}).passthrough().optional()
+})
+
+
+export const GetScholarshipQuestionsMentorParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetScholarshipQuestionsMentorResponse = zod.object({
+  "questions": zod.array(zod.object({
+
+}).passthrough())
+})
+
+
+export const DeleteScholarshipQuestionParams = zod.object({
+  "qid": zod.coerce.string()
+})
+
+export const DeleteScholarshipQuestionResponse = zod.object({
+  "success": zod.boolean()
+})
+
+
+export const UpdateScholarshipExamStatusParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdateScholarshipExamStatusBody = zod.object({
+  "status": zod.enum(['draft', 'open', 'closed', 'graded'])
+})
+
+export const UpdateScholarshipExamStatusResponse = zod.object({
+  "exam": zod.object({
+
+}).passthrough().optional()
+})
+
+
+export const GetScholarshipSubmissionsParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetScholarshipSubmissionsResponse = zod.object({
+  "submissions": zod.array(zod.object({
+
+}).passthrough())
+})
+
+
+export const ScoreScholarshipSubmissionParams = zod.object({
+  "sid": zod.coerce.string()
+})
+
+export const ScoreScholarshipSubmissionBody = zod.object({
+  "mentor_score": zod.number()
+})
+
+export const ScoreScholarshipSubmissionResponse = zod.object({
+  "submission": zod.object({
+
+}).passthrough().optional()
+})
+
+
+export const GrantScholarshipsForExamParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GrantScholarshipsForExamResponse = zod.object({
+  "success": zod.boolean(),
+  "granted": zod.array(zod.object({
+
+}).passthrough())
+})
+
+
+export const GetAcademicDisciplinesResponse = zod.object({
+  "disciplines": zod.array(zod.object({
+
+}).passthrough())
+})
+
+
+export const GetAcademicSpecializationsQueryParams = zod.object({
+  "discipline_id": zod.coerce.string().optional()
+})
+
+export const GetAcademicSpecializationsResponse = zod.object({
+  "specializations": zod.array(zod.object({
+
+}).passthrough())
+})
+
+
+export const GetAcademicCoursesQueryParams = zod.object({
+  "discipline_id": zod.coerce.string().optional(),
+  "specialization_id": zod.coerce.string().optional(),
+  "level": zod.coerce.string().optional(),
+  "search": zod.coerce.string().optional(),
+  "limit": zod.coerce.number().optional(),
+  "offset": zod.coerce.number().optional(),
+  "ids": zod.coerce.string().optional(),
+  "user_email": zod.coerce.string().optional()
+})
+
+export const GetAcademicCoursesResponse = zod.object({
+  "courses": zod.array(zod.object({
+
+}).passthrough())
+})
+
+
+export const GetAcademicCourseDetailParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetAcademicCourseDetailQueryParams = zod.object({
+  "user_email": zod.coerce.string().optional()
+})
+
+export const GetAcademicCourseDetailResponse = zod.object({
+  "course": zod.object({
+
+}).passthrough().optional()
+})
+
+
+export const GetAcademicCoursePrerequisitesParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetAcademicCoursePrerequisitesResponse = zod.object({
+  "prerequisites": zod.object({
+
+}).passthrough()
+})
+
+
+export const GetAcademicResearchTopicsQueryParams = zod.object({
+  "discipline_id": zod.coerce.string().optional()
+})
+
+export const GetAcademicResearchTopicsResponse = zod.object({
+  "topics": zod.array(zod.object({
+
+}).passthrough())
+})
+
+
+export const GetAcademicResearchTopicDetailParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetAcademicResearchTopicDetailResponse = zod.object({
+  "topic": zod.object({
+
+}).passthrough().optional()
+})
+
+
+export const PostAcademicResearchProfileBody = zod.object({
+  "user_email": zod.string(),
+  "interest_text": zod.string(),
+  "discipline_id": zod.string().optional(),
+  "topic_ids": zod.array(zod.string()).optional(),
+  "ai_plan": zod.object({
+
+}).passthrough().optional()
+})
+
+export const PostAcademicResearchProfileResponse = zod.object({
+  "profile": zod.object({
+
+}).passthrough().optional()
+})
+
+
+export const GetAcademicSearchFullTextQueryParams = zod.object({
+  "q": zod.coerce.string().optional(),
+  "discipline_id": zod.coerce.string().optional(),
+  "level": zod.coerce.string().optional(),
+  "user_email": zod.coerce.string().optional()
+})
+
+export const GetAcademicSearchFullTextResponse = zod.object({
+  "courses": zod.array(zod.object({
+
+}).passthrough()),
+  "source": zod.string()
+})
+
+
+export const GetAcademicResearchProfileByEmailParams = zod.object({
+  "email": zod.coerce.string()
+})
+
+export const GetAcademicResearchProfileByEmailResponse = zod.object({
+  "profiles": zod.array(zod.object({
+
+}).passthrough())
+})
+
+
+export const GetForumCategoriesResponseItem = zod.object({
+
+}).passthrough()
+export const GetForumCategoriesResponse = zod.array(GetForumCategoriesResponseItem)
+
+
+export const GetForumThreadsQueryParams = zod.object({
+  "category": zod.coerce.string().optional(),
+  "limit": zod.coerce.number().optional(),
+  "offset": zod.coerce.number().optional()
+})
+
+export const GetForumThreadsResponseItem = zod.object({
+
+}).passthrough()
+export const GetForumThreadsResponse = zod.array(GetForumThreadsResponseItem)
+
+
+export const CreateForumThreadBody = zod.object({
+  "category_id": zod.number(),
+  "title": zod.string(),
+  "body": zod.string(),
+  "author_name": zod.string().optional(),
+  "tags": zod.array(zod.string()).optional()
+})
+
+export const CreateForumThreadResponse = zod.object({
+
+}).passthrough()
+
+
+export const GetForumThreadDetailParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetForumThreadDetailResponse = zod.object({
+  "thread": zod.object({
+
+}).passthrough(),
+  "posts": zod.array(zod.object({
+
+}).passthrough())
+})
+
+
+export const ReplyForumThreadParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ReplyForumThreadBody = zod.object({
+  "body": zod.string(),
+  "author_name": zod.string().optional()
+})
+
+export const ReplyForumThreadResponse = zod.object({
+
+}).passthrough()
+
+
+export const UpvoteForumThreadParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpvoteForumThreadResponse = zod.object({
+  "upvotes": zod.number()
+})
+
+
+export const UpvoteForumPostParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpvoteForumPostResponse = zod.object({
+  "upvotes": zod.number()
+})
+
+
+export const GenerateGameChallengeBody = zod.object({
+  "type": zod.enum(['quiz', 'riddle', 'myth-match', 'code-challenge']).optional(),
+  "topic": zod.string().optional()
+})
+
+export const GenerateGameChallengeResponse = zod.object({
+  "type": zod.string(),
+  "schema": zod.string(),
+  "data": zod.object({
+
+}).passthrough()
+})
+
+
+export const GetGameTypesResponseItem = zod.object({
+
+}).passthrough()
+export const GetGameTypesResponse = zod.array(GetGameTypesResponseItem)
+
+
+export const GetMythologyEpisodesQueryParams = zod.object({
+  "tradition": zod.coerce.string().optional(),
+  "episode_id": zod.coerce.string().optional()
+})
+
+export const GetMythologyEpisodesResponseItem = zod.object({
+
+}).passthrough()
+export const GetMythologyEpisodesResponse = zod.array(GetMythologyEpisodesResponseItem)
+
+
+export const GetMythologyTraditionsResponseItem = zod.object({
+
+}).passthrough()
+export const GetMythologyTraditionsResponse = zod.array(GetMythologyTraditionsResponseItem)
+
+
+export const GenerateMythologyNarrativeBody = zod.object({
+  "episode_id": zod.string()
+})
+
+export const GenerateMythologyNarrativeResponse = zod.object({
+  "episode": zod.object({
+
+}).passthrough(),
+  "narrative": zod.string()
+})
+
+
+export const GetPrivateStatsHeader = zod.object({
+  "x-private-stats-key": zod.string()
+})
+
+export const GetPrivateStatsResponse = zod.object({
+  "success": zod.boolean(),
+  "generated_at": zod.string(),
+  "system": zod.object({
+
+}).passthrough(),
+  "users": zod.object({
+
+}).passthrough(),
+  "subscriptions": zod.object({
+
+}).passthrough(),
+  "crypto_payments_30d": zod.object({
+
+}).passthrough(),
+  "abhaya": zod.object({
+
+}).passthrough()
+})
+
+

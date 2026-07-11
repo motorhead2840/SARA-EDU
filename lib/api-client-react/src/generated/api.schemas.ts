@@ -84,10 +84,832 @@ export interface ShriError {
   error: string;
 }
 
+export interface ScholarshipGenericSuccess {
+  success: boolean;
+}
+
+export type SubscriptionPlansResponseFiat = {
+  currency?: string;
+  amount?: number;
+  provider?: string;
+};
+
+export interface CryptoAssetDetail {
+  amount?: string;
+  usd_rate?: number;
+  wallet?: string;
+  network?: string;
+  decimals?: number;
+}
+
+export type SubscriptionPlansResponseCrypto = {
+  eth?: CryptoAssetDetail;
+  usdc?: CryptoAssetDetail;
+  btc?: CryptoAssetDetail;
+  sara?: CryptoAssetDetail;
+};
+
+export interface SubscriptionPlansResponse {
+  detected_country: string;
+  tier: string;
+  tier_label: string;
+  usd_price: number;
+  billing_period: string;
+  features: string[];
+  fiat: SubscriptionPlansResponseFiat;
+  crypto: SubscriptionPlansResponseCrypto;
+}
+
+export type CheckoutFiatInputPaymentCategory = typeof CheckoutFiatInputPaymentCategory[keyof typeof CheckoutFiatInputPaymentCategory];
+
+
+export const CheckoutFiatInputPaymentCategory = {
+  card: 'card',
+  bank: 'bank',
+} as const;
+
+export interface CheckoutFiatInput {
+  email: string;
+  country_code?: string;
+  payment_category?: CheckoutFiatInputPaymentCategory;
+}
+
+export interface CheckoutFiatResponse {
+  url: string;
+  tier: string;
+  usd_price: number;
+  payment_category?: string;
+}
+
+export type CheckoutCryptoInputCurrency = typeof CheckoutCryptoInputCurrency[keyof typeof CheckoutCryptoInputCurrency];
+
+
+export const CheckoutCryptoInputCurrency = {
+  eth: 'eth',
+  usdc: 'usdc',
+  btc: 'btc',
+  sara: 'sara',
+} as const;
+
+export interface CheckoutCryptoInput {
+  email: string;
+  currency: CheckoutCryptoInputCurrency;
+  country_code?: string;
+}
+
+export interface CheckoutCryptoResponse {
+  payment_id: number;
+  currency: string;
+  network: string;
+  wallet_address: string;
+  amount: string;
+  usd_equivalent: number;
+  tier: string;
+  expires_at: string;
+  instructions: string;
+}
+
+export type CryptoPaymentStatusResponseStatus = typeof CryptoPaymentStatusResponseStatus[keyof typeof CryptoPaymentStatusResponseStatus];
+
+
+export const CryptoPaymentStatusResponseStatus = {
+  confirmed: 'confirmed',
+  expired: 'expired',
+  pending: 'pending',
+  error: 'error',
+} as const;
+
+export type CryptoPaymentStatusResponsePayment = { [key: string]: unknown };
+
+export interface CryptoPaymentStatusResponse {
+  status: CryptoPaymentStatusResponseStatus;
+  tx_hash?: string;
+  error?: string;
+  expires_in_ms?: number;
+  payment?: CryptoPaymentStatusResponsePayment;
+}
+
+export interface SubscriptionStatusInfo {
+  subscribed?: boolean;
+  tier?: string;
+  source?: string;
+  expires_at?: string;
+}
+
+export interface BlockchainTokenInfo {
+  name: string;
+  symbol: string;
+  decimals: number;
+  totalSupply: string;
+  contractAddress: string;
+}
+
+export interface BlockchainBalanceInfo {
+  address: string;
+  formattedBalance: string;
+  rawBalance: string;
+}
+
+export interface BlockchainVotesInfo {
+  address: string;
+  votingPower: string;
+  votingPowerWei: string;
+}
+
+export type BlockchainHoldersListHoldersItem = {
+  address?: string;
+  balance?: string;
+  percentage?: number;
+};
+
+export interface BlockchainHoldersList {
+  holders: BlockchainHoldersListHoldersItem[];
+  count: number;
+}
+
+export type BlockchainTransactionsListTransactionsItem = { [key: string]: unknown };
+
+export interface BlockchainTransactionsList {
+  address: string;
+  transactions: BlockchainTransactionsListTransactionsItem[];
+  count: number;
+}
+
+export type BlockchainContractAbiInfoAbiItem = { [key: string]: unknown };
+
+export interface BlockchainContractAbiInfo {
+  abi: BlockchainContractAbiInfoAbiItem[];
+  contractAddress: string;
+}
+
+export interface BlockchainVerificationStatusInfo {
+  isVerified?: boolean;
+  contractAddress?: string;
+  etherscanUrl?: string;
+}
+
+export interface BlockchainEthCallInput {
+  to: string;
+  data: string;
+}
+
+export interface BlockchainEthCallResult {
+  result: string;
+}
+
+export type AbhayaPayloadInputPayload = { [key: string]: unknown };
+
+export interface AbhayaPayloadInput {
+  payload: AbhayaPayloadInputPayload;
+  threshold?: number;
+}
+
+export interface AbhayaTextInput {
+  text: string;
+  threshold?: number;
+}
+
+export type AbhayaAnalysisResultInput = { [key: string]: unknown };
+
+export interface AbhayaTelemetry {
+  passed: boolean;
+  stability: number;
+  xi_flux: number;
+  sigma_sat: number;
+  chi_v3: number;
+  circuit_a: number;
+  circuit_b: number;
+  circuit_b_active: boolean;
+  phase_cancelled: boolean;
+  damping_ratio: number;
+  gradient_variance: number;
+  free_energy: number;
+  cycles: number;
+  timestamp: string;
+}
+
+export interface AbhayaAnalysisResult {
+  gate: string;
+  input: AbhayaAnalysisResultInput;
+  result: AbhayaTelemetry;
+}
+
+export interface AbhayaSignalInput {
+  signal: number[];
+  threshold?: number;
+  gradient_hint?: number;
+}
+
+export type AbhayaStabilizeResultInput = { [key: string]: unknown };
+
+export interface AbhayaStabilizeResult {
+  gate: string;
+  input: AbhayaStabilizeResultInput;
+  result: AbhayaTelemetry;
+  stabilised: number[];
+}
+
+export type AbhayaStatusInfoParams = { [key: string]: unknown };
+
+export type AbhayaStatusInfoManifold = {
+  cycles?: number;
+  gradient_variance?: number;
+  manifold_stability?: number;
+  circuit_b_primed?: boolean;
+};
+
+export type AbhayaStatusInfoDescription = { [key: string]: unknown };
+
+export interface AbhayaStatusInfo {
+  gate: string;
+  version: string;
+  params: AbhayaStatusInfoParams;
+  manifold: AbhayaStatusInfoManifold;
+  description: AbhayaStatusInfoDescription;
+}
+
+export interface AbhayaSimulateInput {
+  cycles?: number;
+  noise_level?: number;
+}
+
+export type AbhayaSimulateResultParams = { [key: string]: unknown };
+
+export type AbhayaSimulateResultSummary = {
+  total_cycles?: number;
+  phase_cancellations?: number;
+  peak_chi_v3?: number;
+  final_stability?: number;
+  final_free_energy?: number;
+  circuit_b_activations?: number;
+  converged?: boolean;
+};
+
+export type AbhayaSimulateResultTelemetryItem = { [key: string]: unknown };
+
+export interface AbhayaSimulateResult {
+  gate: string;
+  simulation: string;
+  params: AbhayaSimulateResultParams;
+  summary: AbhayaSimulateResultSummary;
+  telemetry: AbhayaSimulateResultTelemetryItem[];
+}
+
+export type StripeProductsListDataItem = { [key: string]: unknown };
+
+export interface StripeProductsList {
+  data: StripeProductsListDataItem[];
+}
+
+export interface StripeCheckoutInput {
+  email: string;
+  priceId: string;
+}
+
+export interface StripeCheckoutResponse {
+  url: string;
+}
+
+export interface StripePortalInput {
+  email: string;
+}
+
+export interface StripePortalResponse {
+  url: string;
+}
+
+export interface StripeStatusInfo {
+  subscribed?: boolean;
+  status?: string;
+  price_id?: string;
+  expires_at?: string;
+}
+
+export interface MentorRegisterInput {
+  email: string;
+  password: string;
+  registration_code: string;
+}
+
+export interface MentorLoginInput {
+  email: string;
+  password: string;
+}
+
+export interface MentorAuthSuccess {
+  token: string;
+  email: string;
+  role: string;
+  message?: string;
+}
+
+export interface MentorProfileInfo {
+  email: string;
+  role: string;
+}
+
+export type MentorMetricsInfoUsers = {
+  total?: number;
+  students?: number;
+  mentors?: number;
+};
+
+export type MentorMetricsInfoSubscriptionsByTier = {
+  high?: number;
+  middle?: number;
+  low?: number;
+};
+
+export type MentorMetricsInfoSubscriptions = {
+  active_total?: number;
+  via_stripe?: number;
+  via_crypto?: number;
+  by_tier?: MentorMetricsInfoSubscriptionsByTier;
+};
+
+export type MentorMetricsInfoCryptoPayments30dByCurrency = { [key: string]: unknown };
+
+export type MentorMetricsInfoCryptoPayments30d = {
+  total_transactions?: number;
+  total_usd_volume?: number;
+  by_currency?: MentorMetricsInfoCryptoPayments30dByCurrency;
+};
+
+export type MentorMetricsInfoPricingTiers = { [key: string]: unknown };
+
+export interface MentorMetricsInfo {
+  generated_at: string;
+  users: MentorMetricsInfoUsers;
+  subscriptions: MentorMetricsInfoSubscriptions;
+  crypto_payments_30d: MentorMetricsInfoCryptoPayments30d;
+  pricing_tiers: MentorMetricsInfoPricingTiers;
+}
+
+export type SecopsIngestInputSourceType = typeof SecopsIngestInputSourceType[keyof typeof SecopsIngestInputSourceType];
+
+
+export const SecopsIngestInputSourceType = {
+  chat: 'chat',
+  mentor_input: 'mentor_input',
+  lex_intake: 'lex_intake',
+  api_payload: 'api_payload',
+} as const;
+
+export interface SecopsIngestInput {
+  text: string;
+  sourceId?: string;
+  sourceType?: SecopsIngestInputSourceType;
+}
+
+export interface SecopsIngestResult {
+  contentId: number | null;
+  tier: string;
+  compositeRisk: number;
+  pmiScore: number;
+  profanityScore: number;
+  vulgarityScore: number;
+  flags: string[];
+  blocked: boolean;
+}
+
+export type SecopsFlaggedListFlaggedItem = { [key: string]: unknown };
+
+export interface SecopsFlaggedList {
+  flagged: SecopsFlaggedListFlaggedItem[];
+  count: number;
+}
+
+export interface SecopsLabelInput {
+  labelProfanity: number;
+  labelVulgarity: number;
+  labelPmi: number;
+  notes?: string;
+}
+
+export type SecopsPatternInputCategory = typeof SecopsPatternInputCategory[keyof typeof SecopsPatternInputCategory];
+
+
+export const SecopsPatternInputCategory = {
+  profanity: 'profanity',
+  vulgarity: 'vulgarity',
+  pmi: 'pmi',
+} as const;
+
+export interface SecopsPatternInput {
+  patternRegex: string;
+  category: SecopsPatternInputCategory;
+  label: string;
+  weight: number;
+}
+
+export type SecopsStatsInfoByTier = { [key: string]: unknown };
+
+export interface SecopsStatsInfo {
+  total_ingested?: number;
+  flagged_count?: number;
+  by_tier?: SecopsStatsInfoByTier;
+}
+
+export type SecopsCyberdemonQueueInfoEventsItem = { [key: string]: unknown };
+
+export interface SecopsCyberdemonQueueInfo {
+  events: SecopsCyberdemonQueueInfoEventsItem[];
+  count: number;
+}
+
+export interface SecopsCyberdemonFlushInput {
+  eventIds: number[];
+}
+
+export interface SecopsGenericSuccess {
+  ok: boolean;
+}
+
+export interface SecopsRagethesageExportResult {
+  ok: boolean;
+  exported: number;
+  s3Key?: string;
+  message?: string;
+}
+
+export interface SecopsRagethesageTrainResult {
+  ok: boolean;
+  executionArn: string;
+  executionName: string;
+}
+
+export type ScholarshipCurrentExamInfoExam = { [key: string]: unknown };
+
+export interface ScholarshipCurrentExamInfo {
+  exam?: ScholarshipCurrentExamInfoExam;
+}
+
+export type ScholarshipQuestionsListQuestionsItem = { [key: string]: unknown };
+
+export interface ScholarshipQuestionsList {
+  questions: ScholarshipQuestionsListQuestionsItem[];
+}
+
+export type ScholarshipSubmitInputAnswers = { [key: string]: unknown };
+
+export interface ScholarshipSubmitInput {
+  exam_id: string;
+  full_name: string;
+  email: string;
+  age: number;
+  answers: ScholarshipSubmitInputAnswers;
+}
+
+export interface ScholarshipSubmitResponse {
+  success: boolean;
+  submission_id: string;
+  auto_score: number;
+}
+
+export type ScholarshipWinnersListWinnersItem = { [key: string]: unknown };
+
+export interface ScholarshipWinnersList {
+  winners: ScholarshipWinnersListWinnersItem[];
+}
+
+export type ScholarshipExamsListInfoExamsItem = { [key: string]: unknown };
+
+export interface ScholarshipExamsListInfo {
+  exams: ScholarshipExamsListInfoExamsItem[];
+}
+
+export interface ScholarshipExamCreateInput {
+  title: string;
+  description?: string;
+  month: number;
+  year: number;
+  opens_at?: string;
+  closes_at?: string;
+}
+
+export type ScholarshipExamSingleInfoExam = { [key: string]: unknown };
+
+export interface ScholarshipExamSingleInfo {
+  exam?: ScholarshipExamSingleInfoExam;
+}
+
+export type ScholarshipQuestionAddInputQuestionType = typeof ScholarshipQuestionAddInputQuestionType[keyof typeof ScholarshipQuestionAddInputQuestionType];
+
+
+export const ScholarshipQuestionAddInputQuestionType = {
+  mcq: 'mcq',
+  short_answer: 'short_answer',
+} as const;
+
+export interface ScholarshipQuestionAddInput {
+  order_num: number;
+  question_text: string;
+  question_type: ScholarshipQuestionAddInputQuestionType;
+  options?: string[];
+  correct_option?: number;
+  max_score?: number;
+}
+
+export type ScholarshipQuestionSingleInfoQuestion = { [key: string]: unknown };
+
+export interface ScholarshipQuestionSingleInfo {
+  question?: ScholarshipQuestionSingleInfoQuestion;
+}
+
+export type ScholarshipQuestionsMentorListQuestionsItem = { [key: string]: unknown };
+
+export interface ScholarshipQuestionsMentorList {
+  questions: ScholarshipQuestionsMentorListQuestionsItem[];
+}
+
+export type ScholarshipExamStatusInputStatus = typeof ScholarshipExamStatusInputStatus[keyof typeof ScholarshipExamStatusInputStatus];
+
+
+export const ScholarshipExamStatusInputStatus = {
+  draft: 'draft',
+  open: 'open',
+  closed: 'closed',
+  graded: 'graded',
+} as const;
+
+export interface ScholarshipExamStatusInput {
+  status: ScholarshipExamStatusInputStatus;
+}
+
+export type ScholarshipSubmissionsListSubmissionsItem = { [key: string]: unknown };
+
+export interface ScholarshipSubmissionsList {
+  submissions: ScholarshipSubmissionsListSubmissionsItem[];
+}
+
+export interface ScholarshipScoreInput {
+  mentor_score: number;
+}
+
+export type ScholarshipScoreResponseSubmission = { [key: string]: unknown };
+
+export interface ScholarshipScoreResponse {
+  submission?: ScholarshipScoreResponseSubmission;
+}
+
+export type ScholarshipGrantResponseGrantedItem = { [key: string]: unknown };
+
+export interface ScholarshipGrantResponse {
+  success: boolean;
+  granted: ScholarshipGrantResponseGrantedItem[];
+}
+
+export type AcademicDisciplinesListDisciplinesItem = { [key: string]: unknown };
+
+export interface AcademicDisciplinesList {
+  disciplines: AcademicDisciplinesListDisciplinesItem[];
+}
+
+export type AcademicSpecializationsListSpecializationsItem = { [key: string]: unknown };
+
+export interface AcademicSpecializationsList {
+  specializations: AcademicSpecializationsListSpecializationsItem[];
+}
+
+export type AcademicCoursesListCoursesItem = { [key: string]: unknown };
+
+export interface AcademicCoursesList {
+  courses: AcademicCoursesListCoursesItem[];
+}
+
+export type AcademicCourseSingleInfoCourse = { [key: string]: unknown };
+
+export interface AcademicCourseSingleInfo {
+  course?: AcademicCourseSingleInfoCourse;
+}
+
+export type AcademicPrerequisitesResponsePrerequisites = { [key: string]: unknown };
+
+export interface AcademicPrerequisitesResponse {
+  prerequisites: AcademicPrerequisitesResponsePrerequisites;
+}
+
+export type AcademicResearchTopicsListTopicsItem = { [key: string]: unknown };
+
+export interface AcademicResearchTopicsList {
+  topics: AcademicResearchTopicsListTopicsItem[];
+}
+
+export type AcademicResearchTopicSingleInfoTopic = { [key: string]: unknown };
+
+export interface AcademicResearchTopicSingleInfo {
+  topic?: AcademicResearchTopicSingleInfoTopic;
+}
+
+export type AcademicResearchProfileInputAiPlan = { [key: string]: unknown };
+
+export interface AcademicResearchProfileInput {
+  user_email: string;
+  interest_text: string;
+  discipline_id?: string;
+  topic_ids?: string[];
+  ai_plan?: AcademicResearchProfileInputAiPlan;
+}
+
+export type AcademicResearchProfileResultProfile = { [key: string]: unknown };
+
+export interface AcademicResearchProfileResult {
+  profile?: AcademicResearchProfileResultProfile;
+}
+
+export type AcademicSearchResponseCoursesItem = { [key: string]: unknown };
+
+export interface AcademicSearchResponse {
+  courses: AcademicSearchResponseCoursesItem[];
+  source: string;
+}
+
+export type AcademicResearchProfilesResponseProfilesItem = { [key: string]: unknown };
+
+export interface AcademicResearchProfilesResponse {
+  profiles: AcademicResearchProfilesResponseProfilesItem[];
+}
+
+export type ForumCategoriesListItem = { [key: string]: unknown };
+
+export type ForumCategoriesList = ForumCategoriesListItem[];
+
+export type ForumThreadsListItem = { [key: string]: unknown };
+
+export type ForumThreadsList = ForumThreadsListItem[];
+
+export type ForumThreadDetailResponseThread = { [key: string]: unknown };
+
+export type ForumThreadDetailResponsePostsItem = { [key: string]: unknown };
+
+export interface ForumThreadDetailResponse {
+  thread: ForumThreadDetailResponseThread;
+  posts: ForumThreadDetailResponsePostsItem[];
+}
+
+export interface ForumThreadCreateInput {
+  category_id: number;
+  title: string;
+  body: string;
+  author_name?: string;
+  tags?: string[];
+}
+
+export interface ForumThreadSingle { [key: string]: unknown }
+
+export interface ForumReplyInput {
+  body: string;
+  author_name?: string;
+}
+
+export interface ForumReplySingle { [key: string]: unknown }
+
+export interface ForumUpvoteResult {
+  upvotes: number;
+}
+
+export type GameGenerateInputType = typeof GameGenerateInputType[keyof typeof GameGenerateInputType];
+
+
+export const GameGenerateInputType = {
+  quiz: 'quiz',
+  riddle: 'riddle',
+  'myth-match': 'myth-match',
+  'code-challenge': 'code-challenge',
+} as const;
+
+export interface GameGenerateInput {
+  type?: GameGenerateInputType;
+  topic?: string;
+}
+
+export type GameGenerateResultData = { [key: string]: unknown };
+
+export interface GameGenerateResult {
+  type: string;
+  schema: string;
+  data: GameGenerateResultData;
+}
+
+export type GameTypesListItem = { [key: string]: unknown };
+
+export type GameTypesList = GameTypesListItem[];
+
+export type MythologyEpisodesListItem = { [key: string]: unknown };
+
+export type MythologyEpisodesList = MythologyEpisodesListItem[];
+
+export type MythologyTraditionsListItem = { [key: string]: unknown };
+
+export type MythologyTraditionsList = MythologyTraditionsListItem[];
+
+export interface MythologyNarrativeInput {
+  episode_id: string;
+}
+
+export type MythologyNarrativeResultEpisode = { [key: string]: unknown };
+
+export interface MythologyNarrativeResult {
+  episode: MythologyNarrativeResultEpisode;
+  narrative: string;
+}
+
+export type PrivateStatsInfoSystem = { [key: string]: unknown };
+
+export type PrivateStatsInfoUsers = { [key: string]: unknown };
+
+export type PrivateStatsInfoSubscriptions = { [key: string]: unknown };
+
+export type PrivateStatsInfoCryptoPayments30d = { [key: string]: unknown };
+
+export type PrivateStatsInfoAbhaya = { [key: string]: unknown };
+
+export interface PrivateStatsInfo {
+  success: boolean;
+  generated_at: string;
+  system: PrivateStatsInfoSystem;
+  users: PrivateStatsInfoUsers;
+  subscriptions: PrivateStatsInfoSubscriptions;
+  crypto_payments_30d: PrivateStatsInfoCryptoPayments30d;
+  abhaya: PrivateStatsInfoAbhaya;
+}
+
 export type GetShriStateParams = {
 /**
  * Session identifier (defaults to "default")
  */
 session_id?: string;
+};
+
+export type GetSubscriptionPlansParams = {
+country_code?: string;
+};
+
+export type GetSubscriptionStatusParams = {
+email: string;
+};
+
+export type GetBlockchainHoldersParams = {
+limit?: number;
+};
+
+export type GetBlockchainTransactionsParams = {
+limit?: number;
+};
+
+export type GetStripeStatusParams = {
+email: string;
+};
+
+export type ListSecopsFlaggedParams = {
+tier?: string;
+reviewed?: boolean;
+limit?: number;
+offset?: number;
+};
+
+export type GetScholarshipWinnersParams = {
+exam_id?: string;
+};
+
+export type GetAcademicSpecializationsParams = {
+discipline_id?: string;
+};
+
+export type GetAcademicCoursesParams = {
+discipline_id?: string;
+specialization_id?: string;
+level?: string;
+search?: string;
+limit?: number;
+offset?: number;
+ids?: string;
+user_email?: string;
+};
+
+export type GetAcademicCourseDetailParams = {
+user_email?: string;
+};
+
+export type GetAcademicResearchTopicsParams = {
+discipline_id?: string;
+};
+
+export type GetAcademicSearchFullTextParams = {
+q?: string;
+discipline_id?: string;
+level?: string;
+user_email?: string;
+};
+
+export type GetForumThreadsParams = {
+category?: string;
+limit?: number;
+offset?: number;
+};
+
+export type GetMythologyEpisodesParams = {
+tradition?: string;
+episode_id?: string;
 };
 

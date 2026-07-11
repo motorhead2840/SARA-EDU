@@ -14,6 +14,28 @@ tags:
     description: Shri Academy AI Mentor operations
   - name: subscription
     description: Global GDP-tiered subscription (fiat + crypto)
+  - name: blockchain
+    description: SARA Token and general blockchain queries
+  - name: abhaya
+    description: Abhaya Gate thermodynamic safety analysis and telemetry
+  - name: stripe
+    description: Stripe direct subscription products, checkout and billing portal
+  - name: mentor
+    description: Mentor authentication, profile and metrics
+  - name: secops
+    description: Content Index analysis, Cyberdemon queue, and RageSage pipelines
+  - name: scholarship
+    description: Scholarship exams, questions, submissions and winner payouts
+  - name: academic
+    description: Core curriculum disciplines, courses, sitemaps, search, and student research profiles
+  - name: forum
+    description: Student community categories, threads, replies and voting
+  - name: games
+    description: Nemotron-powered gamified quizzes, riddles, matching, and coding challenges
+  - name: mythology
+    description: Cosmos Lore interactive mythology stories and episodes
+  - name: privateStats
+    description: Encrypted private system statistics and manifold telemetry
 paths:
   /healthz:
     get:
@@ -92,6 +114,1260 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ShriResetResponse"
+
+  # ─── SUBSCRIPTION ───────────────────────────────────────────────────────────
+  /subscription/plans:
+    get:
+      operationId: getSubscriptionPlans
+      tags: [subscription]
+      summary: Get GDP-tiered plans
+      parameters:
+        - in: query
+          name: country_code
+          schema:
+            type: string
+          required: false
+      responses:
+        "200":
+          description: Live subscription plans and live crypto rates
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionPlansResponse"
+  /subscription/checkout/fiat:
+    post:
+      operationId: checkoutFiat
+      tags: [subscription]
+      summary: Create Stripe checkout session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckoutFiatInput"
+      responses:
+        "200":
+          description: Checkout session created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutFiatResponse"
+  /subscription/checkout/crypto:
+    post:
+      operationId: checkoutCrypto
+      tags: [subscription]
+      summary: Create crypto payment record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckoutCryptoInput"
+      responses:
+        "200":
+          description: Crypto payment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutCryptoResponse"
+  /subscription/crypto/status/{id}:
+    get:
+      operationId: getCryptoPaymentStatus
+      tags: [subscription]
+      summary: Poll on-chain payment status
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: Subscription crypto payment status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CryptoPaymentStatusResponse"
+  /subscription/status:
+    get:
+      operationId: getSubscriptionStatus
+      tags: [subscription]
+      summary: Unified subscription status
+      parameters:
+        - in: query
+          name: email
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: Subscription status of the student
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionStatusInfo"
+
+  # ─── BLOCKCHAIN ─────────────────────────────────────────────────────────────
+  /blockchain/token:
+    get:
+      operationId: getBlockchainTokenInfo
+      tags: [blockchain]
+      responses:
+        "200":
+          description: Token metadata and supply info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlockchainTokenInfo"
+  /blockchain/balance/{address}:
+    get:
+      operationId: getBlockchainBalance
+      tags: [blockchain]
+      parameters:
+        - in: path
+          name: address
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: Balance of SARA tokens for given address
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlockchainBalanceInfo"
+  /blockchain/votes/{address}:
+    get:
+      operationId: getBlockchainVotes
+      tags: [blockchain]
+      parameters:
+        - in: path
+          name: address
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: Voting power for given address
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlockchainVotesInfo"
+  /blockchain/holders:
+    get:
+      operationId: getBlockchainHolders
+      tags: [blockchain]
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+          required: false
+      responses:
+        "200":
+          description: Top token holders list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlockchainHoldersList"
+  /blockchain/transactions/{address}:
+    get:
+      operationId: getBlockchainTransactions
+      tags: [blockchain]
+      parameters:
+        - in: path
+          name: address
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: limit
+          schema:
+            type: integer
+          required: false
+      responses:
+        "200":
+          description: Token transfer transaction history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlockchainTransactionsList"
+  /blockchain/abi:
+    get:
+      operationId: getBlockchainContractAbi
+      tags: [blockchain]
+      responses:
+        "200":
+          description: Verified SARA Token contract ABI
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlockchainContractAbiInfo"
+  /blockchain/verification:
+    get:
+      operationId: getBlockchainVerificationStatus
+      tags: [blockchain]
+      responses:
+        "200":
+          description: Contract verification status on Etherscan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlockchainVerificationStatusInfo"
+  /blockchain/call:
+    post:
+      operationId: postBlockchainEthCall
+      tags: [blockchain]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BlockchainEthCallInput"
+      responses:
+        "200":
+          description: Result of the eth_call execution
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlockchainEthCallResult"
+
+  # ─── ABHAYA GATE ────────────────────────────────────────────────────────────
+  /abhaya/analyze:
+    post:
+      operationId: analyzeAbhayaPayload
+      tags: [abhaya]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AbhayaPayloadInput"
+      responses:
+        "200":
+          description: Abhaya Gate analysis of generic payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AbhayaAnalysisResult"
+  /abhaya/analyze/text:
+    post:
+      operationId: analyzeAbhayaText
+      tags: [abhaya]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AbhayaTextInput"
+      responses:
+        "200":
+          description: Abhaya Gate analysis of text
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AbhayaAnalysisResult"
+  /abhaya/stabilize:
+    post:
+      operationId: stabilizeAbhayaSignal
+      tags: [abhaya]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AbhayaSignalInput"
+      responses:
+        "200":
+          description: Phase-stabilised signal telemetry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AbhayaStabilizeResult"
+  /abhaya/status:
+    get:
+      operationId: getAbhayaStatus
+      tags: [abhaya]
+      responses:
+        "200":
+          description: Snapshot of manifold telemetry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AbhayaStatusInfo"
+  /abhaya/simulate:
+    post:
+      operationId: simulateAbhayaCycles
+      tags: [abhaya]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AbhayaSimulateInput"
+      responses:
+        "200":
+          description: Telemetry output from Maha-Pralaya simulation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AbhayaSimulateResult"
+
+  # ─── STRIPE DIRECT ──────────────────────────────────────────────────────────
+  /stripe/products:
+    get:
+      operationId: getStripeProducts
+      tags: [stripe]
+      responses:
+        "200":
+          description: List of active subscription products and their prices
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StripeProductsList"
+  /stripe/checkout:
+    post:
+      operationId: postStripeCheckout
+      tags: [stripe]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StripeCheckoutInput"
+      responses:
+        "200":
+          description: Stripe checkout session URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StripeCheckoutResponse"
+  /stripe/portal:
+    post:
+      operationId: postStripePortal
+      tags: [stripe]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StripePortalInput"
+      responses:
+        "200":
+          description: Stripe billing portal session URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StripePortalResponse"
+  /stripe/status:
+    get:
+      operationId: getStripeStatus
+      tags: [stripe]
+      parameters:
+        - in: query
+          name: email
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: Direct Stripe subscription status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StripeStatusInfo"
+
+  # ─── MENTOR AUTH ────────────────────────────────────────────────────────────
+  /mentor/register:
+    post:
+      operationId: registerMentor
+      tags: [mentor]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MentorRegisterInput"
+      responses:
+        "201":
+          description: Mentor account created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MentorAuthSuccess"
+  /mentor/login:
+    post:
+      operationId: loginMentor
+      tags: [mentor]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MentorLoginInput"
+      responses:
+        "200":
+          description: Login success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MentorAuthSuccess"
+  /mentor/me:
+    get:
+      operationId: getMentorProfile
+      tags: [mentor]
+      responses:
+        "200":
+          description: Authenticated mentor profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MentorProfileInfo"
+  /mentor/metrics:
+    get:
+      operationId: getMentorMetrics
+      tags: [mentor]
+      responses:
+        "200":
+          description: Unified metrics dashboard for scholarship school mentors
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MentorMetricsInfo"
+
+  # ─── SECOPS ─────────────────────────────────────────────────────────────────
+  /secops/ingest:
+    post:
+      operationId: ingestSecopsContent
+      tags: [secops]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SecopsIngestInput"
+      responses:
+        "200":
+          description: Content ingested and risk scored
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SecopsIngestResult"
+  /secops/flagged:
+    get:
+      operationId: listSecopsFlagged
+      tags: [secops]
+      parameters:
+        - in: query
+          name: tier
+          schema:
+            type: string
+          required: false
+        - in: query
+          name: reviewed
+          schema:
+            type: boolean
+          required: false
+        - in: query
+          name: limit
+          schema:
+            type: integer
+          required: false
+        - in: query
+          name: offset
+          schema:
+            type: integer
+          required: false
+      responses:
+        "200":
+          description: List of flagged content submissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SecopsFlaggedList"
+  /secops/label/{id}:
+    post:
+      operationId: labelSecopsContent
+      tags: [secops]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SecopsLabelInput"
+      responses:
+        "200":
+          description: Flagged item labeled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SecopsGenericSuccess"
+  /secops/pattern:
+    post:
+      operationId: addSecopsPattern
+      tags: [secops]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SecopsPatternInput"
+      responses:
+        "200":
+          description: Blocklist pattern added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SecopsGenericSuccess"
+  /secops/stats:
+    get:
+      operationId: getSecopsStats
+      tags: [secops]
+      responses:
+        "200":
+          description: Secops statistical aggregates
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SecopsStatsInfo"
+  /secops/cyberdemon/queue:
+    get:
+      operationId: getSecopsCyberdemonQueue
+      tags: [secops]
+      responses:
+        "200":
+          description: Pending Cyberdemon events
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SecopsCyberdemonQueueInfo"
+  /secops/cyberdemon/flush:
+    post:
+      operationId: flushSecopsCyberdemon
+      tags: [secops]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SecopsCyberdemonFlushInput"
+      responses:
+        "200":
+          description: Cyberdemon queue flushed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SecopsGenericSuccess"
+  /secops/ragethesage/export:
+    post:
+      operationId: exportSecopsRagethesage
+      tags: [secops]
+      responses:
+        "200":
+          description: Labelled content exported to S3
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SecopsRagethesageExportResult"
+  /secops/ragethesage/train:
+    post:
+      operationId: trainSecopsRagethesage
+      tags: [secops]
+      responses:
+        "200":
+          description: SageMaker RageSage training pipeline triggered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SecopsRagethesageTrainResult"
+
+  # ─── SCHOLARSHIP ────────────────────────────────────────────────────────────
+  /scholarship/current:
+    get:
+      operationId: getScholarshipCurrentExam
+      tags: [scholarship]
+      responses:
+        "200":
+          description: Current open exam metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScholarshipCurrentExamInfo"
+  /scholarship/exam/{id}/questions:
+    get:
+      operationId: getScholarshipExamQuestions
+      tags: [scholarship]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: Questions for specific exam
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScholarshipQuestionsList"
+  /scholarship/submit:
+    post:
+      operationId: submitScholarshipExam
+      tags: [scholarship]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScholarshipSubmitInput"
+      responses:
+        "200":
+          description: Exam answers submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScholarshipSubmitResponse"
+  /scholarship/winners:
+    get:
+      operationId: getScholarshipWinners
+      tags: [scholarship]
+      parameters:
+        - in: query
+          name: exam_id
+          schema:
+            type: string
+          required: false
+      responses:
+        "200":
+          description: Anonymised list of past winners
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScholarshipWinnersList"
+  /scholarship/exams:
+    get:
+      operationId: getScholarshipExamsList
+      tags: [scholarship]
+      responses:
+        "200":
+          description: Complete exams list (mentor view)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScholarshipExamsListInfo"
+  /scholarship/exam:
+    post:
+      operationId: createScholarshipExam
+      tags: [scholarship]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScholarshipExamCreateInput"
+      responses:
+        "200":
+          description: Exam created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScholarshipExamSingleInfo"
+  /scholarship/exam/{id}/question:
+    post:
+      operationId: addScholarshipQuestion
+      tags: [scholarship]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScholarshipQuestionAddInput"
+      responses:
+        "200":
+          description: Question added successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScholarshipQuestionSingleInfo"
+  /scholarship/exam/{id}/questions/mentor:
+    get:
+      operationId: getScholarshipQuestionsMentor
+      tags: [scholarship]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: Questions with solutions (mentor view)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScholarshipQuestionsMentorList"
+  /scholarship/question/{qid}:
+    delete:
+      operationId: deleteScholarshipQuestion
+      tags: [scholarship]
+      parameters:
+        - in: path
+          name: qid
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: Question deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScholarshipGenericSuccess"
+  /scholarship/exam/{id}/status:
+    put:
+      operationId: updateScholarshipExamStatus
+      tags: [scholarship]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScholarshipExamStatusInput"
+      responses:
+        "200":
+          description: Exam status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScholarshipExamSingleInfo"
+  /scholarship/exam/{id}/submissions:
+    get:
+      operationId: getScholarshipSubmissions
+      tags: [scholarship]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: List of student submissions for given exam
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScholarshipSubmissionsList"
+  /scholarship/submission/{sid}/score:
+    put:
+      operationId: scoreScholarshipSubmission
+      tags: [scholarship]
+      parameters:
+        - in: path
+          name: sid
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScholarshipScoreInput"
+      responses:
+        "200":
+          description: Submission scored successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScholarshipScoreResponse"
+  /scholarship/exam/{id}/grant:
+    post:
+      operationId: grantScholarshipsForExam
+      tags: [scholarship]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: Scholarships ranked, finalized, and granted to top-100
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScholarshipGrantResponse"
+
+  # ─── ACADEMIC ───────────────────────────────────────────────────────────────
+  /academic/disciplines:
+    get:
+      operationId: getAcademicDisciplines
+      tags: [academic]
+      responses:
+        "200":
+          description: List of academic disciplines
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcademicDisciplinesList"
+  /academic/specializations:
+    get:
+      operationId: getAcademicSpecializations
+      tags: [academic]
+      parameters:
+        - in: query
+          name: discipline_id
+          schema:
+            type: string
+          required: false
+      responses:
+        "200":
+          description: List of specializations within given discipline
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcademicSpecializationsList"
+  /academic/courses:
+    get:
+      operationId: getAcademicCourses
+      tags: [academic]
+      parameters:
+        - in: query
+          name: discipline_id
+          schema:
+            type: string
+          required: false
+        - in: query
+          name: specialization_id
+          schema:
+            type: string
+          required: false
+        - in: query
+          name: level
+          schema:
+            type: string
+          required: false
+        - in: query
+          name: search
+          schema:
+            type: string
+          required: false
+        - in: query
+          name: limit
+          schema:
+            type: integer
+          required: false
+        - in: query
+          name: offset
+          schema:
+            type: integer
+          required: false
+        - in: query
+          name: ids
+          schema:
+            type: string
+          required: false
+        - in: query
+          name: user_email
+          schema:
+            type: string
+          required: false
+      responses:
+        "200":
+          description: Search or query results of academic courses
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcademicCoursesList"
+  /academic/courses/{id}:
+    get:
+      operationId: getAcademicCourseDetail
+      tags: [academic]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: user_email
+          schema:
+            type: string
+          required: false
+      responses:
+        "200":
+          description: Detailed course information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcademicCourseSingleInfo"
+  /academic/courses/{id}/prerequisites:
+    get:
+      operationId: getAcademicCoursePrerequisites
+      tags: [academic]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: Prerequisite tree/hierarchy of course IDs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcademicPrerequisitesResponse"
+  /academic/research-topics:
+    get:
+      operationId: getAcademicResearchTopics
+      tags: [academic]
+      parameters:
+        - in: query
+          name: discipline_id
+          schema:
+            type: string
+          required: false
+      responses:
+        "200":
+          description: Active research topics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcademicResearchTopicsList"
+  /academic/research-topics/{id}:
+    get:
+      operationId: getAcademicResearchTopicDetail
+      tags: [academic]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: Specific research topic details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcademicResearchTopicSingleInfo"
+  /academic/research-profile:
+    post:
+      operationId: postAcademicResearchProfile
+      tags: [academic]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AcademicResearchProfileInput"
+      responses:
+        "200":
+          description: Profile successfully created/saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcademicResearchProfileResult"
+  /academic/search:
+    get:
+      operationId: getAcademicSearchFullText
+      tags: [academic]
+      parameters:
+        - in: query
+          name: q
+          schema:
+            type: string
+          required: false
+        - in: query
+          name: discipline_id
+          schema:
+            type: string
+          required: false
+        - in: query
+          name: level
+          schema:
+            type: string
+          required: false
+        - in: query
+          name: user_email
+          schema:
+            type: string
+          required: false
+      responses:
+        "200":
+          description: OpenSearch / RDS course results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcademicSearchResponse"
+  /academic/research-profile/{email}:
+    get:
+      operationId: getAcademicResearchProfileByEmail
+      tags: [academic]
+      parameters:
+        - in: path
+          name: email
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: List of research profiles associated with email
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcademicResearchProfilesResponse"
+
+  # ─── FORUM ──────────────────────────────────────────────────────────────────
+  /forum/categories:
+    get:
+      operationId: getForumCategories
+      tags: [forum]
+      responses:
+        "200":
+          description: Active categories
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForumCategoriesList"
+  /forum/threads:
+    get:
+      operationId: getForumThreads
+      tags: [forum]
+      parameters:
+        - in: query
+          name: category
+          schema:
+            type: string
+          required: false
+        - in: query
+          name: limit
+          schema:
+            type: integer
+          required: false
+        - in: query
+          name: offset
+          schema:
+            type: integer
+          required: false
+      responses:
+        "200":
+          description: List of forum threads
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForumThreadsList"
+    post:
+      operationId: createForumThread
+      tags: [forum]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForumThreadCreateInput"
+      responses:
+        "201":
+          description: Thread created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForumThreadSingle"
+  /forum/threads/{id}:
+    get:
+      operationId: getForumThreadDetail
+      tags: [forum]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      responses:
+        "200":
+          description: Single thread object with all comment replies
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForumThreadDetailResponse"
+  /forum/threads/{id}/reply:
+    post:
+      operationId: replyForumThread
+      tags: [forum]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForumReplyInput"
+      responses:
+        "201":
+          description: Reply successfully posted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForumReplySingle"
+  /forum/threads/{id}/upvote:
+    post:
+      operationId: upvoteForumThread
+      tags: [forum]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      responses:
+        "200":
+          description: Thread upvoted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForumUpvoteResult"
+  /forum/posts/{id}/upvote:
+    post:
+      operationId: upvoteForumPost
+      tags: [forum]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      responses:
+        "200":
+          description: Comment reply post upvoted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForumUpvoteResult"
+
+  # ─── GAMES ──────────────────────────────────────────────────────────────────
+  /games/generate:
+    post:
+      operationId: generateGameChallenge
+      tags: [games]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GameGenerateInput"
+      responses:
+        "200":
+          description: AI generated game content payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameGenerateResult"
+  /games/types:
+    get:
+      operationId: getGameTypes
+      tags: [games]
+      responses:
+        "200":
+          description: List of available game genres and metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameTypesList"
+
+  # ─── MYTHOLOGY ──────────────────────────────────────────────────────────────
+  /mythology/episodes:
+    get:
+      operationId: getMythologyEpisodes
+      tags: [mythology]
+      parameters:
+        - in: query
+          name: tradition
+          schema:
+            type: string
+          required: false
+        - in: query
+          name: episode_id
+          schema:
+            type: string
+          required: false
+      responses:
+        "200":
+          description: Episodes matching parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MythologyEpisodesList"
+  /mythology/traditions:
+    get:
+      operationId: getMythologyTraditions
+      tags: [mythology]
+      responses:
+        "200":
+          description: List of active mythology genres/traditions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MythologyTraditionsList"
+  /mythology/narrative:
+    post:
+      operationId: generateMythologyNarrative
+      tags: [mythology]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MythologyNarrativeInput"
+      responses:
+        "200":
+          description: Narrative text generated from Nemotron
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MythologyNarrativeResult"
+
+  # ─── PRIVATE STATS ──────────────────────────────────────────────────────────
+  /private-stats:
+    get:
+      operationId: getPrivateStats
+      tags: [privateStats]
+      parameters:
+        - in: header
+          name: x-private-stats-key
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: Fully consolidated private platform stats and diagnostic variables
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrivateStatsInfo"
+
 components:
   schemas:
     HealthStatus:
@@ -177,3 +1453,688 @@ components:
       properties:
         error:
           type: string
+    ScholarshipGenericSuccess:
+      type: object
+      required: [success]
+      properties:
+        success:
+          type: boolean
+
+    # ─── SUBSCRIPTION SCHEMAS ─────────────────────────────────────────────────
+    SubscriptionPlansResponse:
+      type: object
+      required: [detected_country, tier, tier_label, usd_price, billing_period, features, fiat, crypto]
+      properties:
+        detected_country:
+          type: string
+        tier:
+          type: string
+        tier_label:
+          type: string
+        usd_price:
+          type: number
+        billing_period:
+          type: string
+        features:
+          type: array
+          items:
+            type: string
+        fiat:
+          type: object
+          properties:
+            currency: { type: string }
+            amount: { type: number }
+            provider: { type: string }
+        crypto:
+          type: object
+          properties:
+            eth: { $ref: "#/components/schemas/CryptoAssetDetail" }
+            usdc: { $ref: "#/components/schemas/CryptoAssetDetail" }
+            btc: { $ref: "#/components/schemas/CryptoAssetDetail" }
+            sara: { $ref: "#/components/schemas/CryptoAssetDetail" }
+    CryptoAssetDetail:
+      type: object
+      properties:
+        amount: { type: string }
+        usd_rate: { type: number }
+        wallet: { type: string }
+        network: { type: string }
+        decimals: { type: integer }
+    CheckoutFiatInput:
+      type: object
+      required: [email]
+      properties:
+        email: { type: string }
+        country_code: { type: string }
+        payment_category: { type: string, enum: [card, bank] }
+    CheckoutFiatResponse:
+      type: object
+      required: [url, tier, usd_price]
+      properties:
+        url: { type: string }
+        tier: { type: string }
+        usd_price: { type: number }
+        payment_category: { type: string }
+    CheckoutCryptoInput:
+      type: object
+      required: [email, currency]
+      properties:
+        email: { type: string }
+        currency: { type: string, enum: [eth, usdc, btc, sara] }
+        country_code: { type: string }
+    CheckoutCryptoResponse:
+      type: object
+      required: [payment_id, currency, network, wallet_address, amount, usd_equivalent, tier, expires_at, instructions]
+      properties:
+        payment_id: { type: integer }
+        currency: { type: string }
+        network: { type: string }
+        wallet_address: { type: string }
+        amount: { type: string }
+        usd_equivalent: { type: number }
+        tier: { type: string }
+        expires_at: { type: string }
+        instructions: { type: string }
+    CryptoPaymentStatusResponse:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [confirmed, expired, pending, error] }
+        tx_hash: { type: string }
+        error: { type: string }
+        expires_in_ms: { type: number }
+        payment: { type: object }
+    SubscriptionStatusInfo:
+      type: object
+      properties:
+        subscribed: { type: boolean }
+        tier: { type: string }
+        source: { type: string }
+        expires_at: { type: string }
+
+    # ─── BLOCKCHAIN SCHEMAS ───────────────────────────────────────────────────
+    BlockchainTokenInfo:
+      type: object
+      required: [name, symbol, decimals, totalSupply, contractAddress]
+      properties:
+        name: { type: string }
+        symbol: { type: string }
+        decimals: { type: integer }
+        totalSupply: { type: string }
+        contractAddress: { type: string }
+    BlockchainBalanceInfo:
+      type: object
+      required: [address, formattedBalance, rawBalance]
+      properties:
+        address: { type: string }
+        formattedBalance: { type: string }
+        rawBalance: { type: string }
+    BlockchainVotesInfo:
+      type: object
+      required: [address, votingPower, votingPowerWei]
+      properties:
+        address: { type: string }
+        votingPower: { type: string }
+        votingPowerWei: { type: string }
+    BlockchainHoldersList:
+      type: object
+      required: [holders, count]
+      properties:
+        holders:
+          type: array
+          items:
+            type: object
+            properties:
+              address: { type: string }
+              balance: { type: string }
+              percentage: { type: number }
+        count: { type: integer }
+    BlockchainTransactionsList:
+      type: object
+      required: [address, transactions, count]
+      properties:
+        address: { type: string }
+        transactions:
+          type: array
+          items:
+            type: object
+        count: { type: integer }
+    BlockchainContractAbiInfo:
+      type: object
+      required: [abi, contractAddress]
+      properties:
+        abi: { type: array, items: { type: object } }
+        contractAddress: { type: string }
+    BlockchainVerificationStatusInfo:
+      type: object
+      properties:
+        isVerified: { type: boolean }
+        contractAddress: { type: string }
+        etherscanUrl: { type: string }
+    BlockchainEthCallInput:
+      type: object
+      required: [to, data]
+      properties:
+        to: { type: string }
+        data: { type: string }
+    BlockchainEthCallResult:
+      type: object
+      required: [result]
+      properties:
+        result: { type: string }
+
+    # ─── ABHAYA SCHEMAS ───────────────────────────────────────────────────────
+    AbhayaPayloadInput:
+      type: object
+      required: [payload]
+      properties:
+        payload: { type: object }
+        threshold: { type: number }
+    AbhayaTextInput:
+      type: object
+      required: [text]
+      properties:
+        text: { type: string }
+        threshold: { type: number }
+    AbhayaAnalysisResult:
+      type: object
+      required: [gate, input, result]
+      properties:
+        gate: { type: string }
+        input: { type: object }
+        result: { $ref: "#/components/schemas/AbhayaTelemetry" }
+    AbhayaTelemetry:
+      type: object
+      required: [passed, stability, xi_flux, sigma_sat, chi_v3, circuit_a, circuit_b, circuit_b_active, phase_cancelled, damping_ratio, gradient_variance, free_energy, cycles, timestamp]
+      properties:
+        passed: { type: boolean }
+        stability: { type: number }
+        xi_flux: { type: number }
+        sigma_sat: { type: number }
+        chi_v3: { type: number }
+        circuit_a: { type: number }
+        circuit_b: { type: number }
+        circuit_b_active: { type: boolean }
+        phase_cancelled: { type: boolean }
+        damping_ratio: { type: number }
+        gradient_variance: { type: number }
+        free_energy: { type: number }
+        cycles: { type: integer }
+        timestamp: { type: string }
+    AbhayaSignalInput:
+      type: object
+      required: [signal]
+      properties:
+        signal: { type: array, items: { type: number } }
+        threshold: { type: number }
+        gradient_hint: { type: number }
+    AbhayaStabilizeResult:
+      type: object
+      required: [gate, input, result, stabilised]
+      properties:
+        gate: { type: string }
+        input: { type: object }
+        result: { $ref: "#/components/schemas/AbhayaTelemetry" }
+        stabilised: { type: array, items: { type: number } }
+    AbhayaStatusInfo:
+      type: object
+      required: [gate, version, params, manifold, description]
+      properties:
+        gate: { type: string }
+        version: { type: string }
+        params: { type: object }
+        manifold:
+          type: object
+          properties:
+            cycles: { type: integer }
+            gradient_variance: { type: number }
+            manifold_stability: { type: number }
+            circuit_b_primed: { type: boolean }
+        description: { type: object }
+    AbhayaSimulateInput:
+      type: object
+      properties:
+        cycles: { type: integer }
+        noise_level: { type: number }
+    AbhayaSimulateResult:
+      type: object
+      required: [gate, simulation, params, summary, telemetry]
+      properties:
+        gate: { type: string }
+        simulation: { type: string }
+        params: { type: object }
+        summary:
+          type: object
+          properties:
+            total_cycles: { type: integer }
+            phase_cancellations: { type: integer }
+            peak_chi_v3: { type: number }
+            final_stability: { type: number }
+            final_free_energy: { type: number }
+            circuit_b_activations: { type: integer }
+            converged: { type: boolean }
+        telemetry:
+          type: array
+          items:
+            type: object
+
+    # ─── STRIPE SCHEMAS ───────────────────────────────────────────────────────
+    StripeProductsList:
+      type: object
+      required: [data]
+      properties:
+        data: { type: array, items: { type: object } }
+    StripeCheckoutInput:
+      type: object
+      required: [email, priceId]
+      properties:
+        email: { type: string }
+        priceId: { type: string }
+    StripeCheckoutResponse:
+      type: object
+      required: [url]
+      properties:
+        url: { type: string }
+    StripePortalInput:
+      type: object
+      required: [email]
+      properties:
+        email: { type: string }
+    StripePortalResponse:
+      type: object
+      required: [url]
+      properties:
+        url: { type: string }
+    StripeStatusInfo:
+      type: object
+      properties:
+        subscribed: { type: boolean }
+        status: { type: string }
+        price_id: { type: string }
+        expires_at: { type: string }
+
+    # ─── MENTOR SCHEMAS ───────────────────────────────────────────────────────
+    MentorRegisterInput:
+      type: object
+      required: [email, password, registration_code]
+      properties:
+        email: { type: string }
+        password: { type: string }
+        registration_code: { type: string }
+    MentorLoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string }
+        password: { type: string }
+    MentorAuthSuccess:
+      type: object
+      required: [token, email, role]
+      properties:
+        token: { type: string }
+        email: { type: string }
+        role: { type: string }
+        message: { type: string }
+    MentorProfileInfo:
+      type: object
+      required: [email, role]
+      properties:
+        email: { type: string }
+        role: { type: string }
+    MentorMetricsInfo:
+      type: object
+      required: [generated_at, users, subscriptions, crypto_payments_30d, pricing_tiers]
+      properties:
+        generated_at: { type: string }
+        users:
+          type: object
+          properties:
+            total: { type: integer }
+            students: { type: integer }
+            mentors: { type: integer }
+        subscriptions:
+          type: object
+          properties:
+            active_total: { type: integer }
+            via_stripe: { type: integer }
+            via_crypto: { type: integer }
+            by_tier:
+              type: object
+              properties:
+                high: { type: integer }
+                middle: { type: integer }
+                low: { type: integer }
+        crypto_payments_30d:
+          type: object
+          properties:
+            total_transactions: { type: integer }
+            total_usd_volume: { type: number }
+            by_currency: { type: object }
+        pricing_tiers: { type: object }
+
+    # ─── SECOPS SCHEMAS ───────────────────────────────────────────────────────
+    SecopsIngestInput:
+      type: object
+      required: [text]
+      properties:
+        text: { type: string }
+        sourceId: { type: string }
+        sourceType: { type: string, enum: [chat, mentor_input, lex_intake, api_payload] }
+    SecopsIngestResult:
+      type: object
+      required: [contentId, tier, compositeRisk, pmiScore, profanityScore, vulgarityScore, flags, blocked]
+      properties:
+        contentId: { type: integer, nullable: true }
+        tier: { type: string }
+        compositeRisk: { type: number }
+        pmiScore: { type: number }
+        profanityScore: { type: number }
+        vulgarityScore: { type: number }
+        flags: { type: array, items: { type: string } }
+        blocked: { type: boolean }
+    SecopsFlaggedList:
+      type: object
+      required: [flagged, count]
+      properties:
+        flagged: { type: array, items: { type: object } }
+        count: { type: integer }
+    SecopsLabelInput:
+      type: object
+      required: [labelProfanity, labelVulgarity, labelPmi]
+      properties:
+        labelProfanity: { type: number }
+        labelVulgarity: { type: number }
+        labelPmi: { type: number }
+        notes: { type: string }
+    SecopsPatternInput:
+      type: object
+      required: [patternRegex, category, label, weight]
+      properties:
+        patternRegex: { type: string }
+        category: { type: string, enum: [profanity, vulgarity, pmi] }
+        label: { type: string }
+        weight: { type: number }
+    SecopsStatsInfo:
+      type: object
+      properties:
+        total_ingested: { type: integer }
+        flagged_count: { type: integer }
+        by_tier: { type: object }
+    SecopsCyberdemonQueueInfo:
+      type: object
+      required: [events, count]
+      properties:
+        events: { type: array, items: { type: object } }
+        count: { type: integer }
+    SecopsCyberdemonFlushInput:
+      type: object
+      required: [eventIds]
+      properties:
+        eventIds: { type: array, items: { type: integer } }
+    SecopsGenericSuccess:
+      type: object
+      required: [ok]
+      properties:
+        ok: { type: boolean }
+    SecopsRagethesageExportResult:
+      type: object
+      required: [ok, exported]
+      properties:
+        ok: { type: boolean }
+        exported: { type: integer }
+        s3Key: { type: string }
+        message: { type: string }
+    SecopsRagethesageTrainResult:
+      type: object
+      required: [ok, executionArn, executionName]
+      properties:
+        ok: { type: boolean }
+        executionArn: { type: string }
+        executionName: { type: string }
+
+    # ─── SCHOLARSHIP SCHEMAS ──────────────────────────────────────────────────
+    ScholarshipCurrentExamInfo:
+      type: object
+      properties:
+        exam: { type: object }
+    ScholarshipQuestionsList:
+      type: object
+      required: [questions]
+      properties:
+        questions: { type: array, items: { type: object } }
+    ScholarshipSubmitInput:
+      type: object
+      required: [exam_id, full_name, email, age, answers]
+      properties:
+        exam_id: { type: string }
+        full_name: { type: string }
+        email: { type: string }
+        age: { type: integer }
+        answers: { type: object }
+    ScholarshipSubmitResponse:
+      type: object
+      required: [success, submission_id, auto_score]
+      properties:
+        success: { type: boolean }
+        submission_id: { type: string }
+        auto_score: { type: number }
+    ScholarshipWinnersList:
+      type: object
+      required: [winners]
+      properties:
+        winners: { type: array, items: { type: object } }
+    ScholarshipExamsListInfo:
+      type: object
+      required: [exams]
+      properties:
+        exams: { type: array, items: { type: object } }
+    ScholarshipExamCreateInput:
+      type: object
+      required: [title, month, year]
+      properties:
+        title: { type: string }
+        description: { type: string }
+        month: { type: integer }
+        year: { type: integer }
+        opens_at: { type: string }
+        closes_at: { type: string }
+    ScholarshipExamSingleInfo:
+      type: object
+      properties:
+        exam: { type: object }
+    ScholarshipQuestionAddInput:
+      type: object
+      required: [order_num, question_text, question_type]
+      properties:
+        order_num: { type: integer }
+        question_text: { type: string }
+        question_type: { type: string, enum: [mcq, short_answer] }
+        options: { type: array, items: { type: string } }
+        correct_option: { type: integer }
+        max_score: { type: number }
+    ScholarshipQuestionSingleInfo:
+      type: object
+      properties:
+        question: { type: object }
+    ScholarshipQuestionsMentorList:
+      type: object
+      required: [questions]
+      properties:
+        questions: { type: array, items: { type: object } }
+    ScholarshipExamStatusInput:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [draft, open, closed, graded] }
+    ScholarshipSubmissionsList:
+      type: object
+      required: [submissions]
+      properties:
+        submissions: { type: array, items: { type: object } }
+    ScholarshipScoreInput:
+      type: object
+      required: [mentor_score]
+      properties:
+        mentor_score: { type: number }
+    ScholarshipScoreResponse:
+      type: object
+      properties:
+        submission: { type: object }
+    ScholarshipGrantResponse:
+      type: object
+      required: [success, granted]
+      properties:
+        success: { type: boolean }
+        granted: { type: array, items: { type: object } }
+
+    # ─── ACADEMIC SCHEMAS ─────────────────────────────────────────────────────
+    AcademicDisciplinesList:
+      type: object
+      required: [disciplines]
+      properties:
+        disciplines: { type: array, items: { type: object } }
+    AcademicSpecializationsList:
+      type: object
+      required: [specializations]
+      properties:
+        specializations: { type: array, items: { type: object } }
+    AcademicCoursesList:
+      type: object
+      required: [courses]
+      properties:
+        courses: { type: array, items: { type: object } }
+    AcademicCourseSingleInfo:
+      type: object
+      properties:
+        course: { type: object }
+    AcademicPrerequisitesResponse:
+      type: object
+      required: [prerequisites]
+      properties:
+        prerequisites: { type: object }
+    AcademicResearchTopicsList:
+      type: object
+      required: [topics]
+      properties:
+        topics: { type: array, items: { type: object } }
+    AcademicResearchTopicSingleInfo:
+      type: object
+      properties:
+        topic: { type: object }
+    AcademicResearchProfileInput:
+      type: object
+      required: [user_email, interest_text]
+      properties:
+        user_email: { type: string }
+        interest_text: { type: string }
+        discipline_id: { type: string }
+        topic_ids: { type: array, items: { type: string } }
+        ai_plan: { type: object }
+    AcademicResearchProfileResult:
+      type: object
+      properties:
+        profile: { type: object }
+    AcademicSearchResponse:
+      type: object
+      required: [courses, source]
+      properties:
+        courses: { type: array, items: { type: object } }
+        source: { type: string }
+    AcademicResearchProfilesResponse:
+      type: object
+      required: [profiles]
+      properties:
+        profiles: { type: array, items: { type: object } }
+
+    # ─── FORUM SCHEMAS ────────────────────────────────────────────────────────
+    ForumCategoriesList:
+      type: array
+      items:
+        type: object
+    ForumThreadsList:
+      type: array
+      items:
+        type: object
+    ForumThreadDetailResponse:
+      type: object
+      required: [thread, posts]
+      properties:
+        thread: { type: object }
+        posts: { type: array, items: { type: object } }
+    ForumThreadCreateInput:
+      type: object
+      required: [category_id, title, body]
+      properties:
+        category_id: { type: integer }
+        title: { type: string }
+        body: { type: string }
+        author_name: { type: string }
+        tags: { type: array, items: { type: string } }
+    ForumThreadSingle:
+      type: object
+    ForumReplyInput:
+      type: object
+      required: [body]
+      properties:
+        body: { type: string }
+        author_name: { type: string }
+    ForumReplySingle:
+      type: object
+    ForumUpvoteResult:
+      type: object
+      required: [upvotes]
+      properties:
+        upvotes: { type: integer }
+
+    # ─── GAMES SCHEMAS ────────────────────────────────────────────────────────
+    GameGenerateInput:
+      type: object
+      properties:
+        type: { type: string, enum: [quiz, riddle, myth-match, code-challenge] }
+        topic: { type: string }
+    GameGenerateResult:
+      type: object
+      required: [type, schema, data]
+      properties:
+        type: { type: string }
+        schema: { type: string }
+        data: { type: object }
+    GameTypesList:
+      type: array
+      items:
+        type: object
+
+    # ─── MYTHOLOGY SCHEMAS ────────────────────────────────────────────────────
+    MythologyEpisodesList:
+      type: array
+      items:
+        type: object
+    MythologyTraditionsList:
+      type: array
+      items:
+        type: object
+    MythologyNarrativeInput:
+      type: object
+      required: [episode_id]
+      properties:
+        episode_id: { type: string }
+    MythologyNarrativeResult:
+      type: object
+      required: [episode, narrative]
+      properties:
+        episode: { type: object }
+        narrative: { type: string }
+
+    # ─── PRIVATE STATS SCHEMAS ────────────────────────────────────────────────
+    PrivateStatsInfo:
+      type: object
+      required: [success, generated_at, system, users, subscriptions, crypto_payments_30d, abhaya]
+      properties:
+        success: { type: boolean }
+        generated_at: { type: string }
+        system: { type: object }
+        users: { type: object }
+        subscriptions: { type: object }
+        crypto_payments_30d: { type: object }
+        abhaya: { type: object }
+
