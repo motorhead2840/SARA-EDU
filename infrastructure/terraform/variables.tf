@@ -124,9 +124,9 @@ variable "airflow_environment_class" {
 # ─── Route 53 ─────────────────────────────────────────────────────────────────
 
 variable "domain_name" {
-  description = "Root domain name (e.g. sriplatform.com)"
+  description = "Root domain name (e.g. sri-learn.ai)"
   type        = string
-  default     = "sriplatform.com"
+  default     = "sri-learn.ai"
 }
 
 # ─── GitHub CI/CD ─────────────────────────────────────────────────────────────

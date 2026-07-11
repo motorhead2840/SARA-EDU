@@ -11,7 +11,7 @@ All resources are managed by Terraform and live in `us-east-1`.
                  AWS Global Accelerator (2 anycast IPs)
                             │
                             ▼
-                  Route 53 (sriplatform.com)
+                  Route 53 (sri-learn.ai)
                             │
                             ▼
               ACM (wildcard TLS) ─► ALB (public)
