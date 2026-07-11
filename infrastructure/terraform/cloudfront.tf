@@ -3,8 +3,8 @@
 resource "aws_cloudfront_cache_policy" "default" {
   name        = "${var.project}-${var.environment}-default-policy"
   comment     = "Default cache policy for dynamic content and API fallbacks"
-  default_ttl = 300
-  max_ttl     = 3600
+  default_ttl = 60
+  max_ttl     = 300
   min_ttl     = 0
 
   parameters_in_cache_key_and_forwarded_to_origin {
