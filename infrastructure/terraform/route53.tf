@@ -9,7 +9,7 @@ resource "aws_route53_record" "apex" {
   name    = var.domain_name
   type    = "A"
 
-  set_identifier = var.aws_region
+  set_identifier = "${var.aws_region}-${var.environment}"
   latency_routing_policy {
     region = var.aws_region
   }
@@ -26,7 +26,7 @@ resource "aws_route53_record" "api" {
   name    = "api.${var.domain_name}"
   type    = "A"
 
-  set_identifier = var.aws_region
+  set_identifier = "${var.aws_region}-${var.environment}"
   latency_routing_policy {
     region = var.aws_region
   }

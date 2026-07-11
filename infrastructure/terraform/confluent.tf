@@ -29,6 +29,9 @@ resource "confluent_kafka_cluster" "main" {
   cloud        = "AWS"
   region       = var.aws_region
 
+  # Transitioned from Dedicated 2-CKU to Standard Serverless for frictionless, 
+  # instant scaling on-demand without manual CKU provisioning or pre-warming 
+  # of dedicated resources during high-volume surges.
   standard {}
 
   environment {
@@ -200,6 +203,9 @@ resource "aws_ssm_parameter" "confluent_bootstrap" {
 locals {
   confluent_topics = [
     # ── Core platform topics (carried over from MSK) ──────────────────────────
+    # Note: shri.session.events, subscription.created, and payment.fiat.events are
+    # scaled to 12 partitions to handle high parallel consumer concurrency during the 
+    # initial registration/signup wave of 15,000 concurrent students, avoiding consumer lag.
     { name = "shri.session.events",      partitions = 12, retention_ms = "604800000"   },
     { name = "shri.chat.messages",       partitions = 6, retention_ms = "604800000"   },
     { name = "shri.frustration.events",  partitions = 3, retention_ms = "604800000"   },

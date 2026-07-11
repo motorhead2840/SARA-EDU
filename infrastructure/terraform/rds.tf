@@ -156,7 +156,8 @@ resource "aws_iam_role_policy" "db_proxy" {
       {
         Effect = "Allow"
         Action = [
-          "secretsmanager:GetSecretValue"
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
         ]
         Resource = [
           aws_secretsmanager_secret.db_password.arn

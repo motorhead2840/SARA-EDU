@@ -3,9 +3,9 @@
 resource "aws_cloudfront_cache_policy" "default" {
   name        = "${var.project}-${var.environment}-default-policy"
   comment     = "Default cache policy for dynamic content and API fallbacks"
-  default_ttl = 86400
-  max_ttl     = 31536000
-  min_ttl     = 1
+  default_ttl = 300
+  max_ttl     = 3600
+  min_ttl     = 0
 
   parameters_in_cache_key_and_forwarded_to_origin {
     cookies_config {
