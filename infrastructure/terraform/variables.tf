@@ -151,3 +151,23 @@ variable "nvidia_api_key" {
   sensitive   = true
   default     = ""
 }
+
+# ─── Threat Mitigation ────────────────────────────────────────────────────────
+
+variable "threat_mitigation_max_retries" {
+  description = "Maximum number of retries for WAF IP set updates"
+  type        = number
+  default     = 5
+}
+
+variable "threat_mitigation_initial_backoff_delay_seconds" {
+  description = "Initial backoff delay in seconds for WAF IP set update retries"
+  type        = number
+  default     = 0.5
+}
+
+variable "threat_mitigation_batch_size" {
+  description = "Batch size for the Confluent Kafka Event Source Mapping"
+  type        = number
+  default     = 5
+}

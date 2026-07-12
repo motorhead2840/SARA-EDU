@@ -114,8 +114,8 @@ resource "aws_lambda_function" "threat_mitigation" {
       WAF_IPV6_SET_ID               = aws_wafv2_ip_set.malicious_ips_ipv6.id
       WAF_IPV6_SET_NAME             = aws_wafv2_ip_set.malicious_ips_ipv6.name
       WAF_SCOPE                     = "CLOUDFRONT"
-      MAX_UPDATE_RETRIES            = "5"
-      INITIAL_BACKOFF_DELAY_SECONDS = "0.5"
+      MAX_UPDATE_RETRIES            = var.threat_mitigation_max_retries
+      INITIAL_BACKOFF_DELAY_SECONDS = var.threat_mitigation_initial_backoff_delay_seconds
     }
   }
 
@@ -138,7 +138,7 @@ resource "aws_lambda_event_source_mapping" "threat_mitigation_kafka" {
   function_name     = aws_lambda_function.threat_mitigation.arn
   topics            = ["security.detected.threats"]
   starting_position = "LATEST"
-  batch_size        = 5
+  batch_size        = var.threat_mitigation_batch_size
 
   self_managed_event_source {
     endpoints = {
