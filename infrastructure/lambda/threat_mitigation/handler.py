@@ -12,11 +12,12 @@ Features:
 """
 
 import base64
+import ipaddress
 import json
 import logging
 import os
-import re
 import time
+from typing import Any
 import boto3
 from botocore.exceptions import ClientError
 
@@ -31,24 +32,30 @@ IPV6_SET_ID = os.environ.get("WAF_IPV6_SET_ID", "")
 IPV6_SET_NAME = os.environ.get("WAF_IPV6_SET_NAME", "")
 WAF_SCOPE = os.environ.get("WAF_SCOPE", "CLOUDFRONT") # Must be CLOUDFRONT for globally scoped WAF
 
+# Resilience & Retries
+MAX_UPDATE_RETRIES = int(os.environ.get("MAX_UPDATE_RETRIES", "5"))
+INITIAL_BACKOFF_DELAY_SECONDS = float(os.environ.get("INITIAL_BACKOFF_DELAY_SECONDS", "0.5"))
+
 # WAFv2 client must be in us-east-1 for CLOUDFRONT scope
 waf_client = boto3.client("wafv2", region_name="us-east-1" if WAF_SCOPE == "CLOUDFRONT" else AWS_REGION)
-
-# Regular expression helpers for validating IP addresses
-IPV4_PATTERN = re.compile(r"^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$")
-IPV6_PATTERN = re.compile(r"^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$")
 
 
 def is_valid_ipv4(ip: str) -> bool:
     """Validate if the string is a standard IPv4 address."""
-    if not IPV4_PATTERN.match(ip):
+    try:
+        raw_ip = ip.split("/")[0]
+        return ipaddress.ip_address(raw_ip).version == 4
+    except ValueError:
         return False
-    return all(0 <= int(part) < 256 for part in ip.split("."))
 
 
 def is_valid_ipv6(ip: str) -> bool:
     """Validate if the string is a valid IPv6 address."""
-    return bool(IPV6_PATTERN.match(ip))
+    try:
+        raw_ip = ip.split("/")[0]
+        return ipaddress.ip_address(raw_ip).version == 6
+    except ValueError:
+        return False
 
 
 def update_waf_ip_set(ip_set_id: str, ip_set_name: str, new_ips: list[str]) -> bool:
@@ -60,10 +67,9 @@ def update_waf_ip_set(ip_set_id: str, ip_set_name: str, new_ips: list[str]) -> b
         logger.error("WAF IP Set ID or Name is not configured.")
         return False
 
-    max_retries = 5
-    backoff_delay = 0.5
+    backoff_delay = INITIAL_BACKOFF_DELAY_SECONDS
 
-    for attempt in range(max_retries):
+    for attempt in range(MAX_UPDATE_RETRIES):
         try:
             # 1. Fetch current IP set to get LockToken and existing addresses
             response = waf_client.get_ip_set(
@@ -114,7 +120,7 @@ def update_waf_ip_set(ip_set_id: str, ip_set_name: str, new_ips: list[str]) -> b
     return False
 
 
-def lambda_handler(event: dict, context: dict) -> dict:
+def lambda_handler(event: dict, _context: Any) -> dict:
     """
     AWS Lambda entry point. Parses Confluent Kafka event records,
     classifies malicious source IPs, and applies mitigation.

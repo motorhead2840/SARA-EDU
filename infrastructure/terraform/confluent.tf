@@ -231,7 +231,7 @@ locals {
     # ── Global Defense Network / Security topics ──────────────────────────────
     { name = "security.waf.logs",        partitions = 6, retention_ms = "604800000"   },
     { name = "security.auth.events",     partitions = 6, retention_ms = "2592000000"  },
-    { name = "security.detected.threats",partitions = 3, retention_ms = "2592000000"  },
+    { name = "security.detected.threats", partitions = 3, retention_ms = "2592000000"  },
   ]
 }
 
