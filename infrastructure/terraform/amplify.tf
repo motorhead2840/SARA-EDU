@@ -1,8 +1,12 @@
 # ─── AWS Amplify Apps ────────────────────────────────────────────────────────
 #
 # Frontend applications:
-# 1. Shri Academy (artifacts/shri-academy)
-# 2. Shri Mentor (artifacts/sri-platform)
+# 1. shri-academy (artifacts/shri-academy)
+# 2. shri-mentor (artifacts/sri-platform)
+#
+# Note: The 'shri-mentor' Amplify App deploys the frontend codebase located at
+# the 'artifacts/sri-platform' directory, aligning with the monorepo structure
+# and naming conventions.
 #
 # These are deployed to AWS Amplify using the IAM service roles provided.
 
@@ -21,6 +25,12 @@ variable "shri_mentor_amplify_role_arn" {
 locals {
   shri_academy_amplify_role_arn = var.shri_academy_amplify_role_arn != "" ? var.shri_academy_amplify_role_arn : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/shri-academy-amplify-role"
   shri_mentor_amplify_role_arn  = var.shri_mentor_amplify_role_arn != "" ? var.shri_mentor_amplify_role_arn : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/shri-mentor-amplify-role"
+
+  # SPA custom rewrite rule pattern to redirect all non-file-asset requests to index.html for client-side routing.
+  # Logic: Matches any path without a period (no file extension), or any path with an extension
+  # that is NOT in the whitelisted list of static assets (css, gif, ico, jpg, js, png, txt, svg, woff, woff2, json).
+  # This ensures all routing endpoints are handled by the client-side router (Vite/React/wouter), while preserving asset requests.
+  spa_routing_redirect_source = "^[^.]+$|\\.(?!(css|gif|ico|jpg|js|png|txt|svg|woff|woff2|json)$)([^.]+$)"
 }
 
 # ── Shri Academy Amplify App ──────────────────────────────────────────────────
@@ -38,7 +48,7 @@ resource "aws_amplify_app" "shri_academy" {
 
   # SPA custom rewrite rule to support client-side routing
   custom_rule {
-    source = "</^[^.]+$|\\.(?!(css|gif|ico|jpg|js|png|txt|svg|woff|woff2|json)$)([^.]+$)/>"
+    source = local.spa_routing_redirect_source
     status = "200"
     target = "/index.html"
   }
@@ -55,6 +65,8 @@ resource "aws_amplify_branch" "shri_academy_main" {
 
 # ── Shri Mentor Amplify App ───────────────────────────────────────────────────
 resource "aws_amplify_app" "shri_mentor" {
+  # This app is named 'shri-mentor' as requested by the user, and compiles
+  # the 'sri-platform' package.
   name                 = "shri-mentor"
   repository           = "https://github.com/${var.github_org}/${var.github_monorepo}"
   iam_service_role_arn = local.shri_mentor_amplify_role_arn
@@ -63,12 +75,12 @@ resource "aws_amplify_app" "shri_mentor" {
   environment_variables = {
     PORT                      = "8080"
     BASE_PATH                 = "/"
-    AMPLIFY_MONOREPO_APP_ROOT = "artifacts/sri-platform"
+    AMPLIFY_MONOREPO_APP_ROOT = "artifacts/sri-platform" # maps to the 'sri-platform' directory
   }
 
   # SPA custom rewrite rule to support client-side routing
   custom_rule {
-    source = "</^[^.]+$|\\.(?!(css|gif|ico|jpg|js|png|txt|svg|woff|woff2|json)$)([^.]+$)/>"
+    source = local.spa_routing_redirect_source
     status = "200"
     target = "/index.html"
   }
@@ -96,10 +108,10 @@ output "amplify_shri_academy_default_domain" {
 
 output "amplify_shri_mentor_app_id" {
   value       = aws_amplify_app.shri_mentor.id
-  description = "AWS Amplify App ID for shri-mentor"
+  description = "AWS Amplify App ID for shri-mentor (sri-platform)"
 }
 
 output "amplify_shri_mentor_default_domain" {
   value       = aws_amplify_app.shri_mentor.default_domain
-  description = "AWS Amplify Default Domain for shri-mentor"
+  description = "AWS Amplify Default Domain for shri-mentor (sri-platform)"
 }
