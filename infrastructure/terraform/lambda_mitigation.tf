@@ -65,7 +65,7 @@ resource "aws_iam_role_policy" "lambda_mitigation_permissions" {
           "logs:PutLogEvents"
         ]
         Resource = [
-          "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${local.threat_mitigation_function_name}:*"
+          "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${local.threat_mitigation_function_name}:log-stream:*"
         ]
       },
       # Secrets Manager & SSM Permissions for Confluent Cloud Credentials
