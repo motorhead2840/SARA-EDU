@@ -12,7 +12,7 @@ locals {
 
 data "archive_file" "threat_mitigation" {
   type        = "zip"
-  source_file = "${path.module}/../lambda/threat_mitigation/handler.py"
+  source_dir  = "${path.module}/../lambda/threat_mitigation"
   output_path = "${path.module}/../lambda/threat_mitigation.zip"
 }
 
@@ -99,7 +99,7 @@ resource "aws_lambda_function" "threat_mitigation" {
   role          = aws_iam_role.lambda_mitigation.arn
   runtime       = "python3.12"
   handler       = "handler.lambda_handler"
-  timeout       = 15
+  timeout       = 30
   memory_size   = 256
 
   filename         = data.archive_file.threat_mitigation.output_path
