@@ -228,6 +228,10 @@ locals {
     { name = "student.game.played",      partitions = 3, retention_ms = "604800000"   },
     { name = "student.forum.posted",     partitions = 3, retention_ms = "2592000000"  },
     { name = "student.mythology.viewed", partitions = 3, retention_ms = "604800000"   },
+    # ── Global Defense Network / Security topics ──────────────────────────────
+    { name = "security.waf.logs",        partitions = 6, retention_ms = "604800000"   },
+    { name = "security.auth.events",     partitions = 6, retention_ms = "2592000000"  },
+    { name = "security.detected.threats", partitions = 3, retention_ms = "2592000000"  },
   ]
 }
 
