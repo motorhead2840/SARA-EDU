@@ -120,9 +120,9 @@ app.include_router(research_router, prefix="/shri-api/research")
 app.include_router(sagemaker_router, prefix="/shri-api/sagemaker")
 
 # ─── LLM Factory ────────────────────────────────────────────────────────────────
-OPENAI_MODEL = "nvidia/llama-3.1-nemotron-70b-instruct"
+NIM_MODEL = "nvidia/llama-3.1-nemotron-70b-instruct"
 
-def get_openai_client() -> openai.OpenAI:
+def get_nim_client() -> openai.OpenAI:
     api_key = os.environ.get("NVIDIA_API_KEY")
     if not api_key:
         raise RuntimeError("NVIDIA_API_KEY is not configured")
@@ -450,13 +450,13 @@ async def chat(req: ChatInput):
     sm_endpoint = os.environ.get("SAGEMAKER_ENDPOINT_NAME")
     sm_region = os.environ.get("AWS_REGION", "us-east-1")
 
-    async def _openai_call() -> str:
+    async def _nim_call() -> str:
         try:
-            client = get_openai_client()
+            client = get_nim_client()
             resp = await asyncio.get_event_loop().run_in_executor(
                 None,
                 lambda: client.chat.completions.create(
-                    model=OPENAI_MODEL,
+                    model=NIM_MODEL,
                     messages=plain_messages,
                     max_tokens=2048,
                     temperature=0.7,
@@ -468,13 +468,13 @@ async def chat(req: ChatInput):
             raise HTTPException(status_code=502, detail=f"AI mentor unavailable: {str(e)}")
 
     if eval_mode and sm_endpoint:
-        openai_task = asyncio.create_task(_openai_call())
+        nim_task = asyncio.create_task(_nim_call())
         sm_task = asyncio.create_task(
             call_sagemaker_endpoint(plain_messages, sm_endpoint, sm_region)
         )
-        answer, sm_answer = await asyncio.gather(openai_task, sm_task)
+        answer, sm_answer = await asyncio.gather(nim_task, sm_task)
     else:
-        answer = await _openai_call()
+        answer = await _nim_call()
         sm_answer = None
 
     # Persist to history (NIM response is canonical)

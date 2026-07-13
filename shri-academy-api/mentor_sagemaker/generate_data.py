@@ -94,7 +94,6 @@ def generate_pairs(client: OpenAI, chunk_text: str, n: int, retries: int = 3) ->
                     if part_stripped.startswith("[") or part_stripped.startswith("{"):
                         cleaned_raw = part_stripped
                         break
-            
             # Find actual JSON array boundaries
             start_idx = cleaned_raw.find("[")
             end_idx = cleaned_raw.rfind("]")

@@ -150,7 +150,7 @@ async def _call_bedrock(system_prompt: str, user_prompt: str) -> str:
     return await loop.run_in_executor(None, _invoke)
 
 
-# ─── OpenAI client ────────────────────────────────────────────────────────────
+# ─── NVIDIA NIM client ────────────────────────────────────────────────────────────
 
 async def _call_nim(system_prompt: str, user_prompt: str) -> str:
     async with httpx.AsyncClient(timeout=60) as client:
@@ -164,7 +164,6 @@ async def _call_nim(system_prompt: str, user_prompt: str) -> str:
                     {"role": "user", "content": user_prompt},
                 ],
                 "temperature": 0.3,
-                
                 "max_tokens": 2500,
             }
         )
