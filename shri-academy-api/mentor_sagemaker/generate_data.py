@@ -35,8 +35,8 @@ log = logging.getLogger(__name__)
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from syllabus import SYLLABUS_CHUNKS  # type: ignore
 
-# ── OpenAI (teacher model for data generation) ───────────────────────────────
-GENERATOR_MODEL = "gpt-4o"
+# ── NVIDIA NIM (teacher model for data generation) ───────────────────────────
+GENERATOR_MODEL = "nvidia/llama-3.1-nemotron-70b-instruct"
 
 SYSTEM_PROMPT = (
     "You are Shri, a knowledgeable AI mentor for Shri Academy. "
@@ -63,10 +63,13 @@ No extra commentary. No markdown fences. Valid JSON only.
 
 
 def build_client() -> OpenAI:
-    api_key = os.environ.get("OPENAI_API_KEY2") or os.environ.get("OPENAI_API_KEY")
+    api_key = os.environ.get("NVIDIA_API_KEY")
     if not api_key:
-        raise EnvironmentError("OPENAI_API_KEY2 is not set")
-    return OpenAI(api_key=api_key)
+        raise EnvironmentError("NVIDIA_API_KEY is not set")
+    return OpenAI(
+        base_url="https://integrate.api.nvidia.com/v1",
+        api_key=api_key
+    )
 
 
 def generate_pairs(client: OpenAI, chunk_text: str, n: int, retries: int = 3) -> list[dict]:
@@ -80,12 +83,24 @@ def generate_pairs(client: OpenAI, chunk_text: str, n: int, retries: int = 3) ->
                 max_tokens=2048,
             )
             raw = resp.choices[0].message.content.strip()
-            # Strip markdown fences if present
-            if raw.startswith("```"):
-                raw = raw.split("```")[1]
-                if raw.startswith("json"):
-                    raw = raw[4:]
-            pairs = json.loads(raw)
+            # Robust JSON extraction
+            cleaned_raw = raw.strip()
+            if "```" in cleaned_raw:
+                parts = cleaned_raw.split("```")
+                for part in parts:
+                    part_stripped = part.strip()
+                    if part_stripped.startswith("json"):
+                        part_stripped = part_stripped[4:].strip()
+                    if part_stripped.startswith("[") or part_stripped.startswith("{"):
+                        cleaned_raw = part_stripped
+                        break
+            # Find actual JSON array boundaries
+            start_idx = cleaned_raw.find("[")
+            end_idx = cleaned_raw.rfind("]")
+            if start_idx != -1 and end_idx != -1:
+                cleaned_raw = cleaned_raw[start_idx:end_idx+1]
+
+            pairs = json.loads(cleaned_raw)
             if not isinstance(pairs, list):
                 raise ValueError("Expected JSON array")
             valid = [p for p in pairs if isinstance(p, dict) and "question" in p and "answer" in p]

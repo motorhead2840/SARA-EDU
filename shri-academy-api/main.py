@@ -1,7 +1,7 @@
 """
 Shri Academy AI Mentor Backend
-FastAPI + ChromaDB (local ONNX embeddings) + OpenAI
-Eval mode: parallel GPT-4o + SageMaker Nemotron endpoint comparison
+FastAPI + ChromaDB (local ONNX embeddings) + NVIDIA NIM
+Eval mode: parallel NVIDIA Nemotron + SageMaker Nemotron endpoint comparison
 """
 
 import asyncio
@@ -120,13 +120,16 @@ app.include_router(research_router, prefix="/shri-api/research")
 app.include_router(sagemaker_router, prefix="/shri-api/sagemaker")
 
 # ─── LLM Factory ────────────────────────────────────────────────────────────────
-OPENAI_MODEL = "gpt-4o"
+NIM_MODEL = "nvidia/llama-3.1-nemotron-70b-instruct"
 
-def get_openai_client() -> openai.OpenAI:
-    api_key = os.environ.get("OPENAI_API_KEY2") or os.environ.get("OPENAI_API_KEY")
+def get_nim_client() -> openai.OpenAI:
+    api_key = os.environ.get("NVIDIA_API_KEY")
     if not api_key:
-        raise RuntimeError("OPENAI_API_KEY2 is not configured")
-    return openai.OpenAI(api_key=api_key)
+        raise RuntimeError("NVIDIA_API_KEY is not configured")
+    return openai.OpenAI(
+        base_url="https://integrate.api.nvidia.com/v1",
+        api_key=api_key
+    )
 
 # ─── SageMaker Eval Inference ────────────────────────────────────────────────────
 async def call_sagemaker_endpoint(
@@ -435,25 +438,25 @@ async def chat(req: ChatInput):
     # RAG retrieval
     context, context_used = retrieve_context(req.message, circuit)
 
-    # Build system prompt and OpenAI message list (system + history + current)
+    # Build system prompt and NIM message list (system + history + current)
     system_prompt = build_system_prompt(circuit, context)
     plain_messages = [{"role": "system", "content": system_prompt}]
     for msg in session["history"][-10:]:
         plain_messages.append({"role": msg["role"], "content": msg["content"]})
     plain_messages.append({"role": "user", "content": req.message})
 
-    # ── Eval mode: call OpenAI + SageMaker in parallel ───────────────────────
+    # ── Eval mode: call NVIDIA NIM + SageMaker in parallel ───────────────────
     eval_mode = os.environ.get("MENTOR_EVAL_MODE", "").lower() == "true"
     sm_endpoint = os.environ.get("SAGEMAKER_ENDPOINT_NAME")
     sm_region = os.environ.get("AWS_REGION", "us-east-1")
 
-    async def _openai_call() -> str:
+    async def _nim_call() -> str:
         try:
-            client = get_openai_client()
+            client = get_nim_client()
             resp = await asyncio.get_event_loop().run_in_executor(
                 None,
                 lambda: client.chat.completions.create(
-                    model=OPENAI_MODEL,
+                    model=NIM_MODEL,
                     messages=plain_messages,
                     max_tokens=2048,
                     temperature=0.7,
@@ -461,20 +464,20 @@ async def chat(req: ChatInput):
             )
             return resp.choices[0].message.content
         except Exception as e:
-            log.error(f"GPT-4o error: {e}")
+            log.error(f"NVIDIA NIM error: {e}")
             raise HTTPException(status_code=502, detail=f"AI mentor unavailable: {str(e)}")
 
     if eval_mode and sm_endpoint:
-        openai_task = asyncio.create_task(_openai_call())
+        nim_task = asyncio.create_task(_nim_call())
         sm_task = asyncio.create_task(
             call_sagemaker_endpoint(plain_messages, sm_endpoint, sm_region)
         )
-        answer, sm_answer = await asyncio.gather(openai_task, sm_task)
+        answer, sm_answer = await asyncio.gather(nim_task, sm_task)
     else:
-        answer = await _openai_call()
+        answer = await _nim_call()
         sm_answer = None
 
-    # Persist to history (OpenAI response is canonical)
+    # Persist to history (NIM response is canonical)
     session["history"].append({"role": "user", "content": req.message})
     session["history"].append({"role": "assistant", "content": answer})
 
