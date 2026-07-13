@@ -2,7 +2,7 @@
 Research mentor routes — AI-powered academic path generator.
 
 Primary AI path: AWS Bedrock (Claude 3.5 Sonnet) when BEDROCK_ENABLED=true.
-Fallback:        OpenAI GPT-4o when OPENAI_API_KEY is set.
+Fallback:        NVIDIA NIM (Llama 3.1 Nemotron 70B) when NVIDIA_API_KEY is set.
 Events:          Publishes to Confluent Cloud Kafka topic 'academic.plan.generated'
                  after every successful plan generation.
 """
@@ -23,7 +23,7 @@ router = APIRouter()
 # ─── Configuration ────────────────────────────────────────────────────────────
 
 API_SERVER      = os.getenv("API_SERVER_URL", "http://localhost:3000")
-OPENAI_KEY      = os.getenv("OPENAI_API_KEY", "")
+NVIDIA_KEY      = os.getenv("NVIDIA_API_KEY", "")
 BEDROCK_ENABLED = os.getenv("BEDROCK_ENABLED", "false").lower() == "true"
 BEDROCK_MODEL   = os.getenv("BEDROCK_MODEL_ID", "anthropic.claude-3-5-sonnet-20241022-v2:0")
 BEDROCK_REGION  = os.getenv("BEDROCK_REGION", "us-east-1")
@@ -152,19 +152,19 @@ async def _call_bedrock(system_prompt: str, user_prompt: str) -> str:
 
 # ─── OpenAI client ────────────────────────────────────────────────────────────
 
-async def _call_openai(system_prompt: str, user_prompt: str) -> str:
+async def _call_nim(system_prompt: str, user_prompt: str) -> str:
     async with httpx.AsyncClient(timeout=60) as client:
         response = await client.post(
-            "https://api.openai.com/v1/chat/completions",
-            headers={"Authorization": f"Bearer {OPENAI_KEY}", "Content-Type": "application/json"},
+            "https://integrate.api.nvidia.com/v1/chat/completions",
+            headers={"Authorization": f"Bearer {NVIDIA_KEY}", "Content-Type": "application/json"},
             json={
-                "model": "gpt-4o",
+                "model": "nvidia/llama-3.1-nemotron-70b-instruct",
                 "messages": [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
                 ],
                 "temperature": 0.3,
-                "response_format": {"type": "json_object"},
+                
                 "max_tokens": 2500,
             }
         )
@@ -267,20 +267,20 @@ async def research_mentor(req: MentorRequest):
         try:
             raw = await _call_bedrock(SYSTEM_PROMPT, user_prompt)
         except Exception as e:
-            logger.warning("Bedrock call failed (%s) — falling back to OpenAI", e)
-            if not OPENAI_KEY:
-                raise HTTPException(status_code=503, detail=f"Bedrock failed and no OpenAI fallback: {e}")
+            logger.warning("Bedrock call failed (%s) — falling back to NVIDIA NIM", e)
+            if not NVIDIA_KEY:
+                raise HTTPException(status_code=503, detail=f"Bedrock failed and no NVIDIA NIM fallback: {e}")
             try:
-                raw = await _call_openai(SYSTEM_PROMPT, user_prompt)
+                raw = await _call_nim(SYSTEM_PROMPT, user_prompt)
             except httpx.HTTPError as e2:
                 raise HTTPException(status_code=502, detail=f"All AI backends failed: {e2}")
-    elif OPENAI_KEY:
+    elif NVIDIA_KEY:
         try:
-            raw = await _call_openai(SYSTEM_PROMPT, user_prompt)
+            raw = await _call_nim(SYSTEM_PROMPT, user_prompt)
         except httpx.HTTPError as e:
-            raise HTTPException(status_code=502, detail=f"OpenAI request failed: {e}")
+            raise HTTPException(status_code=502, detail=f"NVIDIA NIM request failed: {e}")
     else:
-        raise HTTPException(status_code=503, detail="No AI backend configured (set BEDROCK_ENABLED=true or OPENAI_API_KEY)")
+        raise HTTPException(status_code=503, detail="No AI backend configured (set BEDROCK_ENABLED=true or NVIDIA_API_KEY)")
 
     try:
         plan_data = json.loads(raw)
