@@ -29,10 +29,10 @@ except ImportError:
     _jax_available = False
 
 try:
-    from juliacall import Main as jl
+    from juliacall import Main as julia_main
     _julia_available = True
 except ImportError:
-    jl = None  # type: ignore
+    julia_main = None  # type: ignore
     _julia_available = False
 
 try:
@@ -53,7 +53,7 @@ except ImportError:
 
 
 # ─── Constants for the Omega-Dit Architecture & Training Dynamics ───────────
-STOCHASTIC_FLUX_DAMPENING = 0.9 # Rate of noise reduction for unitive non-dual balance
+STOCHASTIC_FLUX_DAMPING = 0.9   # Rate of noise reduction for unitive non-dual balance
 CRITICAL_THRESHOLD = 0.7        # Point at which truth saturation triggers thermodynamic override
 SIGMOID_STEEPNESS = 15.0        # Smooth transition sensitivity coefficient for Circuit B override
 DEFAULT_LEARNING_RATE = 0.01    # Baseline learning rate for gradient updates
@@ -199,10 +199,10 @@ def run_julia_nondual_notations(omega_in: List[float]) -> List[float]:
     Invokes the Julia runtime via the Python-Julia bridge to compute high-fidelity
     unitive, non-dual transformations of the Omega-Dit state vector.
     """
-    if _julia_available and jl is not None:
+    if _julia_available and julia_main is not None:
         try:
             # Express unitive mathematical notation in Julia
-            jl.seval("""
+            julia_main.seval("""
             function unitive_phase_shift(omega::Vector{Float64})
                 # Non-dual transformation based on Nataraja Guru principles
                 # Harmonizing the inner and outer dualistic states
@@ -213,10 +213,10 @@ def run_julia_nondual_notations(omega_in: List[float]) -> List[float]:
                 
                 # Unitive non-dual scale transformation
                 u_factor = (sigma + beta + upsilon) / (3.0 + xi)
-                return [sigma * u_factor, beta * cos(beta), upsilon * u_factor, xi * 0.9]
+                return [sigma * u_factor, beta * cos(beta), upsilon * u_factor, xi * {damping_constant}]
             end
-            """)
-            omega_out = jl.unitive_phase_shift(omega_in)
+            """.format(damping_constant=STOCHASTIC_FLUX_DAMPING))
+            omega_out = julia_main.unitive_phase_shift(omega_in)
             return [float(x) for x in omega_out]
         except Exception as e:
             log.warning(f"Julia bridge execution failed: {e}. Falling back to Python equivalent.")
@@ -224,7 +224,7 @@ def run_julia_nondual_notations(omega_in: List[float]) -> List[float]:
     # Python equivalent/fallback logic preserving the non-dual unitive calculations
     sigma, beta, upsilon, xi = omega_in
     u_factor = (sigma + beta + upsilon) / (3.0 + xi)
-    return [sigma * u_factor, beta * math.cos(beta), upsilon * u_factor, xi * STOCHASTIC_FLUX_DAMPENING]
+    return [sigma * u_factor, beta * math.cos(beta), upsilon * u_factor, xi * STOCHASTIC_FLUX_DAMPING]
 
 
 # ─── Omega-Dit JAX Architecture & Loss Function ──────────────────────────────
@@ -236,7 +236,7 @@ if _jax_available and jnp is not None:
     @jax.jit
     def apply_phase_cancellation_safety(omega: jnp.ndarray) -> jnp.ndarray:
         """
-        Integrates conjugate destructive interference directly to dampen noise tokens (xi)
+        Integrates conjugate destructive interference directly to damp noise tokens (xi)
         that violate mirror symmetry.
         """
         sigma, beta, upsilon, xi = omega[0], omega[1], omega[2], omega[3]
@@ -244,11 +244,11 @@ if _jax_available and jnp is not None:
         # Mirror symmetry indicator: checking matching state structures
         asymmetry = jnp.abs(sigma - beta)
         
-        # Dampen noise token (xi) as asymmetry increases (phase-cancellation safety)
-        dampening_factor = jnp.exp(-2.0 * asymmetry)
-        dampened_xi = xi * dampening_factor
+        # Damp noise token (xi) as asymmetry increases (phase-cancellation safety)
+        damping_factor = jnp.exp(-2.0 * asymmetry)
+        damped_xi = xi * damping_factor
         
-        return jnp.array([sigma, beta, upsilon, dampened_xi])
+        return jnp.array([sigma, beta, upsilon, damped_xi])
 
 
     @jax.jit
@@ -256,7 +256,7 @@ if _jax_available and jnp is not None:
         """
         Align the optimization loss with the two-part autopoietic phase-transition equation:
         - Circuit A (Resonant Baseline): Minimizes a baseline exponential cooling term as stability (Xi) -> 1.0.
-        - Circuit B (Thermodynamic Override): Sigmoid-gated override damping wild gradient variances,
+        - Circuit B (Thermodynamic Override): Sigmoid-gated override that damps wild gradient variances,
           arming automatically as truth saturation (sigma_sat) grows past the critical threshold.
         """
         # Circuit A: Resonant Baseline
@@ -277,8 +277,8 @@ else:
     def apply_phase_cancellation_safety(omega: list) -> list:
         sigma, beta, upsilon, xi = omega
         asymmetry = abs(sigma - beta)
-        dampening_factor = math.exp(-2.0 * asymmetry)
-        return [sigma, beta, upsilon, xi * dampening_factor]
+        damping_factor = math.exp(-2.0 * asymmetry)
+        return [sigma, beta, upsilon, xi * damping_factor]
 
     def compute_autopoietic_loss(omega: list, stability: float, truth_sat: float, gradient_variance: float) -> float:
         cooling_loss = math.exp(-(stability - 0.5))
