@@ -37,7 +37,7 @@ except ImportError:
     import subprocess
     import sys
     try:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "mlflow", "pypdf"])
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "mlflow>=2.14.0"])
         import mlflow
     except Exception as install_err:
         log.warning(f"Could not install mlflow inside container: {install_err}")
@@ -177,7 +177,7 @@ def main():
     if mlflow:
         try:
             os.makedirs(SM_MODEL_DIR, exist_ok=True)
-            db_path = os.path.join(SM_MODEL_DIR, "mlflow.db")
+            db_path = os.path.abspath(os.path.join(SM_MODEL_DIR, "mlflow.db"))
             mlflow.set_tracking_uri(f"sqlite:///{db_path}")
             mlflow.set_experiment("shri-academy-mentor")
             mlflow_run = mlflow.start_run()

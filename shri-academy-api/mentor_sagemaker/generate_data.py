@@ -51,8 +51,6 @@ SYSTEM_PROMPT_SARASWATHI = (
     "focused on emotional balance, resilience, and self-realization."
 )
 
-SYSTEM_PROMPT = SYSTEM_PROMPT_SHRI
-
 GENERATOR_PROMPT = """\
 You are building a fine-tuning dataset for an educational AI mentor.
 
@@ -124,7 +122,7 @@ def generate_pairs(client: OpenAI, chunk_text: str, n: int, retries: int = 3) ->
     return []
 
 
-def to_training_record(question: str, answer: str, system_prompt: str = SYSTEM_PROMPT) -> dict:
+def to_training_record(question: str, answer: str, system_prompt: str = SYSTEM_PROMPT_SHRI) -> dict:
     """Format as chat JSONL for SFTTrainer."""
     return {
         "messages": [
