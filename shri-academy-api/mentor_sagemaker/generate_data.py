@@ -38,11 +38,20 @@ from syllabus import SYLLABUS_CHUNKS  # type: ignore
 # ── NVIDIA NIM (teacher model for data generation) ───────────────────────────
 GENERATOR_MODEL = "nvidia/llama-3.1-nemotron-70b-instruct"
 
-SYSTEM_PROMPT = (
+SYSTEM_PROMPT_SHRI = (
     "You are Shri, a knowledgeable AI mentor for Shri Academy. "
     "You teach students across all academic subjects using Socratic questioning "
     "and supportive guidance. You are patient, precise, and pedagogically rigorous."
 )
+
+SYSTEM_PROMPT_SARASWATHI = (
+    "You are Shri-Ma-Saraswathi, a wise and compassionate AI mentor for Shri Academy. "
+    "You guide students using deep psychological, educational, and philosophical insights from "
+    "the Bhagavad Gita and modern educational psychology. You are patient, supportive, and "
+    "focused on emotional balance, resilience, and self-realization."
+)
+
+SYSTEM_PROMPT = SYSTEM_PROMPT_SHRI
 
 GENERATOR_PROMPT = """\
 You are building a fine-tuning dataset for an educational AI mentor.
@@ -115,11 +124,11 @@ def generate_pairs(client: OpenAI, chunk_text: str, n: int, retries: int = 3) ->
     return []
 
 
-def to_training_record(question: str, answer: str) -> dict:
+def to_training_record(question: str, answer: str, system_prompt: str = SYSTEM_PROMPT) -> dict:
     """Format as chat JSONL for SFTTrainer."""
     return {
         "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "system", "content": system_prompt},
             {"role": "user", "content": question},
             {"role": "assistant", "content": answer},
         ]
@@ -141,16 +150,37 @@ def main():
     parser.add_argument("--pairs-per-chunk", type=int, default=8, help="Q&A pairs per syllabus chunk")
     parser.add_argument("--region", default=os.environ.get("AWS_REGION", "us-east-1"))
     parser.add_argument("--output-dir", default="/tmp/mentor-training", help="Local output directory")
+    parser.add_argument("--mentor-type", choices=["shri", "saraswathi", "all"], default="shri", help="Mentor type")
     args = parser.parse_args()
 
     os.makedirs(args.output_dir, exist_ok=True)
     client = build_client()
 
-    all_records: list[dict] = []
+    # Filter chunks and select appropriate system prompt depending on mentor type
+    selected_chunks = []
     for chunk_id, chunk_text in SYLLABUS_CHUNKS:
+        is_saraswathi = chunk_id.startswith("saraswathi_")
+        if args.mentor_type == "saraswathi" and is_saraswathi:
+            selected_chunks.append((chunk_id, chunk_text))
+        elif args.mentor_type == "shri" and not is_saraswathi:
+            selected_chunks.append((chunk_id, chunk_text))
+        elif args.mentor_type == "all":
+            selected_chunks.append((chunk_id, chunk_text))
+
+    log.info(f"Selected {len(selected_chunks)} chunks for mentor type '{args.mentor_type}'")
+
+    all_records: list[dict] = []
+    for chunk_id, chunk_text in selected_chunks:
         log.info(f"Generating {args.pairs_per_chunk} pairs for chunk '{chunk_id}' ...")
         pairs = generate_pairs(client, chunk_text, args.pairs_per_chunk)
-        records = [to_training_record(p["question"], p["answer"]) for p in pairs]
+        
+        # Decide prompt for each chunk
+        if chunk_id.startswith("saraswathi_"):
+            sys_prompt = SYSTEM_PROMPT_SARASWATHI
+        else:
+            sys_prompt = SYSTEM_PROMPT_SHRI
+            
+        records = [to_training_record(p["question"], p["answer"], system_prompt=sys_prompt) for p in pairs]
         all_records.extend(records)
         log.info(f"  → {len(records)} records (total so far: {len(all_records)})")
         time.sleep(0.5)  # gentle rate-limit pause
@@ -175,8 +205,9 @@ def main():
     manifest = {
         "s3_uri": s3_uri,
         "record_count": len(all_records),
-        "chunks_processed": len(SYLLABUS_CHUNKS),
+        "chunks_processed": len(selected_chunks),
         "pairs_per_chunk": args.pairs_per_chunk,
+        "mentor_type": args.mentor_type,
     }
     manifest_file = os.path.join(args.output_dir, "manifest.json")
     with open(manifest_file, "w") as f:
