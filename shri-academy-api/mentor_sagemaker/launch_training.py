@@ -61,6 +61,7 @@ def launch(
     job_name: str | None = None,
     hf_token: str | None = None,
     wait: bool = False,
+    registered_model_name: str = "Shri-Ma-Saraswathi",
 ) -> dict:
     if job_name is None:
         ts = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
@@ -84,6 +85,7 @@ def launch(
         "lora_r": "16",
         "lora_alpha": "32",
         "lora_dropout": "0.1",
+        "registered_model_name": registered_model_name,
     }
 
     # Candidate instance types for fallback on capacity errors
@@ -165,6 +167,7 @@ def main():
     parser.add_argument("--instance-type", default=TRAINING_INSTANCE)
     parser.add_argument("--hf-token", default=os.environ.get("HF_TOKEN"))
     parser.add_argument("--wait", action="store_true")
+    parser.add_argument("--registered-model-name", default="Shri-Ma-Saraswathi")
     args = parser.parse_args()
 
     if not args.role_arn:
@@ -179,6 +182,7 @@ def main():
         instance_type=args.instance_type,
         hf_token=args.hf_token,
         wait=args.wait,
+        registered_model_name=args.registered_model_name,
     )
     print(json.dumps(result, indent=2))
 

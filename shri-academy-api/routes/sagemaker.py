@@ -68,6 +68,7 @@ def _get_role() -> str:
 class GenerateDataRequest(BaseModel):
     pairs_per_chunk: int = 8
     s3_prefix: str = "mentor-training/data"
+    mentor_type: str = "shri"
 
 
 class GenerateDataResponse(BaseModel):
@@ -80,6 +81,7 @@ class TrainRequest(BaseModel):
     data_s3_uri: str
     model_id: str = "nvidia/Nemotron-Mini-4B-Instruct"
     instance_type: str = "ml.g4dn.2xlarge"
+    registered_model_name: str = "Shri-Ma-Saraswathi"
 
 
 class TrainResponse(BaseModel):
@@ -134,6 +136,7 @@ async def generate_data(
         "--prefix", req.s3_prefix,
         "--pairs-per-chunk", str(req.pairs_per_chunk),
         "--region", region,
+        "--mentor-type", req.mentor_type,
     ]
 
     log.info(f"Launching data generation: {' '.join(cmd)}")
@@ -193,6 +196,7 @@ async def launch_training(
                 instance_type=req.instance_type,
                 hf_token=hf_token,
                 wait=False,
+                registered_model_name=req.registered_model_name,
             ),
         )
     except Exception as e:
