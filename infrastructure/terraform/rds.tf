@@ -44,7 +44,8 @@ resource "aws_db_instance" "main" {
   engine            = "postgres"
   engine_version    = "15.6"
   instance_class    = var.db_instance_class
-  allocated_storage = 100
+  allocated_storage = 20
+  max_allocated_storage = 100
   storage_type      = "gp3"
   storage_encrypted = true
 
@@ -62,13 +63,13 @@ resource "aws_db_instance" "main" {
   skip_final_snapshot    = false
   final_snapshot_identifier = "${var.project}-${var.environment}-final"
 
-  backup_retention_period = 14
+  backup_retention_period = 7
   backup_window           = "03:00-04:00"
   maintenance_window      = "sun:04:00-sun:05:00"
 
   performance_insights_enabled          = true
   performance_insights_retention_period = 7
-  monitoring_interval                   = 60
+  monitoring_interval                   = 300
   monitoring_role_arn                   = aws_iam_role.rds_monitoring.arn
 
   enabled_cloudwatch_logs_exports = ["postgresql", "upgrade"]
@@ -166,4 +167,3 @@ resource "aws_iam_role_policy" "db_proxy" {
     ]
   })
 }
-

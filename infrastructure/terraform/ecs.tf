@@ -145,20 +145,20 @@ resource "aws_lb_listener" "http_redirect" {
 
 resource "aws_cloudwatch_log_group" "api_server" {
   name              = "/ecs/${var.project}/${var.environment}/api-server"
-  retention_in_days = 30
+  retention_in_days = 7
 }
 
 resource "aws_cloudwatch_log_group" "shri_api" {
   name              = "/ecs/${var.project}/${var.environment}/shri-api"
-  retention_in_days = 30
+  retention_in_days = 7
 }
 
 resource "aws_ecs_task_definition" "api_server" {
   family                   = "${var.project}-${var.environment}-api-server"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
-  cpu                      = 1024
-  memory                   = 2048
+  cpu                      = 512
+  memory                   = 1024
   execution_role_arn       = aws_iam_role.ecs_execution.arn
   task_role_arn            = aws_iam_role.ecs_task.arn
 
@@ -212,8 +212,8 @@ resource "aws_ecs_task_definition" "shri_api" {
   family                   = "${var.project}-${var.environment}-shri-api"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
-  cpu                      = 2048
-  memory                   = 4096
+  cpu                      = 1024
+  memory                   = 2048
   execution_role_arn       = aws_iam_role.ecs_execution.arn
   task_role_arn            = aws_iam_role.ecs_task.arn
 
@@ -266,7 +266,7 @@ resource "aws_ecs_service" "api_server" {
   name            = "api-server"
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.api_server.arn
-  desired_count   = 2
+  desired_count   = 1
 
   capacity_provider_strategy {
     capacity_provider = "FARGATE"
@@ -305,7 +305,7 @@ resource "aws_ecs_service" "shri_api" {
   name            = "shri-api"
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.shri_api.arn
-  desired_count   = 2
+  desired_count   = 1
 
   capacity_provider_strategy {
     capacity_provider = "FARGATE"
@@ -337,8 +337,8 @@ resource "aws_ecs_service" "shri_api" {
 # ─── Auto Scaling ─────────────────────────────────────────────────────────────
 
 resource "aws_appautoscaling_target" "api_server" {
-  max_capacity       = 30
-  min_capacity       = 10
+  max_capacity       = 3
+  min_capacity       = 1
   resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.api_server.name}"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"

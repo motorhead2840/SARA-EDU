@@ -163,7 +163,7 @@ resource "aws_codebuild_project" "cyberdemon" {
   artifacts { type = "CODEPIPELINE" }
 
   environment {
-    compute_type                = "BUILD_GENERAL1_MEDIUM"
+    compute_type                = "BUILD_GENERAL1_SMALL"
     image                       = "aws/codebuild/standard:7.0"
     type                        = "LINUX_CONTAINER"
     image_pull_credentials_type = "CODEBUILD"
@@ -194,7 +194,7 @@ resource "aws_codebuild_project" "opentag" {
   artifacts { type = "CODEPIPELINE" }
 
   environment {
-    compute_type                = "BUILD_GENERAL1_MEDIUM"
+    compute_type                = "BUILD_GENERAL1_SMALL"
     image                       = "aws/codebuild/standard:7.0"
     type                        = "LINUX_CONTAINER"
     image_pull_credentials_type = "CODEBUILD"

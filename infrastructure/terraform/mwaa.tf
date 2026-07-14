@@ -46,8 +46,8 @@ resource "aws_mwaa_environment" "main" {
   }
 
   min_workers = 1
-  max_workers = 10
-  schedulers  = 2
+  max_workers = 2
+  schedulers  = 1
 
   depends_on = [
     aws_s3_object.airflow_dags_placeholder,

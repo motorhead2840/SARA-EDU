@@ -267,7 +267,7 @@ resource "aws_sns_topic" "alerts" {
 resource "aws_cloud9_environment_ec2" "dev" {
   name          = "${var.project}-${var.environment}-dev"
   description   = "SRI Platform development environment"
-  instance_type = "t3.medium"
+  instance_type = "t3.small"
   image_id      = "amazonlinux-2023-x86_64"
 
   automatic_stop_time_minutes = 30

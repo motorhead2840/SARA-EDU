@@ -48,7 +48,7 @@ variable "db_username" {
 variable "db_instance_class" {
   description = "RDS instance class"
   type        = string
-  default     = "db.r6g.2xlarge"
+  default     = "db.t4g.medium"
 }
 
 # ─── ElastiCache ──────────────────────────────────────────────────────────────
@@ -56,7 +56,7 @@ variable "db_instance_class" {
 variable "redis_node_type" {
   description = "ElastiCache Redis node type"
   type        = string
-  default     = "cache.r6g.xlarge"
+  default     = "cache.t4g.small"
 }
 
 # ─── Confluent Cloud (replaces MSK) ──────────────────────────────────────────
@@ -90,7 +90,7 @@ variable "opensearch_version" {
 variable "opensearch_instance_type" {
   description = "OpenSearch instance type"
   type        = string
-  default     = "r6g.large.search"
+  default     = "t3.small.search"
 }
 
 # ─── ECS ──────────────────────────────────────────────────────────────────────
@@ -175,7 +175,7 @@ variable "threat_mitigation_batch_size" {
 variable "threat_mitigation_log_retention_days" {
   description = "Retention in days for the CloudWatch log group of the threat mitigation Lambda"
   type        = number
-  default     = 30
+  default     = 7
 }
 
 variable "confluent_privatelink_service_name" {

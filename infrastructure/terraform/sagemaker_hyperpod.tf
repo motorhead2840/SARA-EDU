@@ -12,7 +12,7 @@ resource "aws_sagemaker_cluster" "shri_saraswathi_hyperpod" {
   instance_groups {
     instance_count      = 1
     instance_group_name = "gpu-training-group"
-    instance_type       = "ml.g5.24xlarge" # Or ml.p4d.24xlarge
+    instance_type       = "ml.g5.2xlarge"
     execution_role      = aws_iam_role.sagemaker.arn
 
     threads_per_core = 2
@@ -113,7 +113,7 @@ resource "aws_sagemaker_user_profile" "hyperpod_developer" {
 
     kernel_gateway_app_settings {
       default_resource_spec {
-        instance_type = "ml.g5.xlarge" # Highly cost-effective (1x A10G GPU) for interactive prototyping
+        instance_type = "ml.g4dn.xlarge"
       }
     }
   }

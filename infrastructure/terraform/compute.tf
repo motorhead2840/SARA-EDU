@@ -14,7 +14,7 @@
 
 resource "aws_imagebuilder_infrastructure_configuration" "main" {
   name                          = "${var.project}-${var.environment}-image-builder"
-  instance_types                = ["t3.medium"]
+  instance_types                = ["t3.small"]
   subnet_id                     = aws_subnet.private[0].id
   security_group_ids            = [aws_security_group.ecs.id]
   instance_profile_name         = aws_iam_instance_profile.image_builder.name
@@ -70,7 +70,7 @@ resource "aws_imagebuilder_image_recipe" "platform" {
   block_device_mapping {
     device_name = "/dev/xvda"
     ebs {
-      volume_size           = 50
+      volume_size           = 20
       volume_type           = "gp3"
       delete_on_termination = true
       encrypted             = true
@@ -116,14 +116,14 @@ data "aws_ssm_parameter" "al2023_ami_arm64" {
 resource "aws_launch_template" "arm_worker" {
   name_prefix   = "${var.project}-${var.environment}-arm-worker-"
   image_id      = data.aws_ssm_parameter.al2023_ami_arm64.value  # ARM64 AMI — matches m7g/m6g instances
-  instance_type = "m7g.xlarge"   # Graviton3: 4 vCPU, 16 GB, ~40% cheaper than x86
+  instance_type = "m7g.medium"   # Graviton baseline for low-cost background workers
 
   iam_instance_profile { arn = aws_iam_instance_profile.gpu.arn }
   vpc_security_group_ids = [aws_security_group.ecs.id]
 
   block_device_mappings {
     device_name = "/dev/sda1"
-    ebs { volume_size = 100; volume_type = "gp3"; encrypted = true; delete_on_termination = true }
+    ebs { volume_size = 30; volume_type = "gp3"; encrypted = true; delete_on_termination = true }
   }
 
   user_data = base64encode(<<-EOF
@@ -143,8 +143,8 @@ resource "aws_launch_template" "arm_worker" {
 resource "aws_autoscaling_group" "arm_workers" {
   name                = "${var.project}-${var.environment}-arm-workers"
   min_size            = 0
-  max_size            = 20
-  desired_capacity    = 2
+  max_size            = 4
+  desired_capacity    = 0
   vpc_zone_identifier = aws_subnet.private[*].id
 
   mixed_instances_policy {
@@ -153,13 +153,13 @@ resource "aws_autoscaling_group" "arm_workers" {
         launch_template_id = aws_launch_template.arm_worker.id
         version            = "$Latest"
       }
-      override { instance_type = "m7g.xlarge" }
-      override { instance_type = "m7g.2xlarge" }
-      override { instance_type = "m6g.xlarge" }
+      override { instance_type = "m7g.medium" }
+      override { instance_type = "m7g.large" }
+      override { instance_type = "m6g.large" }
     }
     instances_distribution {
-      on_demand_base_capacity                  = 1
-      on_demand_percentage_above_base_capacity = 20
+      on_demand_base_capacity                  = 0
+      on_demand_percentage_above_base_capacity = 0
       spot_allocation_strategy                 = "price-capacity-optimized"
     }
   }
