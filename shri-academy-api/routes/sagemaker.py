@@ -23,7 +23,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 
 from fastapi import APIRouter, Depends, HTTPException, Header
 
@@ -82,6 +82,8 @@ class TrainRequest(BaseModel):
     model_id: str = "nvidia/Nemotron-Mini-4B-Instruct"
     instance_type: str = "ml.g4dn.2xlarge"
     registered_model_name: str = "Shri-Ma-Saraswathi"
+    omega_state_vector: Optional[List[float]] = None
+    use_hyperpod_cluster: bool = False
 
 
 class TrainResponse(BaseModel):
@@ -197,6 +199,8 @@ async def launch_training(
                 hf_token=hf_token,
                 wait=False,
                 registered_model_name=req.registered_model_name,
+                omega_state_vector=req.omega_state_vector,
+                use_hyperpod_cluster=req.use_hyperpod_cluster,
             ),
         )
     except Exception as e:

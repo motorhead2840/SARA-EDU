@@ -67,11 +67,13 @@ def start_pipeline(**context: Any) -> str:
             PipelineName=PIPELINE_NAME,
             PipelineExecutionDisplayName=execution_name,
             PipelineParameters=[
-                {"Name": "TrainingInstanceType", "Value": "ml.p3.2xlarge"},
+                {"Name": "TrainingInstanceType", "Value": "ml.g5.24xlarge"},
                 {"Name": "TrainingEpochs",       "Value": "20"},
                 {"Name": "BatchSize",            "Value": "64"},
                 {"Name": "LearningRate",         "Value": "0.0005"},
                 {"Name": "ModelApprovalStatus",  "Value": "PendingManualApproval"},
+                {"Name": "RegisteredModelName",  "Value": "Shri-Ma-Saraswathi"},
+                {"Name": "OmegaStateVector",     "Value": "[0.8, 0.6, 0.75, 0.3]"},
             ],
             PipelineExecutionDescription=f"Weekly training run triggered by Airflow on {datetime.utcnow().date()}",
         )

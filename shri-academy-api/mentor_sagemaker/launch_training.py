@@ -62,6 +62,8 @@ def launch(
     hf_token: str | None = None,
     wait: bool = False,
     registered_model_name: str = "Shri-Ma-Saraswathi",
+    omega_state_vector: list | None = None,
+    use_hyperpod_cluster: bool = False,
 ) -> dict:
     if job_name is None:
         ts = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
@@ -87,9 +89,14 @@ def launch(
         "lora_dropout": "0.1",
         "registered_model_name": registered_model_name,
     }
+    if omega_state_vector:
+        hyperparameters["omega_state_vector"] = json.dumps(omega_state_vector)
+
+    if (registered_model_name == "Shri-Ma-Saraswathi" or use_hyperpod_cluster) and instance_type == TRAINING_INSTANCE:
+        instance_type = "ml.g5.24xlarge"
 
     # Candidate instance types for fallback on capacity errors
-    fallbacks = ["ml.g4dn.2xlarge", "ml.g5.2xlarge", "ml.p3.2xlarge"]
+    fallbacks = ["ml.g5.24xlarge", "ml.p4d.24xlarge", "ml.g4dn.2xlarge", "ml.g5.2xlarge", "ml.p3.2xlarge"]
     candidates = [instance_type]
     for fb in fallbacks:
         if fb not in candidates:

@@ -177,3 +177,13 @@ variable "threat_mitigation_log_retention_days" {
   type        = number
   default     = 30
 }
+
+variable "confluent_privatelink_service_name" {
+  description = "The VPC endpoint service name for Confluent Cloud PrivateLink connection"
+  type        = string
+}
+
+variable "eks_cluster_arn" {
+  description = "The ARN of the EKS cluster for orchestrating SageMaker HyperPod"
+  type        = string
+}
