@@ -239,6 +239,81 @@ resource "aws_sagemaker_notebook_instance_lifecycle_configuration" "cyberdemon_l
 
     # Fix permissions so Jupyter can read/write files
     chown -R ec2-user:ec2-user "$DIR"
+
+    # 3. Install auto-stop script for notebook idle shutdown (after 60 mins of inactivity)
+    cat << 'AUTO_EOF' > /usr/local/bin/autostop.py
+import sys
+import re
+import urllib.request
+import json
+import datetime
+import subprocess
+
+IDLE_LIMIT = 3600 # 60 minutes in seconds
+
+def get_jupyter_info():
+    try:
+        res = subprocess.run(["jupyter", "server", "list"], capture_output=True, text=True)
+        out = res.stdout
+        if not out.strip() or "Currently running servers" not in out:
+            res = subprocess.run(["jupyter", "notebook", "list"], capture_output=True, text=True)
+            out = res.stdout
+        
+        match = re.search(r"http://localhost:(\\d+)/\\?\\?token=([a-f0-9]+)", out)
+        if not match:
+            match = re.search(r"http://localhost:(\\d+)/", out)
+        if match:
+            port = match.group(1)
+            token = match.group(2) if len(match.groups()) > 1 else ""
+            return port, token
+    except Exception as e:
+        print(f"Error listing jupyter servers: {e}")
+    return "8888", ""
+
+def check_idle():
+    port, token = get_jupyter_info()
+    url = f"http://localhost:{port}/api/sessions"
+    if token:
+        url += f"?token={token}"
+    
+    try:
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req) as response:
+            sessions = json.loads(response.read().decode())
+    except Exception as e:
+        print(f"Error calling Jupyter sessions API: {e}")
+        return True
+    
+    if not sessions:
+        return True
+        
+    now = datetime.datetime.now(datetime.timezone.utc)
+    for session in sessions:
+        kernel = session.get("kernel", {})
+        last_activity_str = kernel.get("last_activity")
+        if last_activity_str:
+            last_activity_str = last_activity_str.replace("Z", "+00:00")
+            last_activity = datetime.datetime.fromisoformat(last_activity_str)
+            idle_duration = (now - last_activity).total_seconds()
+            if idle_duration < IDLE_LIMIT:
+                print(f"Active session found. Kernel {kernel.get('id')} was active {idle_duration} seconds ago.")
+                return False
+    return True
+
+if __name__ == "__main__":
+    if check_idle():
+        print("Instance is idle. Shutting down...")
+        subprocess.run(["sudo", "shutdown", "-h", "now"])
+    else:
+        print("Instance is not idle.")
+AUTO_EOF
+
+    chmod +x /usr/local/bin/autostop.py
+
+    cat << 'CRON_EOF' > /etc/cron.d/autostop
+*/5 * * * * root /usr/bin/python3 /usr/local/bin/autostop.py >> /var/log/autostop.log 2>&1
+CRON_EOF
+    chmod 644 /etc/cron.d/autostop
   EOF
   )
 }
@@ -333,6 +408,81 @@ resource "aws_sagemaker_notebook_instance_lifecycle_configuration" "shri_lc" {
 
     # Fix permissions so Jupyter can read/write files
     chown -R ec2-user:ec2-user "$DIR"
+
+    # 3. Install auto-stop script for notebook idle shutdown (after 60 mins of inactivity)
+    cat << 'AUTO_EOF' > /usr/local/bin/autostop.py
+import sys
+import re
+import urllib.request
+import json
+import datetime
+import subprocess
+
+IDLE_LIMIT = 3600 # 60 minutes in seconds
+
+def get_jupyter_info():
+    try:
+        res = subprocess.run(["jupyter", "server", "list"], capture_output=True, text=True)
+        out = res.stdout
+        if not out.strip() or "Currently running servers" not in out:
+            res = subprocess.run(["jupyter", "notebook", "list"], capture_output=True, text=True)
+            out = res.stdout
+        
+        match = re.search(r"http://localhost:(\\d+)/\\?\\?token=([a-f0-9]+)", out)
+        if not match:
+            match = re.search(r"http://localhost:(\\d+)/", out)
+        if match:
+            port = match.group(1)
+            token = match.group(2) if len(match.groups()) > 1 else ""
+            return port, token
+    except Exception as e:
+        print(f"Error listing jupyter servers: {e}")
+    return "8888", ""
+
+def check_idle():
+    port, token = get_jupyter_info()
+    url = f"http://localhost:{port}/api/sessions"
+    if token:
+        url += f"?token={token}"
+    
+    try:
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req) as response:
+            sessions = json.loads(response.read().decode())
+    except Exception as e:
+        print(f"Error calling Jupyter sessions API: {e}")
+        return True
+    
+    if not sessions:
+        return True
+        
+    now = datetime.datetime.now(datetime.timezone.utc)
+    for session in sessions:
+        kernel = session.get("kernel", {})
+        last_activity_str = kernel.get("last_activity")
+        if last_activity_str:
+            last_activity_str = last_activity_str.replace("Z", "+00:00")
+            last_activity = datetime.datetime.fromisoformat(last_activity_str)
+            idle_duration = (now - last_activity).total_seconds()
+            if idle_duration < IDLE_LIMIT:
+                print(f"Active session found. Kernel {kernel.get('id')} was active {idle_duration} seconds ago.")
+                return False
+    return True
+
+if __name__ == "__main__":
+    if check_idle():
+        print("Instance is idle. Shutting down...")
+        subprocess.run(["sudo", "shutdown", "-h", "now"])
+    else:
+        print("Instance is not idle.")
+AUTO_EOF
+
+    chmod +x /usr/local/bin/autostop.py
+
+    cat << 'CRON_EOF' > /etc/cron.d/autostop
+*/5 * * * * root /usr/bin/python3 /usr/local/bin/autostop.py >> /var/log/autostop.log 2>&1
+CRON_EOF
+    chmod 644 /etc/cron.d/autostop
   EOF
   )
 }
