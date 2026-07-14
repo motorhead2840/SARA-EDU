@@ -30,19 +30,10 @@ from trl import SFTTrainer, DataCollatorForCompletionOnlyLM
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger(__name__)
 
-# Dynamic mlflow import and install
 try:
     import mlflow
 except ImportError:
-    log.info("mlflow not found inside container, installing dynamically...")
-    import subprocess
-    import sys
-    try:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "mlflow>=2.14.0"])
-        import mlflow
-    except Exception as install_err:
-        log.warning(f"Could not install mlflow inside container: {install_err}")
-        mlflow = None
+    mlflow = None
 
 # ── SageMaker paths ───────────────────────────────────────────────────────────
 SM_TRAIN_DIR = os.environ.get("SM_CHANNEL_TRAINING", "/opt/ml/input/data/training")
@@ -174,10 +165,10 @@ def main():
     )
 
     # Set up MLflow if imported
+    db_path = None
     mlflow_run = None
     if mlflow:
         try:
-            os.makedirs("/tmp", exist_ok=True)
             db_path = os.path.abspath("/tmp/mlflow.db")
             mlflow.set_tracking_uri(f"sqlite:///{db_path}")
             mlflow.set_experiment("shri-academy-mentor")
@@ -222,9 +213,10 @@ def main():
             log.info("Successfully registered model in MLflow Model Registry.")
             
             # Copy local mlflow database to SM_MODEL_DIR so it packages inside model.tar.gz
-            dest_db_path = os.path.join(SM_MODEL_DIR, "mlflow.db")
-            log.info(f"Copying MLflow local DB from {db_path} to {dest_db_path} for packaging...")
-            shutil.copy(db_path, dest_db_path)
+            if db_path and os.path.exists(db_path):
+                dest_db_path = os.path.join(SM_MODEL_DIR, "mlflow.db")
+                log.info(f"Copying MLflow local DB from {db_path} to {dest_db_path} for packaging...")
+                shutil.copy(db_path, dest_db_path)
         except Exception as mlflow_log_err:
             log.warning(f"Error logging or registering with MLflow: {mlflow_log_err}")
         finally:
