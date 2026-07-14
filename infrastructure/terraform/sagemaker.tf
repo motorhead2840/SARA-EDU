@@ -429,9 +429,9 @@ def get_jupyter_info():
             res = subprocess.run(["jupyter", "notebook", "list"], capture_output=True, text=True)
             out = res.stdout
         
-        match = re.search(r"http://localhost:(\\d+)/\\?token=([A-Za-z0-9_-]+)", out)
+        match = re.search(r"http://localhost:(\d+)/\?token=([A-Za-z0-9_-]+)", out)
         if not match:
-            match = re.search(r"http://localhost:(\\d+)/", out)
+            match = re.search(r"http://localhost:(\d+)/", out)
         if match:
             port = match.group(1)
             token = match.group(2) if len(match.groups()) > 1 else ""
