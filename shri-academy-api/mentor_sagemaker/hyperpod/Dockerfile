@@ -29,9 +29,9 @@ RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1 \
 
 # Install Julia
 RUN JULIA_VERSION=1.10.2 && \
-    curl -fL -o julia.tar.gz "https://julialang-s3.julialang.org/bin/linux/x64/\${JULIA_VERSION%.*}/julia-\${JULIA_VERSION}-linux-x86_64.tar.gz" && \
-    mkdir -p "\${JULIA_PATH}" && \
-    tar -xzf julia.tar.gz -C "\${JULIA_PATH}" --strip-components=1 && \
+    curl -fL -o julia.tar.gz "https://julialang-s3.julialang.org/bin/linux/x64/${JULIA_VERSION%.*}/julia-${JULIA_VERSION}-linux-x86_64.tar.gz" && \
+    mkdir -p "${JULIA_PATH}" && \
+    tar -xzf julia.tar.gz -C "${JULIA_PATH}" --strip-components=1 && \
     rm julia.tar.gz
 
 # Pre-install key Python and JAX-with-CUDA dependencies

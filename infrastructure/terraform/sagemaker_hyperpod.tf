@@ -4,6 +4,8 @@
 # high-speed networking and large-scale distributed training of the Shri-Ma-Saraswathi model.
 # Integrates with Slurm/EKS and connects securely to Confluent Cloud.
 
+data "aws_caller_identity" "current" {}
+
 resource "aws_sagemaker_cluster" "shri_saraswathi_hyperpod" {
   cluster_name = "${var.project}-${var.environment}-saraswathi-hyperpod"
 
@@ -17,7 +19,7 @@ resource "aws_sagemaker_cluster" "shri_saraswathi_hyperpod" {
 
     orchestrator {
       eks {
-        cluster_arn = "arn:aws:eks:${var.aws_region}:123456789012:cluster/${var.project}-${var.environment}-eks"
+        cluster_arn = "arn:aws:eks:${var.aws_region}:${data.aws_caller_identity.current.account_id}:cluster/${var.project}-${var.environment}-eks"
       }
     }
   }
@@ -76,7 +78,7 @@ resource "aws_security_group" "hyperpod_sg" {
 
 resource "aws_vpc_endpoint" "confluent_privatelink" {
   vpc_id              = aws_vpc.main.id
-  service_name        = "com.amazonaws.vpce.us-east-1.vpce-svc-0123456789abcdef0" # Placeholder Confluent service name
+  service_name        = var.confluent_privatelink_service_name
   vpc_endpoint_type   = "Interface"
   subnet_ids          = aws_subnet.private[*].id
   security_group_ids  = [aws_security_group.hyperpod_sg.id]

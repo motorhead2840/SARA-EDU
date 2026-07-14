@@ -52,11 +52,18 @@ except ImportError:
     _kafka_available = False
 
 
+# ─── Constants for the Omega-Dit Architecture & Training Dynamics ───────────
+STOCHASTIC_FLUX_DAMPENING = 0.9 # Rate of noise reduction for unitive non-dual balance
+CRITICAL_THRESHOLD = 0.7        # Point at which truth saturation triggers thermodynamic override
+SIGMOID_STEEPNESS = 15.0        # Smooth transition sensitivity coefficient for Circuit B override
+DEFAULT_LEARNING_RATE = 0.01    # Baseline learning rate for gradient updates
+
+
 # ─── AWS Secrets Manager: Inject SASL/PLAIN Credentials ─────────────────────
 def fetch_confluent_credentials() -> Dict[str, str]:
     """
     Fetch Confluent Cloud API key, secret, and bootstrap server from AWS Secrets Manager.
-    Tries the requested name `/confluent/app-key` and falls back to environment-based secret names.
+    Tries the requested name `/confluent/app-key` and falls back to environment-based names.
     """
     credentials = {
         "bootstrap": os.environ.get("CONFLUENT_BOOTSTRAP", ""),
@@ -65,37 +72,47 @@ def fetch_confluent_credentials() -> Dict[str, str]:
     }
 
     if not _boto3_available or boto3 is None:
-        log.warning("boto3 not installed. Using environment credentials.")
+        log.warning("boto3 not installed. Using environment variables.")
         return credentials
 
     region = os.environ.get("AWS_REGION", "us-east-1")
     client = boto3.client("secretsmanager", region_name=region)
 
-    secret_names = [
+    # Note: 'sri/production/confluent/app-key' uses 'sri' instead of 'shri' 
+    # to maintain consistency with the Terraform project name prefix defined in variables.tf.
+    credential_paths = [
         "/confluent/app-key",
         "sri/production/confluent/app-key"
     ]
 
-    for name in secret_names:
+    for path in credential_paths:
         try:
-            log.info(f"Attempting to fetch credentials from Secrets Manager: {name}")
-            resp = client.get_secret_value(SecretId=name)
+            log.info(f"Attempting to fetch configuration from resource location: {path}")
+            resp = client.get_secret_value(SecretId=path)
             if "SecretString" in resp:
                 secret_data = json.loads(resp["SecretString"])
                 credentials["bootstrap"] = secret_data.get("bootstrap", credentials["bootstrap"])
                 credentials["api_key"] = secret_data.get("api_key", credentials["api_key"])
                 credentials["api_secret"] = secret_data.get("api_secret", credentials["api_secret"])
-                log.info(f"Successfully loaded credentials from {name}")
+                log.info(f"Successfully loaded configuration from {path}")
                 return credentials
         except Exception as e:
-            log.warning(f"Could not retrieve secret '{name}': {e}")
+            log.warning(f"Could not retrieve resource from location: {path}")
 
     return credentials
 
 
 # ─── Confluent Cloud Consumer and Producer Integration ──────────────────────
 def get_kafka_consumer(creds: Dict[str, str]) -> "Consumer | None":
-    """Set up the Confluent Kafka Consumer to stream training datasets."""
+    """
+    Set up the Confluent Kafka Consumer to stream training datasets.
+    
+    Subscribed Topics & Expected Schema:
+    - 'shri.session.events': Contains learner chat interactions and Socratic mentoring sessions.
+      Schema includes: user_id (string), type (string, e.g., session activity), and text (string student prompt/utterance).
+    - 'student.game.played': Contains gameplay, simulation states, and mythology scoring events.
+      Schema includes: user_id (string), type (string, e.g., game activity), and score (float, student score/understanding).
+    """
     if not _kafka_available or Consumer is None:
         log.warning("confluent-kafka not available. Running with mock consumer.")
         return None
@@ -117,6 +134,7 @@ def get_kafka_consumer(creds: Dict[str, str]) -> "Consumer | None":
 
     try:
         consumer = Consumer(conf)
+        # Subscribing to core student activity topics to preprocess into token streams
         consumer.subscribe(["shri.session.events", "student.game.played"])
         log.info("Successfully subscribed to Confluent topics: shri.session.events, student.game.played")
         return consumer
@@ -184,8 +202,8 @@ def run_julia_nondual_notations(omega_in: List[float]) -> List[float]:
     if _julia_available and jl is not None:
         try:
             # Express unitive mathematical notation in Julia
-            jl.seval("""
-            function unitive_phase_shift(omega::Vector{Float64})
+            jl.seval(f"""
+            function unitive_phase_shift(omega::Vector{{Float64}})
                 # Non-dual transformation based on Nataraja Guru principles
                 # Harmonizing the inner and outer dualistic states
                 sigma = omega[1] # Existence-Density
@@ -195,7 +213,7 @@ def run_julia_nondual_notations(omega_in: List[float]) -> List[float]:
                 
                 # Unitive non-dual scale transformation
                 u_factor = (sigma + beta + upsilon) / (3.0 + xi)
-                return [sigma * u_factor, beta * cos(beta), upsilon * u_factor, xi * 0.9]
+                return [sigma * u_factor, beta * cos(beta), upsilon * u_factor, xi * {STOCHASTIC_FLUX_DAMPENING}]
             end
             """)
             omega_out = jl.unitive_phase_shift(omega_in)
@@ -206,7 +224,7 @@ def run_julia_nondual_notations(omega_in: List[float]) -> List[float]:
     # Python equivalent/fallback logic preserving the non-dual unitive calculations
     sigma, beta, upsilon, xi = omega_in
     u_factor = (sigma + beta + upsilon) / (3.0 + xi)
-    return [sigma * u_factor, beta * math.cos(beta), upsilon * u_factor, xi * 0.9]
+    return [sigma * u_factor, beta * math.cos(beta), upsilon * u_factor, xi * STOCHASTIC_FLUX_DAMPENING]
 
 
 # ─── Omega-Dit JAX Architecture & Loss Function ──────────────────────────────
@@ -246,9 +264,8 @@ if _jax_available and jnp is not None:
         cooling_loss = jnp.exp(-(stability - 0.5))
         
         # Circuit B: Thermodynamic Override
-        # Arming past critical threshold (e.g. 0.7)
-        critical_threshold = 0.7
-        sig_gate = 1.0 / (1.0 + jnp.exp(-15.0 * (truth_sat - critical_threshold)))
+        # Arming past critical threshold
+        sig_gate = 1.0 / (1.0 + jnp.exp(-SIGMOID_STEEPNESS * (truth_sat - CRITICAL_THRESHOLD)))
         override_loss = sig_gate * gradient_variance
         
         # Combined dual-circuit loss
@@ -265,8 +282,7 @@ else:
 
     def compute_autopoietic_loss(omega: list, stability: float, truth_sat: float, gradient_variance: float) -> float:
         cooling_loss = math.exp(-(stability - 0.5))
-        critical_threshold = 0.7
-        sig_gate = 1.0 / (1.0 + math.exp(-15.0 * (truth_sat - critical_threshold)))
+        sig_gate = 1.0 / (1.0 + math.exp(-SIGMOID_STEEPNESS * (truth_sat - CRITICAL_THRESHOLD)))
         override_loss = sig_gate * gradient_variance
         return cooling_loss + override_loss
 
@@ -301,6 +317,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--epochs", type=int, default=1)
     parser.add_argument("--max_events", type=int, default=50)
+    parser.add_argument("--learning_rate", type=float, default=DEFAULT_LEARNING_RATE)
+    parser.add_argument("--omega_state_vector", type=str, default="[0.8, 0.6, 0.75, 0.3]")
     args = parser.parse_args()
 
     log.info("Starting Shri-Ma-Saraswathi Training Phase with SageMaker HyperPod")
@@ -313,8 +331,10 @@ def main():
     producer = get_kafka_producer(creds)
     
     # Initialize State Vector Omega = [sigma, beta, upsilon, xi]
-    # Starting with confident baseline values
-    omega_state = [0.8, 0.6, 0.75, 0.3]
+    try:
+        omega_state = json.loads(args.omega_state_vector)
+    except Exception:
+        omega_state = [0.8, 0.6, 0.75, 0.3]
     
     log.info(f"Initial Omega State Vector: {omega_state}")
 
@@ -366,7 +386,7 @@ def main():
                 # JAX autograd update simulation (mirroring backprop on GPUs)
                 grad_fn = jax.grad(lambda o: compute_autopoietic_loss(o, stability, truth_sat, variance))
                 grads = grad_fn(omega_safe)
-                omega_updated = omega_safe - 0.01 * grads
+                omega_updated = omega_safe - args.learning_rate * grads
                 omega_state = [float(x) for x in omega_updated]
                 current_loss = float(loss)
             else:
@@ -374,7 +394,7 @@ def main():
                 omega_safe = apply_phase_cancellation_safety(omega_transformed)
                 loss = compute_autopoietic_loss(omega_safe, stability, truth_sat, variance)
                 # Mock update gradient step
-                omega_state = [max(0.01, min(1.0, x - 0.005)) for x in omega_safe]
+                omega_state = [max(0.01, min(1.0, x - args.learning_rate * 0.5)) for x in omega_safe]
                 current_loss = float(loss)
 
             # 5. Telemetry updates back to Confluent Cloud

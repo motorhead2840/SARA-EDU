@@ -82,7 +82,7 @@ class TrainRequest(BaseModel):
     model_id: str = "nvidia/Nemotron-Mini-4B-Instruct"
     instance_type: str = "ml.g4dn.2xlarge"
     registered_model_name: str = "Shri-Ma-Saraswathi"
-    omega_state_vector: Optional[List[float]] = [0.8, 0.6, 0.75, 0.3]
+    omega_state_vector: Optional[List[float]] = None
     use_hyperpod_cluster: bool = False
 
 

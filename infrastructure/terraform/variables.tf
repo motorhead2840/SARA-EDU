@@ -177,3 +177,9 @@ variable "threat_mitigation_log_retention_days" {
   type        = number
   default     = 30
 }
+
+variable "confluent_privatelink_service_name" {
+  description = "The VPC endpoint service name for Confluent Cloud PrivateLink connection"
+  type        = string
+  default     = "com.amazonaws.vpce.us-east-1.vpce-svc-0123456789abcdef0"
+}
