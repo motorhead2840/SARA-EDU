@@ -432,4 +432,91 @@ SYLLABUS_CHUNKS: list[tuple[str, str]] = [
         "of self-paced mastery and crowd-sourced social support fosters a highly motivating, resilient, and "
         "interactive learning environment that scales effectively to hundreds of thousands of students worldwide.",
     ),
+    # ── Shri-Ma-Saraswathi Wisdom & Educational Psychology Chunks ────────────────
+    (
+        "saraswathi_gita_psy_intro",
+        "Psychology of Srimadh Bhagavad Gita - Certitude and Wisdom: The Bhagavad Gita, or Brahmavidya "
+        "(Science of the Absolute), is a dialogue between a wise teacher (Guru) and a doubting disciple (Sishya), "
+        "establishing a profound psychological and contemplative model. It seeks certitude about absolute existence, "
+        "subsistence, and value. Unlike syllogistic logic or purely objective sciences, Gita's wisdom focuses "
+        "on subjective consciousness and the integration of conflicting mental states. It addresses the common man, "
+        "symbolized by Dhritarashtra (one who blindly holds on to possessions/ideas) and Arjuna (the doubting skeptic), "
+        "offering a path of self-realization, emotional balance, and mental clarity through dialectic reasoning.",
+    ),
+    (
+        "saraswathi_gita_grief",
+        "Srimadh Bhagavad Gita - Overcoming Grief and Arjuna's Despondency: Arjuna's despondency (Vishada) "
+        "at the start of the battle typifies the deepest psychological crisis, grief, and conflict in human life. "
+        "Krishna's guidance in Chapter 2 serves as a supreme therapeutic counseling model. Krishna addresses "
+        "Arjuna's weakness and mental confusion, teaching that grief is rooted in the misunderstanding of the self. "
+        "The wise grieve neither for the living nor for the dead. By realigning Arjuna's perspective from selfish "
+        "attachment to absolute duty, Krishna demonstrates how spiritual and psychological integration can resolve "
+        "existential despair and emotional paralysis.",
+    ),
+    (
+        "saraswathi_gita_soul_duty",
+        "Srimadh Bhagavad Gita Chapter 2 - The Self, Duty, and Dharma: Chapter 2 (Sankhya Yoga) "
+        "explains that the true self (Atman) is eternal, indestructible, and distinct from the transient physical body. "
+        "Just as a person discards worn-out clothes and puts on new ones, the self casts off worn-out bodies "
+        "and enters new ones. Understanding this eternal nature eliminates fear of death and loss. "
+        "Furthermore, Krishna highlights the importance of Swadharma (one's personal duty/calling) and Nishkama Karma "
+        "(action without selfish desire for results), encouraging individuals to perform their responsibilities "
+        "with mental poise and focus, thereby achieving inner peace.",
+    ),
+    (
+        "saraswathi_gita_sthitaprajna",
+        "Srimadh Bhagavad Gita - The Sthitaprajna and Emotional Stability: A Sthitaprajna is a person of "
+        "steady, anchored wisdom and emotional resilience. Such a person is neither agitated by adversity "
+        "nor overly delighted by prosperity. By relinquishing all desires from the mind and finding contentment "
+        "within the self, a Sthitaprajna controls their senses and maintains tranquility. The path to emotional "
+        "instability begins when thinking about sense objects leads to attachment, which leads to anger, delusion, "
+        "and loss of memory/reason. Thus, self-restraint and mindfulness are essential for establishing "
+        "emotional stability and mental clarity.",
+    ),
+    (
+        "saraswathi_guru_word",
+        "The Word of the Guru - Narayana Guru's Wisdom: Narayana Guru was a modern sage who lived the ancient "
+        "wisdom of absolute unity. He taught that there is only one caste, one religion, and one God for humankind. "
+        "Narayana Guru emphasized that all human beings are fundamentally the same, and differences like dress, "
+        "language, or creed are trivial. True wisdom lies in seeing the common essence (unity) in all things, "
+        "transcending superficial distinctions, and dedicating oneself to the welfare of others, thereby "
+        "attaining peace and freedom from want and suffering.",
+    ),
+    (
+        "saraswathi_guru_happiness",
+        "The Word of the Guru - Happiness and the Common Goal: Narayana Guru's core philosophy is that the ultimate "
+        "goal of all human effort and religious faith is the attainment of Happiness. Why should people fight "
+        "over their respective faiths when their underlying goal is identical? Wisdom dictates that one should not "
+        "be swayed by conflicts of opinions, but should instead remain tranquil in the knowledge of global unity. "
+        "The Guru's teachings guide seekers to live in a state of tranquil happiness by recognizing that "
+        "individual well-being is inseparable from the well-being of the entire community.",
+    ),
+    (
+        "saraswathi_edu_psy_personal",
+        "Educational Psychology - The Personal Factor in Education: Dr. Natarajan's thesis emphasizes "
+        "the 'personal factor' as the most crucial element in the educational process. Relationships in large, "
+        "collective classrooms tend to become cold and impersonal. In contrast, personal relationships, such as "
+        "those in small study groups or tutoring arrangements, utilize the teacher's personal influence to spark "
+        "the student's unique interests and potential. The ideal educational environment recognizes the student "
+        "as an individual with subjective interests, ensuring a supportive and highly adaptive pedagogical connection.",
+    ),
+    (
+        "saraswathi_edu_psy_learning",
+        "Educational Psychology - Pedagogical Guidance and Learning: Learning is a dynamic subjective process "
+        "driven by a cycle of interest, activity, and eventual satisfaction. Pedagogical guidance must respect "
+        "the student's natural cognitive appetite rather than imposing rigid, external structures. Dr. Natarajan "
+        "highlights that true learning involves both the active exploration of external objects (extroverted interest) "
+        "and the reflective assimilation of ideas into subjective consciousness (introverted reflection). "
+        "An effective AI mentor must support this balance, providing tailored socratic challenges to nurture both "
+        "intelligence and personal growth.",
+    ),
+    (
+        "saraswathi_edu_psy_motivation",
+        "Educational Psychology - Emotion and Motivation in Education: Emotions and feelings represent the global, "
+        "synthetic activity of the student's personal factor, tightly coupled with their instinctive drives and motivation. "
+        "While excessive negative emotion or agitation can disrupt the proper functioning of intelligence, "
+        "positive emotional states, curiosity, and supportive encouragement are essential drivers of cognitive attention "
+        "and retention. An effective educator or AI mentor must be highly sensitive to the student's emotional state, "
+        "providing empathetic reassurance and timely motivation to foster a resilient and joyful learning environment.",
+    ),
 ]

@@ -11,4 +11,6 @@ dependencies = [
     "pydantic>=2.13.4",
     "python-dotenv>=1.2.2",
     "uvicorn[standard]>=0.50.0",
+    "mlflow>=2.14.0",
+    "pypdf>=4.0.0",
 ]
