@@ -28,7 +28,7 @@ resource "aws_elasticache_replication_group" "main" {
   parameter_group_name = aws_elasticache_parameter_group.redis7.name
   engine_version       = "7.1"
 
-  num_cache_clusters         = 2
+  num_cache_clusters         = 3
   automatic_failover_enabled = true
   multi_az_enabled           = true
 

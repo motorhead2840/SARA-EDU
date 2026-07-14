@@ -159,7 +159,7 @@ resource "aws_autoscaling_group" "arm_workers" {
     }
     instances_distribution {
       on_demand_base_capacity                  = 1
-      on_demand_percentage_above_base_capacity = 0
+      on_demand_percentage_above_base_capacity = 25
       spot_allocation_strategy                 = "price-capacity-optimized"
     }
   }
