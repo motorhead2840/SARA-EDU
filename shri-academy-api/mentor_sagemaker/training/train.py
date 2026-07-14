@@ -14,6 +14,7 @@ import argparse
 import json
 import logging
 import os
+import shutil
 
 import torch
 from datasets import load_dataset
@@ -176,8 +177,8 @@ def main():
     mlflow_run = None
     if mlflow:
         try:
-            os.makedirs(SM_MODEL_DIR, exist_ok=True)
-            db_path = os.path.abspath(os.path.join(SM_MODEL_DIR, "mlflow.db"))
+            os.makedirs("/tmp", exist_ok=True)
+            db_path = os.path.abspath("/tmp/mlflow.db")
             mlflow.set_tracking_uri(f"sqlite:///{db_path}")
             mlflow.set_experiment("shri-academy-mentor")
             mlflow_run = mlflow.start_run()
@@ -219,6 +220,11 @@ def main():
             log.info(f"Registering model in MLflow Model Registry as '{registered_name}' with URI '{model_uri}'")
             mlflow.register_model(model_uri=model_uri, name=registered_name)
             log.info("Successfully registered model in MLflow Model Registry.")
+            
+            # Copy local mlflow database to SM_MODEL_DIR so it packages inside model.tar.gz
+            dest_db_path = os.path.join(SM_MODEL_DIR, "mlflow.db")
+            log.info(f"Copying MLflow local DB from {db_path} to {dest_db_path} for packaging...")
+            shutil.copy(db_path, dest_db_path)
         except Exception as mlflow_log_err:
             log.warning(f"Error logging or registering with MLflow: {mlflow_log_err}")
         finally:
