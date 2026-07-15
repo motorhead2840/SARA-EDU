@@ -153,12 +153,18 @@ async def _call_bedrock(system_prompt: str, user_prompt: str) -> str:
 # ─── NVIDIA NIM client ────────────────────────────────────────────────────────────
 
 async def _call_nim(system_prompt: str, user_prompt: str) -> str:
+    if NVIDIA_KEY.startswith("sk-"):
+        url = "https://api.openai.com/v1/chat/completions"
+        model = "gpt-4o"
+    else:
+        url = "https://integrate.api.nvidia.com/v1/chat/completions"
+        model = "nvidia/llama-3.1-nemotron-70b-instruct"
     async with httpx.AsyncClient(timeout=60) as client:
         response = await client.post(
-            "https://integrate.api.nvidia.com/v1/chat/completions",
+            url,
             headers={"Authorization": f"Bearer {NVIDIA_KEY}", "Content-Type": "application/json"},
             json={
-                "model": "nvidia/llama-3.1-nemotron-70b-instruct",
+                "model": model,
                 "messages": [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
