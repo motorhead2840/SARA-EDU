@@ -23,7 +23,7 @@ router = APIRouter()
 # ─── Configuration ────────────────────────────────────────────────────────────
 
 API_SERVER      = os.getenv("API_SERVER_URL", "http://localhost:3000")
-NVIDIA_KEY      = os.getenv("NVIDIA_API_KEY", "")
+NVIDIA_KEY      = os.getenv("NVIDIA_API_KEY") or os.getenv("OPENAI_API_KEY") or ""
 BEDROCK_ENABLED = os.getenv("BEDROCK_ENABLED", "false").lower() == "true"
 BEDROCK_MODEL   = os.getenv("BEDROCK_MODEL_ID", "anthropic.claude-3-5-sonnet-20241022-v2:0")
 BEDROCK_REGION  = os.getenv("BEDROCK_REGION", "us-east-1")
@@ -279,7 +279,7 @@ async def research_mentor(req: MentorRequest):
         except httpx.HTTPError as e:
             raise HTTPException(status_code=502, detail=f"NVIDIA NIM request failed: {e}")
     else:
-        raise HTTPException(status_code=503, detail="No AI backend configured (set BEDROCK_ENABLED=true or NVIDIA_API_KEY)")
+        raise HTTPException(status_code=503, detail="No AI backend configured (set BEDROCK_ENABLED=true, NVIDIA_API_KEY or OPENAI_API_KEY)")
 
     try:
         plan_data = json.loads(raw)
