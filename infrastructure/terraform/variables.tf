@@ -140,7 +140,7 @@ variable "github_org" {
 variable "github_monorepo" {
   description = "GitHub repository name for the Shri Academy monorepo (used for OIDC trust policy)"
   type        = string
-  default     = "shri-academy"
+  default     = "SHRI-ACADEMY"
 }
 
 # ─── NVIDIA NIM ───────────────────────────────────────────────────────────────
