@@ -177,6 +177,7 @@ resource "aws_ecs_task_definition" "api_server" {
         { name = "S3_ASSETS_BUCKET",     value = aws_s3_bucket.assets.id },
         { name = "S3_CHROMADB_BUCKET",   value = aws_s3_bucket.chromadb.id },
         { name = "S3_ACADEMIC_BUCKET",   value = aws_s3_bucket.academic.id },
+        { name = "PYTHON_API_URL",       value = "https://${var.domain_name}/shri-api" },
       ]
       secrets = [
         { name = "DATABASE_URL",      valueFrom = "${aws_secretsmanager_secret.db_password.arn}:database_url::" },
@@ -187,7 +188,7 @@ resource "aws_ecs_task_definition" "api_server" {
         { name = "KAFKA_API_KEY",     valueFrom = "${aws_secretsmanager_secret.confluent_app.arn}:api_key::" },
         { name = "KAFKA_API_SECRET",  valueFrom = "${aws_secretsmanager_secret.confluent_app.arn}:api_secret::" },
         # NVIDIA NIM — Nemotron games + mythology
-        { name = "NVIDIA_API_KEY",    valueFrom = "${aws_secretsmanager_secret.nvidia_api_key.arn}" },
+        { name = "NVIDIA_API_KEY",    valueFrom = aws_secretsmanager_secret.nvidia_api_key.arn },
       ]
       logConfiguration = {
         logDriver = "awslogs"
@@ -228,7 +229,7 @@ resource "aws_ecs_task_definition" "shri_api" {
         { name = "AWS_REGION",          value = var.aws_region },
         { name = "S3_ACADEMIC_BUCKET",  value = aws_s3_bucket.academic.id },
         { name = "OPENSEARCH_URL",      value = "https://${aws_opensearch_domain.main.endpoint}" },
-        { name = "API_SERVER_URL",      value = "http://api-server.${var.project}.internal:8080" },
+        { name = "API_SERVER_URL",      value = "https://${var.domain_name}" },
         # Bedrock — used when BEDROCK_ENABLED=true (primary) or OPENAI_API_KEY missing (fallback)
         { name = "BEDROCK_ENABLED",     value = "true" },
         { name = "BEDROCK_REGION",      value = var.aws_region },
@@ -236,6 +237,7 @@ resource "aws_ecs_task_definition" "shri_api" {
       ]
       secrets = [
         { name = "OPENAI_API_KEY",   valueFrom = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.project}/${var.environment}/openai_api_key" },
+        { name = "NVIDIA_API_KEY",   valueFrom = aws_secretsmanager_secret.nvidia_api_key.arn },
         # Confluent Cloud credentials
         { name = "KAFKA_BOOTSTRAP",  valueFrom = "${aws_secretsmanager_secret.confluent_app.arn}:bootstrap::" },
         { name = "KAFKA_API_KEY",    valueFrom = "${aws_secretsmanager_secret.confluent_app.arn}:api_key::" },

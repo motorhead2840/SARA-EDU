@@ -11,7 +11,7 @@ import { logger } from "../lib/logger.js";
 import { requireMentor } from "../middleware/requireMentor.js";
 
 const router = Router();
-const PYTHON_BASE = "http://localhost:8001/shri-api";
+const PYTHON_BASE = process.env.PYTHON_API_URL ?? "http://localhost:8001/shri-api";
 
 // ─── Data-URI / base64-blob pattern ──────────────────────────────────────────
 // Catches: data:image/..., data:application/pdf, data:application/octet-stream
