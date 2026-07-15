@@ -125,8 +125,8 @@ async def generate_data(
     the NVIDIA Nemotron API. Uploads JSONL to S3 and returns the S3 URI.
     Runs generate_data.py as a subprocess (CPU-only, ~2-3 min for 200 pairs).
     """
-    if not os.environ.get("NVIDIA_API_KEY"):
-        raise HTTPException(status_code=503, detail="NVIDIA_API_KEY not set")
+    if not (os.environ.get("NVIDIA_API_KEY") or os.environ.get("OPENAI_API_KEY")):
+        raise HTTPException(status_code=503, detail="NVIDIA_API_KEY or OPENAI_API_KEY not set")
 
     bucket = _get_bucket()
     region = os.environ.get("AWS_REGION", "us-east-1")
