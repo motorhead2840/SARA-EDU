@@ -11,8 +11,11 @@
 resource "aws_iam_openid_connect_provider" "github_actions" {
   url = "https://token.actions.githubusercontent.com"
 
-  # GitHub's OIDC thumbprint (stable — rotating announced on GitHub blog)
-  thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"]
+  # GitHub's OIDC thumbprints (stable — rotating announced on GitHub blog)
+  thumbprint_list = [
+    "6938fd4d98bab03faadb97b34396831e3780aea1",
+    "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
+  ]
 
   client_id_list = ["sts.amazonaws.com"]
 }
@@ -45,6 +48,9 @@ resource "aws_iam_role" "github_actions_deploy" {
               "repo:${var.github_org}/${var.github_monorepo}:environment:production",
               "repo:${var.github_org}/${var.github_monorepo}:ref:refs/tags/v*",
               "repo:${var.github_org}/${var.github_monorepo}:ref:refs/heads/*",
+              "repo:${var.github_org}/${lower(var.github_monorepo)}:environment:production",
+              "repo:${var.github_org}/${lower(var.github_monorepo)}:ref:refs/tags/v*",
+              "repo:${var.github_org}/${lower(var.github_monorepo)}:ref:refs/heads/*",
             ]
           }
         }
