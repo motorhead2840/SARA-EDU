@@ -132,6 +132,11 @@ def get_nim_client() -> openai.OpenAI:
     api_key = os.environ.get("NVIDIA_API_KEY") or os.environ.get("OPENAI_API_KEY")
     if not api_key:
         raise RuntimeError("NVIDIA_API_KEY or OPENAI_API_KEY is not configured")
+    if api_key.startswith("sk-"):
+        return openai.OpenAI(
+            base_url="https://api.openai.com/v1",
+            api_key=api_key
+        )
     return openai.OpenAI(
         base_url="https://integrate.api.nvidia.com/v1",
         api_key=api_key
@@ -459,10 +464,12 @@ async def chat(req: ChatInput):
     async def _nim_call() -> str:
         try:
             client = get_nim_client()
+            api_key = os.environ.get("NVIDIA_API_KEY") or os.environ.get("OPENAI_API_KEY") or ""
+            model = "gpt-4o" if api_key.startswith("sk-") else NIM_MODEL
             resp = await asyncio.get_event_loop().run_in_executor(
                 None,
                 lambda: client.chat.completions.create(
-                    model=NIM_MODEL,
+                    model=model,
                     messages=plain_messages,
                     max_tokens=2048,
                     temperature=0.7,

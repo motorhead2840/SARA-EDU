@@ -73,6 +73,11 @@ def build_client() -> OpenAI:
     api_key = os.environ.get("NVIDIA_API_KEY") or os.environ.get("OPENAI_API_KEY")
     if not api_key:
         raise EnvironmentError("NVIDIA_API_KEY or OPENAI_API_KEY is not set")
+    if api_key.startswith("sk-"):
+        return OpenAI(
+            base_url="https://api.openai.com/v1",
+            api_key=api_key
+        )
     return OpenAI(
         base_url="https://integrate.api.nvidia.com/v1",
         api_key=api_key
@@ -80,11 +85,13 @@ def build_client() -> OpenAI:
 
 
 def generate_pairs(client: OpenAI, chunk_text: str, n: int, retries: int = 3) -> list[dict]:
+    api_key = os.environ.get("NVIDIA_API_KEY") or os.environ.get("OPENAI_API_KEY") or ""
+    model = "gpt-4o" if api_key.startswith("sk-") else GENERATOR_MODEL
     prompt = GENERATOR_PROMPT.format(chunk=chunk_text, n=n)
     for attempt in range(1, retries + 1):
         try:
             resp = client.chat.completions.create(
-                model=GENERATOR_MODEL,
+                model=model,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.8,
                 max_tokens=2048,

@@ -35,11 +35,15 @@ async function generateNarrative(tradition: string, title: string): Promise<stri
   const key = process.env.NVIDIA_API_KEY;
   if (!key) throw new Error("NVIDIA_API_KEY not configured");
 
-  const resp = await fetch(`${NVIDIA_BASE}/chat/completions`, {
+  const isOpenAI = key.startsWith("sk-");
+  const url = isOpenAI ? "https://api.openai.com/v1/chat/completions" : `${NVIDIA_BASE}/chat/completions`;
+  const model = isOpenAI ? "gpt-4o" : "nvidia/llama-3.1-nemotron-70b-instruct";
+
+  const resp = await fetch(url, {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "nvidia/llama-3.1-nemotron-70b-instruct",
+      model: model,
       messages: [
         {
           role: "system",
