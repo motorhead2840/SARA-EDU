@@ -10,11 +10,6 @@ import os
 import logging
 from contextlib import asynccontextmanager
 
-# Configure fallback from NVIDIA_API_KEY to OPENAI_API_KEY if not explicitly set.
-# This aligns with our production ECS task definition where OpenAI API keys are passed
-# to the Shri API container instead of Nvidia keys.
-if not os.environ.get("NVIDIA_API_KEY") and os.environ.get("OPENAI_API_KEY"):
-    os.environ["NVIDIA_API_KEY"] = os.environ["OPENAI_API_KEY"]
 from typing import Optional
 
 import chromadb
@@ -129,9 +124,9 @@ app.include_router(sagemaker_router, prefix="/shri-api/sagemaker")
 NIM_MODEL = "nvidia/llama-3.1-nemotron-70b-instruct"
 
 def get_nim_client() -> openai.OpenAI:
-    api_key = os.environ.get("NVIDIA_API_KEY") or os.environ.get("OPENAI_API_KEY")
+    api_key = os.environ.get("NVIDIA_API_KEY")
     if not api_key:
-        raise RuntimeError("NVIDIA_API_KEY or OPENAI_API_KEY is not configured")
+        raise RuntimeError("NVIDIA_API_KEY is not configured")
     return openai.OpenAI(
         base_url="https://integrate.api.nvidia.com/v1",
         api_key=api_key

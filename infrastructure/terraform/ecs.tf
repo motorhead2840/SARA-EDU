@@ -230,13 +230,12 @@ resource "aws_ecs_task_definition" "shri_api" {
         { name = "S3_ACADEMIC_BUCKET",  value = aws_s3_bucket.academic.id },
         { name = "OPENSEARCH_URL",      value = "https://${aws_opensearch_domain.main.endpoint}" },
         { name = "API_SERVER_URL",      value = "https://${var.domain_name}" },
-        # Bedrock — used when BEDROCK_ENABLED=true (primary) or OPENAI_API_KEY missing (fallback)
+        # Bedrock — used when BEDROCK_ENABLED=true (primary)
         { name = "BEDROCK_ENABLED",     value = "true" },
         { name = "BEDROCK_REGION",      value = var.aws_region },
         { name = "BEDROCK_MODEL_ID",    value = "anthropic.claude-3-5-sonnet-20241022-v2:0" },
       ]
       secrets = [
-        { name = "OPENAI_API_KEY",   valueFrom = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.project}/${var.environment}/openai_api_key" },
         { name = "NVIDIA_API_KEY",   valueFrom = aws_secretsmanager_secret.nvidia_api_key.arn },
         # Confluent Cloud credentials
         { name = "KAFKA_BOOTSTRAP",  valueFrom = "${aws_secretsmanager_secret.confluent_app.arn}:bootstrap::" },

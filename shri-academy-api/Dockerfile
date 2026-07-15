@@ -74,5 +74,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=120s --retries=3 \
   CMD curl -f http://localhost:8000/shri-api/health || exit 1
 
-# 2 workers: one for inference, one for Bedrock/OpenAI fallback concurrency
+# 2 workers: one for inference, one for Bedrock/NVIDIA NIM fallback concurrency
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]
