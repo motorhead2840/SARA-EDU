@@ -126,16 +126,7 @@ NIM_MODEL = "nvidia/llama-3.1-nemotron-70b-instruct"
 def get_nim_client() -> openai.OpenAI:
     api_key = os.environ.get("NVIDIA_API_KEY")
     if not api_key:
-<<<<<<< HEAD
         raise RuntimeError("NVIDIA_API_KEY is not configured")
-=======
-        raise RuntimeError("NVIDIA_API_KEY or OPENAI_API_KEY is not configured")
-    if api_key.startswith("sk-"):
-        return openai.OpenAI(
-            base_url="https://api.openai.com/v1",
-            api_key=api_key
-        )
->>>>>>> origin/main
     return openai.OpenAI(
         base_url="https://integrate.api.nvidia.com/v1",
         api_key=api_key

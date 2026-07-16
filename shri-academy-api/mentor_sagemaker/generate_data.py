@@ -72,16 +72,7 @@ No extra commentary. No markdown fences. Valid JSON only.
 def build_client() -> OpenAI:
     api_key = os.environ.get("NVIDIA_API_KEY")
     if not api_key:
-<<<<<<< HEAD
         raise EnvironmentError("NVIDIA_API_KEY is not set")
-=======
-        raise EnvironmentError("NVIDIA_API_KEY or OPENAI_API_KEY is not set")
-    if api_key.startswith("sk-"):
-        return OpenAI(
-            base_url="https://api.openai.com/v1",
-            api_key=api_key
-        )
->>>>>>> origin/main
     return OpenAI(
         base_url="https://integrate.api.nvidia.com/v1",
         api_key=api_key
