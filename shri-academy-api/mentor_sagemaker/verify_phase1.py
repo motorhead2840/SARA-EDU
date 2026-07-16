@@ -140,7 +140,7 @@ def main():
     
     # Load current configuration. In the Terraform infrastructure, project is defined as "sri"
     # and environment is "production" (e.g. s3 bucket is "sri-production-sagemaker").
-    project_name_prefix = os.environ.get("PROJECT_NAME_PREFIX", "sri")
+    project_name = os.environ.get("PROJECT_NAME_PREFIX", "sri")
     environment = os.environ.get("ENVIRONMENT", "production")
     
     aws_region = os.environ.get("AWS_REGION", "us-east-1")
@@ -154,8 +154,8 @@ def main():
     nvidia_api_key = os.environ.get("NVIDIA_API_KEY") or os.environ.get("OPENAI_API_KEY")
     hf_token = os.environ.get("HF_TOKEN")
 
-    # If sagemaker_role_arn or sagemaker_s3_bucket are not set, derive from fallback resources
-    fallback_resource_name = f"{project_name_prefix}-{environment}-sagemaker"
+    # If sagemaker_role_arn or sagemaker_s3_bucket are not set, derive from standard resources
+    standard_resource_name = f"{project_name}-{environment}-sagemaker"
     
     role_was_derived = False
     if not sagemaker_role_arn:
@@ -167,16 +167,16 @@ def main():
                 account_id = sts.get_caller_identity()["Account"]
         except (NoCredentialsError, ClientError):
             logger.info("Could not retrieve AWS caller identity dynamically (NoCredentials or ClientError).")
-        sagemaker_role_arn = f"arn:aws:iam::{account_id}:role/{fallback_resource_name}"
+        sagemaker_role_arn = f"arn:aws:iam::{account_id}:role/{standard_resource_name}"
         role_was_derived = True
 
     bucket_was_derived = False
     if not sagemaker_s3_bucket:
-        sagemaker_s3_bucket = fallback_resource_name
+        sagemaker_s3_bucket = standard_resource_name
         bucket_was_derived = True
 
-    feature_group_mentor = f"{project_name_prefix}-{environment}-mentor-activity"
-    feature_group_blockchain = f"{project_name_prefix}-{environment}-blockchain-events"
+    feature_group_mentor = f"{project_name}-{environment}-mentor-activity"
+    feature_group_blockchain = f"{project_name}-{environment}-blockchain-events"
 
     # 1. Check AWS Connectivity & Credentials
     credentials_active = False
@@ -308,13 +308,12 @@ def main():
         
     print("-"*80)
     print("ENVIRONMENT CONFIGURATION:")
-    print(f"  PROJECT PREFIX:      {project_name_prefix}")
+    print(f"  PROJECT PREFIX:      {project_name}")
     print(f"  ENVIRONMENT:         {environment}")
     print(f"  AWS_REGION:          {aws_region}")
-    role_derived_str = " (derived/fallback)" if role_was_derived else ""
-    bucket_derived_str = " (derived/fallback)" if bucket_was_derived else ""
-    print(f"  SAGEMAKER_ROLE_ARN:  {sagemaker_role_arn}{role_derived_str}")
-    print(f"  SAGEMAKER_S3_BUCKET: {sagemaker_s3_bucket}{bucket_derived_str}")
+    get_suffix = lambda derived_flag: " (derived/fallback)" if derived_flag else ""
+    print(f"  SAGEMAKER_ROLE_ARN:  {sagemaker_role_arn}{get_suffix(role_was_derived)}")
+    print(f"  SAGEMAKER_S3_BUCKET: {sagemaker_s3_bucket}{get_suffix(bucket_was_derived)}")
     print(f"  MENTOR_API_SECRET:   *** [SET]" if mentor_api_secret else "  MENTOR_API_SECRET:   None")
     print(f"  NVIDIA_API_KEY:      *** [SET]" if nvidia_api_key else "  NVIDIA_API_KEY:      None")
     print(f"  HF_TOKEN:            *** [SET]" if hf_token else "  HF_TOKEN:            None")
