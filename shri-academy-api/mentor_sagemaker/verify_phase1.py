@@ -11,7 +11,7 @@ import secrets
 import logging
 from pathlib import Path
 
-PLACEHOLDER_ACCOUNT_ID = "123456789012"
+FALLBACK_ACCOUNT_ID = "123456789012"
 S3_BUCKET_TF_REGEX = r'sagemaker\s*=\s*"\$\{var\.project\}-\$\{var\.environment\}-sagemaker"'
 
 # Ensure we can import from parent directory if needed
@@ -140,7 +140,7 @@ def main():
     
     # Load current configuration. In the Terraform infrastructure, project is defined as "sri"
     # and environment is "production" (e.g. s3 bucket is "sri-production-sagemaker").
-    project_prefix = os.environ.get("PROJECT_NAME_PREFIX", "sri")
+    project_name_prefix = os.environ.get("PROJECT_NAME_PREFIX", "sri")
     environment = os.environ.get("ENVIRONMENT", "production")
     
     aws_region = os.environ.get("AWS_REGION", "us-east-1")
@@ -154,30 +154,29 @@ def main():
     nvidia_api_key = os.environ.get("NVIDIA_API_KEY") or os.environ.get("OPENAI_API_KEY")
     hf_token = os.environ.get("HF_TOKEN")
 
-    # If sagemaker_role_arn or sagemaker_s3_bucket are not set, derive from fallback values
-    fallback_role_name = f"{project_prefix}-{environment}-sagemaker"
-    fallback_bucket_name = f"{project_prefix}-{environment}-sagemaker"
+    # If sagemaker_role_arn or sagemaker_s3_bucket are not set, derive from fallback resources
+    fallback_resource_name = f"{project_name_prefix}-{environment}-sagemaker"
     
     role_was_derived = False
     if not sagemaker_role_arn:
         # We need an account ID to derive a full ARN, so let's check if boto3 can tell us, else we use placeholder
-        account_id = PLACEHOLDER_ACCOUNT_ID
+        account_id = FALLBACK_ACCOUNT_ID
         try:
             if _boto3_available and boto3:
                 sts = boto3.client("sts")
                 account_id = sts.get_caller_identity()["Account"]
         except (NoCredentialsError, ClientError):
             logger.info("Could not retrieve AWS caller identity dynamically (NoCredentials or ClientError).")
-        sagemaker_role_arn = f"arn:aws:iam::{account_id}:role/{fallback_role_name}"
+        sagemaker_role_arn = f"arn:aws:iam::{account_id}:role/{fallback_resource_name}"
         role_was_derived = True
 
     bucket_was_derived = False
     if not sagemaker_s3_bucket:
-        sagemaker_s3_bucket = fallback_bucket_name
+        sagemaker_s3_bucket = fallback_resource_name
         bucket_was_derived = True
 
-    feature_group_mentor = f"{project_prefix}-{environment}-mentor-activity"
-    feature_group_blockchain = f"{project_prefix}-{environment}-blockchain-events"
+    feature_group_mentor = f"{project_name_prefix}-{environment}-mentor-activity"
+    feature_group_blockchain = f"{project_name_prefix}-{environment}-blockchain-events"
 
     # 1. Check AWS Connectivity & Credentials
     credentials_active = False
@@ -309,11 +308,13 @@ def main():
         
     print("-"*80)
     print("ENVIRONMENT CONFIGURATION:")
-    print(f"  PROJECT PREFIX:      {project_prefix}")
+    print(f"  PROJECT PREFIX:      {project_name_prefix}")
     print(f"  ENVIRONMENT:         {environment}")
     print(f"  AWS_REGION:          {aws_region}")
-    print(f"  SAGEMAKER_ROLE_ARN:  {sagemaker_role_arn}")
-    print(f"  SAGEMAKER_S3_BUCKET: {sagemaker_s3_bucket}")
+    role_derived_str = " (derived/fallback)" if role_was_derived else ""
+    bucket_derived_str = " (derived/fallback)" if bucket_was_derived else ""
+    print(f"  SAGEMAKER_ROLE_ARN:  {sagemaker_role_arn}{role_derived_str}")
+    print(f"  SAGEMAKER_S3_BUCKET: {sagemaker_s3_bucket}{bucket_derived_str}")
     print(f"  MENTOR_API_SECRET:   *** [SET]" if mentor_api_secret else "  MENTOR_API_SECRET:   None")
     print(f"  NVIDIA_API_KEY:      *** [SET]" if nvidia_api_key else "  NVIDIA_API_KEY:      None")
     print(f"  HF_TOKEN:            *** [SET]" if hf_token else "  HF_TOKEN:            None")
@@ -366,7 +367,8 @@ def main():
                 
         # Append remaining keys that were not found in existing lines
         if keys_to_update:
-            new_lines.append("\n# Auto-generated SageMaker and Mentor API environment variables")
+            new_lines.append("")
+            new_lines.append("# Auto-generated SageMaker and Mentor API environment variables")
             for key, val in keys_to_update.items():
                 new_lines.append(f"{key}={val}")
             
