@@ -128,14 +128,14 @@ def check_teacher_connectivity(api_key: str) -> tuple[bool, str]:
         )
         # Attempt a very lightweight model check or a minimal chat completion
         # We target nvidia/llama-3.1-nemotron-70b-instruct as specified in generate_data.py
-        # Use a short timeout of 5 seconds to avoid blocking
+        # Use a short timeout of 15 seconds to avoid blocking
         logger.info("Testing connectivity to NVIDIA NIM endpoint...")
         resp = client.chat.completions.create(
             model="nvidia/llama-3.1-nemotron-70b-instruct",
             messages=[{"role": "user", "content": "Respond with the single word: OK"}],
             max_tokens=10,
             temperature=0.1,
-            timeout=5.0
+            timeout=15.0
         )
         text = resp.choices[0].message.content.strip()
         return True, f"Connected to NVIDIA NIM! Teacher model response: '{text}'"
@@ -328,7 +328,7 @@ def main():
             logger.warning("Verification failed. Live test might fail or cannot run due to missing prerequisites.")
         live_ok = run_live_test(nvidia_api_key, sagemaker_s3_bucket, aws_region)
         if live_ok:
-            logger.info("🟢 LIVE INTEGRATION TEST PASSED SUCCESSFULY!")
+            logger.info("🟢 LIVE INTEGRATION TEST PASSED SUCCESSFULLY!")
         else:
             logger.error("🔴 LIVE INTEGRATION TEST FAILED!")
             sys.exit(1)
