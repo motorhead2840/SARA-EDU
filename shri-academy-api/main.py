@@ -100,7 +100,23 @@ def init_chromadb():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_chromadb()
+    # Properly start the async Kafka producer during app lifecycle if configured
+    if os.environ.get("KAFKA_BOOTSTRAP_SERVERS"):
+        try:
+            from async_kafka_utils import producer_singleton
+            await producer_singleton.get_producer()
+            log.info("Lifespan: Async Kafka producer started.")
+        except Exception as e:
+            log.error(f"Lifespan: Failed to start async Kafka producer: {e}")
     yield
+    # Properly stop the async Kafka producer on shutdown
+    try:
+        from async_kafka_utils import stop_kafka_producer
+        await stop_kafka_producer()
+        log.info("Lifespan: Async Kafka producer stopped.")
+    except Exception as e:
+        log.error(f"Lifespan: Failed to stop async Kafka producer: {e}")
+
 
 # ─── FastAPI App ────────────────────────────────────────────────────────────────
 app = FastAPI(title="Shri Academy API", lifespan=lifespan)
