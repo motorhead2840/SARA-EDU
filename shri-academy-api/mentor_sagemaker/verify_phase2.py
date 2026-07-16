@@ -124,7 +124,8 @@ def check_teacher_connectivity(api_key: str) -> tuple[bool, str]:
     
     # Static / dry-run check bypass for test/mock environment
     if api_key.startswith("mock") or api_key == "PLACEHOLDER_SET_ME" or "dummy" in api_key.lower():
-        return True, f"[Dry-Run Check Passed] Bypassed NVIDIA NIM connectivity check for mock/placeholder key '{api_key}'"
+        masked_key = f"{api_key[:8]}..." if len(api_key) > 8 else api_key
+        return True, f"[Dry-Run Check Passed] Bypassed NVIDIA NIM connectivity check for mock/placeholder key '{masked_key}'"
     
     try:
         # Instantiating the OpenAI client with a client-level timeout.
