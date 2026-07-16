@@ -44,6 +44,14 @@ export async function initForumSchema(): Promise<void> {
       created_at  TIMESTAMPTZ DEFAULT NOW()
     );
 
+    CREATE TABLE IF NOT EXISTS dev_team_members (
+      id          SERIAL PRIMARY KEY,
+      email       TEXT NOT NULL UNIQUE,
+      github_username TEXT,
+      signup_method TEXT NOT NULL CHECK (signup_method IN ('github', 'email')),
+      created_at  TIMESTAMPTZ DEFAULT NOW()
+    );
+
     CREATE INDEX IF NOT EXISTS idx_forum_threads_category ON forum_threads(category_id);
     CREATE INDEX IF NOT EXISTS idx_forum_threads_created ON forum_threads(created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_forum_posts_thread ON forum_posts(thread_id);
@@ -54,13 +62,21 @@ export async function initForumSchema(): Promise<void> {
 
 async function seedCategories(): Promise<void> {
   const db = pool;
+  
+  // Seed our special dev-team category first, in case of a partially or fully seeded DB
+  await db.query(
+    `INSERT INTO forum_categories (name, slug, description, icon, color)
+     VALUES ($1, $2, $3, $4, $5) ON CONFLICT (slug) DO NOTHING`,
+    ["Dev Team Discussions", "dev-team", "Collaborate, share builds, and plan features for SHRI-ACADEMY.", "⚙", "user"]
+  );
+
   const { rows } = await db.query("SELECT COUNT(*) FROM forum_categories");
-  if (parseInt(rows[0].count) > 0) return;
+  if (parseInt(rows[0].count) > 1) return; // count of 1 is just the dev-team category we inserted above
 
   const cats = [
     { name: "Science & Mathematics", slug: "science-math", description: "Explore the universe through equations and experiments.", icon: "⬡", color: "system" },
     { name: "World Mythology & Ancient Wisdom", slug: "mythology", description: "Deities, epics, and the cosmologies of every civilization.", icon: "◉", color: "mentor" },
-    { name: "Coding & Artificial Intelligence", slug: "coding-ai", description: "Algorithms, models, and the machines we build.", icon: "▣", color: "user" },
+    { name: "Coding & Artificial Intelligence", slug: "coding-ai", description: "Explore algorithms, models, and the machines we build.", icon: "▣", color: "user" },
     { name: "Philosophy & Ethics", slug: "philosophy", description: "Questions that outlive every answer ever given.", icon: "◈", color: "system" },
     { name: "Creative Arts & Expression", slug: "creative", description: "Music, writing, design, and making things that matter.", icon: "◎", color: "mentor" },
   ];
@@ -175,4 +191,23 @@ export async function upvotePost(id: number) {
     [id]
   );
   return rows[0]?.upvotes ?? 0;
+}
+
+export async function createDevTeamMember(email: string, githubUsername: string | null, signupMethod: 'github' | 'email') {
+  const db = pool;
+  const { rows } = await db.query(`
+    INSERT INTO dev_team_members (email, github_username, signup_method)
+    VALUES ($1, $2, $3)
+    ON CONFLICT (email) DO UPDATE SET github_username = $2, signup_method = $3
+    RETURNING *
+  `, [email, githubUsername, signupMethod]);
+  return rows[0];
+}
+
+export async function getDevTeamMemberByEmail(email: string) {
+  const db = pool;
+  const { rows } = await db.query(
+    "SELECT * FROM dev_team_members WHERE email = $1", [email]
+  );
+  return rows[0] ?? null;
 }
