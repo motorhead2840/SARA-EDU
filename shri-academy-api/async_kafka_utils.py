@@ -11,9 +11,9 @@ class AsyncKafkaProducerSingleton:
     _instance: Optional['AsyncKafkaProducerSingleton'] = None
     _producer: Optional[AIOKafkaProducer] = None
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls):
         if not cls._instance:
-            cls._instance = super(AsyncKafkaProducerSingleton, cls).__new__(cls, *args, **kwargs)
+            cls._instance = super(AsyncKafkaProducerSingleton, cls).__new__(cls)
         return cls._instance
 
     async def get_producer(self) -> AIOKafkaProducer:

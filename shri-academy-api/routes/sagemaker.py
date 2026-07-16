@@ -331,13 +331,13 @@ async def async_query(req: AsyncQueryRequest):
     3. Publishes a response event asynchronously to Confluent Cloud (Kafka)
     """
     # Step 1: Publish incoming query event to Kafka
-    now_start = datetime.now(timezone.utc)
+    start_time = datetime.now(timezone.utc)
     query_event = {
         "event_type": "query_received",
         "user_id": req.user_id,
         "query": req.query,
-        "timestamp_seconds": now_start.timestamp(),
-        "timestamp_iso": now_start.isoformat(),
+        "timestamp_seconds": start_time.timestamp(),
+        "timestamp_iso": start_time.isoformat(),
     }
     try:
         await publish_event_async(req.topic, query_event)
@@ -348,16 +348,16 @@ async def async_query(req: AsyncQueryRequest):
     response_text = await invoke_shri_mentor_async(req.query, req.user_id)
 
     # Step 3: Publish response generated event to Kafka
-    now_end = datetime.now(timezone.utc)
-    latency = (now_end - now_start).total_seconds()
+    end_time = datetime.now(timezone.utc)
+    latency = (end_time - start_time).total_seconds()
     response_event = {
         "event_type": "response_generated",
         "user_id": req.user_id,
         "query": req.query,
         "response": response_text,
         "latency_seconds": latency,
-        "timestamp_seconds": now_end.timestamp(),
-        "timestamp_iso": now_end.isoformat(),
+        "timestamp_seconds": end_time.timestamp(),
+        "timestamp_iso": end_time.isoformat(),
     }
 
     try:
@@ -368,7 +368,7 @@ async def async_query(req: AsyncQueryRequest):
 
     return AsyncQueryResponse(
         response=response_text,
-        status="success" if response_text else "failed"
+        status="success" if response_text is not None else "failed"
     )
 
 
