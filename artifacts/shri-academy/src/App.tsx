@@ -11,6 +11,7 @@ import Drawing from '@/pages/drawing';
 import Games from '@/pages/games';
 import Mythology from '@/pages/mythology';
 import Forum from '@/pages/forum';
+import DevTeam from '@/pages/dev-team';
 import { Route, Switch, Router as WouterRouter } from 'wouter';
 import MentorLogin from '@/pages/mentor-login';
 import MentorDashboard from '@/pages/mentor-dashboard';
@@ -29,6 +30,7 @@ function Router() {
       <Route path="/games">{() => <Games />}</Route>
       <Route path="/mythology">{() => <Mythology />}</Route>
       <Route path="/forum">{() => <Forum />}</Route>
+      <Route path="/dev-team">{() => <DevTeam />}</Route>
       <Route path="/mentor/login">{() => <MentorLogin />}</Route>
       <Route path="/mentor">{() => <MentorDashboard />}</Route>
       <Route>{() => <NotFound />}</Route>
