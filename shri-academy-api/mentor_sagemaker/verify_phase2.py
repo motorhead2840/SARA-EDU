@@ -124,7 +124,8 @@ def check_teacher_connectivity(api_key: str) -> tuple[bool, str]:
     try:
         client = OpenAI(
             base_url="https://integrate.api.nvidia.com/v1",
-            api_key=api_key
+            api_key=api_key,
+            timeout=15.0
         )
         # Attempt a very lightweight model check or a minimal chat completion
         # We target nvidia/llama-3.1-nemotron-70b-instruct as specified in generate_data.py
@@ -134,8 +135,7 @@ def check_teacher_connectivity(api_key: str) -> tuple[bool, str]:
             model="nvidia/llama-3.1-nemotron-70b-instruct",
             messages=[{"role": "user", "content": "Respond with the single word: OK"}],
             max_tokens=10,
-            temperature=0.1,
-            timeout=15.0
+            temperature=0.1
         )
         text = resp.choices[0].message.content.strip()
         return True, f"Connected to NVIDIA NIM! Teacher model response: '{text}'"
