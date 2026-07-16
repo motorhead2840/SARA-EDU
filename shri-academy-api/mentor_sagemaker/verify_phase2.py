@@ -188,10 +188,10 @@ def run_live_test(api_key: str, bucket_name: str, region: str) -> bool:
         # Format record
         record = to_training_record(pair["question"], pair["answer"], system_prompt=SYSTEM_PROMPT_SHRI)
         
-        # Save to local file using a unique temporary directory
-        test_dir = Path(tempfile.mkdtemp())
-        local_file = test_dir / "test_train.jsonl"
-        try:
+        # Save and upload local file using a unique temporary directory context manager
+        with tempfile.TemporaryDirectory() as temp_dir_str:
+            test_dir = Path(temp_dir_str)
+            local_file = test_dir / "test_train.jsonl"
             with open(local_file, "w", encoding="utf-8") as f:
                 f.write(json.dumps(record, ensure_ascii=False) + "\n")
                 
@@ -201,15 +201,6 @@ def run_live_test(api_key: str, bucket_name: str, region: str) -> bool:
             test_s3_key = "mentor-training/test-data/train.jsonl"
             s3_uri = upload_to_s3(str(local_file), bucket_name, test_s3_key, region)
             logger.info(f"Integration test S3 upload successful: {s3_uri}")
-        finally:
-            # Robustly cleanup temporary file and directory
-            try:
-                if local_file.exists():
-                    local_file.unlink()
-                if test_dir.exists():
-                    test_dir.rmdir()
-            except Exception as cleanup_err:
-                logger.warning(f"Failed to cleanup temporary test directory/file: {cleanup_err}")
             
         return True
     except Exception as e:
