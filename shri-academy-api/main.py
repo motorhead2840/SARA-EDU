@@ -10,6 +10,24 @@ import os
 import logging
 from contextlib import asynccontextmanager
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    from pathlib import Path
+    dotenv_path = Path(__file__).parent.parent / ".env"
+    if dotenv_path.exists():
+        for line in dotenv_path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if "=" in line:
+                key, val = line.split("=", 1)
+                val = val.strip()
+                if (val.startswith('"') and val.endswith('"')) or (val.startswith("'") and val.endswith("'")):
+                    val = val[1:-1]
+                os.environ[key.strip()] = val
+
 from typing import Optional
 
 import chromadb
