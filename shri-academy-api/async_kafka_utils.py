@@ -1,8 +1,9 @@
 import os
 import json
 import logging
-from typing import Any, Optional
+from typing import Any, Optional, Dict
 from aiokafka import AIOKafkaProducer
+
 
 log = logging.getLogger(__name__)
 
@@ -25,7 +26,7 @@ class AsyncKafkaProducerSingleton:
                 log.warning("KAFKA_BOOTSTRAP_SERVERS environment variable is not set. Kafka producer will not be started.")
                 raise RuntimeError("Kafka not configured: KAFKA_BOOTSTRAP_SERVERS is missing")
 
-            kwargs: dict[str, Any] = {
+            kwargs: Dict[str, Any] = {
                 "bootstrap_servers": bootstrap_servers
             }
 

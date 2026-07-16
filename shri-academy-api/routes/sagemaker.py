@@ -333,13 +333,12 @@ async def async_query(req: AsyncQueryRequest):
     """
     # Step 1: Publish incoming query event to Kafka
     start_time = time.time()
-    iso_timestamp = datetime.now(timezone.utc).isoformat()
     query_event = {
         "event_type": "query_received",
         "user_id": req.user_id,
         "query": req.query,
-        "timestamp_unix": start_time,
-        "timestamp_iso": iso_timestamp,
+        "timestamp_seconds": start_time,
+        "timestamp_iso": datetime.now(timezone.utc).isoformat(),
     }
     try:
         await publish_event_async(req.topic, query_event)
@@ -357,13 +356,14 @@ async def async_query(req: AsyncQueryRequest):
         "query": req.query,
         "response": response_text,
         "latency_seconds": end_time - start_time,
-        "timestamp_unix": end_time,
+        "timestamp_seconds": end_time,
         "timestamp_iso": datetime.now(timezone.utc).isoformat(),
     }
     try:
         await publish_event_async(req.topic, response_event)
     except Exception as e:
         log.warning(f"Failed to publish response_generated event to Kafka: {e}")
+
 
     return AsyncQueryResponse(
         response=response_text,
