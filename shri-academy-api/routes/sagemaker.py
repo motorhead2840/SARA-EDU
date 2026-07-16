@@ -22,10 +22,16 @@ import logging
 import os
 import subprocess
 import sys
+import time
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, List
 
 from fastapi import APIRouter, Depends, HTTPException, Header
+
+from async_kafka_utils import publish_event_async
+from sagemaker_client import invoke_shri_mentor_async
+
 
 try:
     import boto3
@@ -325,17 +331,15 @@ async def async_query(req: AsyncQueryRequest):
     2. Invokes the SageMaker endpoint asynchronously using aioboto3
     3. Publishes a response event asynchronously to Confluent Cloud (Kafka)
     """
-    from async_kafka_utils import publish_event_async
-    from sagemaker_client import invoke_shri_mentor_async
-    import time
-
     # Step 1: Publish incoming query event to Kafka
     start_time = time.time()
+    iso_timestamp = datetime.now(timezone.utc).isoformat()
     query_event = {
         "event_type": "query_received",
         "user_id": req.user_id,
         "query": req.query,
-        "timestamp": start_time,
+        "timestamp_unix": start_time,
+        "timestamp_iso": iso_timestamp,
     }
     try:
         await publish_event_async(req.topic, query_event)
@@ -353,7 +357,8 @@ async def async_query(req: AsyncQueryRequest):
         "query": req.query,
         "response": response_text,
         "latency_seconds": end_time - start_time,
-        "timestamp": end_time,
+        "timestamp_unix": end_time,
+        "timestamp_iso": datetime.now(timezone.utc).isoformat(),
     }
     try:
         await publish_event_async(req.topic, response_event)
@@ -364,4 +369,5 @@ async def async_query(req: AsyncQueryRequest):
         response=response_text,
         status="success" if response_text else "failed"
     )
+
 

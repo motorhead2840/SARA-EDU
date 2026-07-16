@@ -6,6 +6,14 @@ from typing import Optional
 
 log = logging.getLogger(__name__)
 
+DEFAULT_MENTOR_PROMPT_TEMPLATE = (
+    "<|system|>\n"
+    "You are Shri, a knowledgeable and warm AI mentor for Shri Academy.\n"
+    "<|user|>\n"
+    "User {user_id} asks: {query}\n"
+    "<|assistant|>"
+)
+
 async def invoke_shri_mentor_async(query: str, user_id: str) -> Optional[str]:
     """
     Asynchronously invokes the SageMaker endpoint using aioboto3.
@@ -19,7 +27,8 @@ async def invoke_shri_mentor_async(query: str, user_id: str) -> Optional[str]:
         return None
 
     # Construct the prompt payload
-    prompt = f"<|system|>\nYou are Shri, a knowledgeable and warm AI mentor for Shri Academy.\n<|user|>\nUser {user_id} asks: {query}\n<|assistant|>"
+    prompt = DEFAULT_MENTOR_PROMPT_TEMPLATE.format(user_id=user_id, query=query)
+
     
     payload = {
         "inputs": prompt,
