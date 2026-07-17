@@ -39,15 +39,15 @@ logger = logging.getLogger("OCWProcessor")
 LOCAL_SOCRATIC_TEMPLATES = [
     {
         "q": "How does the concept of {focus} apply to holistic human development in education?",
-        "a": "To cultivate a complete human being, we must connect intellectual pursuits with emotional, psychological, and spiritual maturity. Centering our teachings on this foundation allows students to tap into their deep inner potential. This goes far beyond mere rote learning, fostering a balanced mind and self-awareness that empower lifelong resilience and stability.",
+        "a": "To cultivate a complete human being, we must connect intellectual pursuits with emotional, psychological, and spiritual maturity. Centering our teachings on {focus} allows students to tap into their deep inner potential, fostering a balanced mind and self-awareness that empower lifelong resilience.",
     },
     {
         "q": "Can you explain why understanding {focus} helps students achieve greater emotional stability and resilience?",
-        "a": "When students grasp these principles, they acquire a stable internal anchor to weather the pressures of academic and daily life. Instead of being swept away by passing thoughts and anxieties, they learn to observe their emotional states with clarity. This fosters mindfulness, self-efficacy, and a profound realization of interconnectedness.",
+        "a": "When students grasp {focus}, they acquire a stable internal anchor to weather the pressures of academic and daily life. Instead of being swept away by passing thoughts, they learn to observe their emotional states with clarity, cultivating mindfulness and self-efficacy.",
     },
     {
         "q": "What would happen if an educational system ignored {focus} and focused solely on logical-mathematical testing?",
-        "a": "Neglecting the deeper facets of self-development in favor of purely technical testing leads to fragmented growth. While students might excel analytically, they often struggle with severe anxiety and a lack of empathy. Grounding education in a holistic paradigm is essential to align academic achievements with emotional balance and ethical, compassionate action."
+        "a": "Neglecting {focus} in favor of purely technical testing leads to fragmented growth. While students might excel analytically, they often struggle with severe anxiety. Grounding education in a holistic paradigm is essential to align academic achievements with emotional balance."
     }
 ]
 
@@ -153,6 +153,10 @@ class OCWProcessor:
                 elif role == "assistant":
                     a_text = content.lower()
                     
+            # If both user and assistant messages are empty, skip to prevent meaningless records
+            if not q_text and not a_text:
+                continue
+
             # Canonical record serialization
             canon_rec = json.dumps(rec, sort_keys=True)
             
@@ -161,14 +165,12 @@ class OCWProcessor:
                 continue
                 
             # If we have a user message, check if seen
-            if q_text:
-                if q_text in seen_questions:
-                    continue
+            if q_text and q_text in seen_questions:
+                continue
             
             # Fallback check on assistant message content
-            if a_text:
-                if a_text in seen_answers:
-                    continue
+            if a_text and a_text in seen_answers:
+                continue
 
             # Mark as seen and add to unique records
             if q_text:

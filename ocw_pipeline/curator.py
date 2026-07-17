@@ -32,9 +32,8 @@ class OCWCurator:
     def clean_text(self, text: str) -> str:
         """
         Standardizes character normalization and removes extra spacing.
-        Replaces em dashes and en dashes with simple hyphens to prevent text
-        encoding/decoding issues and ensure compliance with AWS resource naming constraints
-        and general ASCII/UTF-8 systems.
+        Replaces em dashes (—, \\u2014) and en dashes (–, \\u2013) with simple hyphens to prevent text
+        encoding/decoding issues and ensure clean tokenization in UTF-8/ASCII systems.
         """
         text = text.replace("\u2014", "-").replace("\u2013", "-")
         # Remove multiple newlines and spaces

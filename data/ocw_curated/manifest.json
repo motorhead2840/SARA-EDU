@@ -2,8 +2,8 @@
   "pipeline_status": "success",
   "raw_documents_ingested": 4,
   "curated_documents_retained": 4,
-  "pretrain_corpus_path": "/home/runner/work/SHRI-ACADEMY/SHRI-ACADEMY/data/ocw_curated/pretrain.txt",
-  "sft_dataset_path": "/home/runner/work/SHRI-ACADEMY/SHRI-ACADEMY/data/ocw_curated/train.jsonl",
+  "pretrain_corpus_path": "data/ocw_curated/pretrain.txt",
+  "sft_dataset_path": "data/ocw_curated/train.jsonl",
   "quality_threshold": 0.3,
   "pairs_per_doc": 4
 }

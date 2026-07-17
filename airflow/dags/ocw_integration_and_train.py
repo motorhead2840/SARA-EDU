@@ -72,6 +72,8 @@ def trigger_synthetic_generation(**ctx):
     """Hits the FastAPI endpoint /shri-api/sagemaker/generate-data to merge syllabus chunks and OCW."""
     manifest = ctx["ti"].xcom_pull(task_ids="run_ocw_pipeline", key="manifest")
     sft_dataset_path = manifest.get("sft_dataset_path")
+    if sft_dataset_path and not os.path.isabs(sft_dataset_path):
+        sft_dataset_path = os.path.abspath(os.path.join(str(REPO_ROOT), sft_dataset_path))
     
     headers = {"X-Mentor-Token": os.environ.get("MENTOR_API_SECRET", MENTOR_TOKEN)}
     payload = {

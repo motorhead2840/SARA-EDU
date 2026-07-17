@@ -85,13 +85,21 @@ def main():
         pretrain_path = processor.process_for_pretraining(curated_docs)
         sft_path = processor.process_for_sft(curated_docs, pairs_per_doc=args.pairs_per_doc)
 
+        # Convert paths to be relative to the repository root for maximum portability
+        try:
+            rel_pretrain = str(pretrain_path.relative_to(repo_root))
+            rel_sft = str(sft_path.relative_to(repo_root))
+        except ValueError:
+            rel_pretrain = str(pretrain_path)
+            rel_sft = str(sft_path)
+
         # 5. Step 4: Versioning and Manifest Generation
         manifest_data = {
             "pipeline_status": "success",
             "raw_documents_ingested": len(raw_docs),
             "curated_documents_retained": len(curated_docs),
-            "pretrain_corpus_path": str(pretrain_path),
-            "sft_dataset_path": str(sft_path),
+            "pretrain_corpus_path": rel_pretrain,
+            "sft_dataset_path": rel_sft,
             "quality_threshold": args.quality_threshold,
             "pairs_per_doc": args.pairs_per_doc,
         }
